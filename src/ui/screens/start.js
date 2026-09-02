@@ -7,6 +7,7 @@
  */
 
 import { el } from '../dom.js';
+import { historyStrip } from '../components/history.js';
 import { button } from '../components/button.js';
 import { page, card } from '../components/layout.js';
 import { openRules } from './rules.js';
@@ -63,6 +64,7 @@ export function mount(container, store) {
               ]),
             ),
           ),
+          historyStrip(state, { compact: true }),
         ],
         'card--roster',
       )

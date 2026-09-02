@@ -7,10 +7,10 @@
  */
 
 import { el } from '../dom.js';
+import { historyStrip } from '../components/history.js';
 import { modal } from '../components/modal.js';
 import { button } from '../components/button.js';
 import { sipWord } from '../strings.js';
-import { HORSES_BY_ID } from '../../data/horses.js';
 
 /**
  * Builds the per-player table.
@@ -58,32 +58,6 @@ function table(state) {
 }
 
 /**
- * The last races as coloured dots — shows at a glance that every horse wins sometimes.
- * @param {any} state
- * @returns {HTMLElement|null}
- */
-function history(state) {
-  const entries = state.session.history.slice(-20);
-  if (entries.length === 0) return null;
-
-  return el('div', { className: 'history' }, [
-    el('h3', { text: 'Die letzten Rennen' }),
-    el(
-      'ol',
-      { className: 'history__dots' },
-      entries.map((entry) => {
-        const horse = HORSES_BY_ID[entry.winnerId];
-        return el('li', {
-          className: 'history__dot',
-          vars: { '--horse-color': horse?.color ?? 'var(--ink-soft)' },
-          attrs: { title: horse?.name ?? 'Unbekannt' },
-        });
-      }),
-    ),
-  ]);
-}
-
-/**
  * Opens the statistics overlay.
  * @param {{getState: Function, dispatch: Function}} store
  * @returns {{close: () => void}}
@@ -99,7 +73,7 @@ export function openStats(store) {
         text: `${state.session.racesPlayed} ${state.session.racesPlayed === 1 ? 'Rennen' : 'Rennen'} in dieser Session.`,
       }),
       table(state),
-      history(state) ?? el('span'),
+      historyStrip(state) ?? el('span'),
       button({
         label: 'Session zurücksetzen',
         variant: 'ghost',

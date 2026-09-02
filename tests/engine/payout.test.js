@@ -300,3 +300,67 @@ describe('event drinking rules', () => {
     expect(result.eventRules[0].horseId).toBeNull();
   });
 });
+
+describe('the bet-type matrix', () => {
+  const order = ['a', 'b', 'c', 'd', 'e', 'f'];
+
+  /** Two players on the same horse, so every case also covers multiple winners. */
+  const pair = (horseId) => [
+    { playerId: 'p1', horseId, sips: 3 },
+    { playerId: 'p2', horseId, sips: 4 },
+  ];
+
+  it.each([
+    ['win', 'a', [3, 4]],
+    ['place', 'c', [2, 2]],
+    ['last', 'f', [6, 8]],
+  ])('pays every backer under bet type "%s"', (betType, horseId, expected) => {
+    const result = settle({ bets: pair(horseId), order, settings: { betType } });
+    expect(result.winners.map((winner) => winner.sipsToDeal)).toEqual(expected);
+    expect(result.losers).toEqual([]);
+    expect(result.houseWins).toBe(false);
+  });
+
+  it.each([
+    ['win', 'b'],
+    ['place', 'd'],
+    ['last', 'a'],
+  ])('lets the house win under bet type "%s" when nobody hits', (betType, horseId) => {
+    const result = settle({ bets: pair(horseId), order, settings: { betType } });
+    expect(result.winners).toEqual([]);
+    expect(result.houseWins).toBe(true);
+    expect(result.losers.map((loser) => loser.sipsToDrink)).toEqual([3, 4]);
+  });
+
+  it('does not let the house win when only one of several players hits', () => {
+    const result = settle({
+      bets: [
+        { playerId: 'p1', horseId: 'a', sips: 2 },
+        { playerId: 'p2', horseId: 'e', sips: 5 },
+      ],
+      order,
+      settings: { betType: 'win' },
+    });
+    expect(result.houseWins).toBe(false);
+    expect(result.winners).toHaveLength(1);
+    expect(result.losers).toHaveLength(1);
+  });
+
+  it('settles a mixed table under "free" including a house win for the losers only', () => {
+    const result = settle({
+      bets: [
+        { playerId: 'p1', horseId: 'f', sips: 2, type: 'last' },
+        { playerId: 'p2', horseId: 'f', sips: 2, type: 'win' },
+        { playerId: 'p3', horseId: 'b', sips: 1, type: 'place' },
+      ],
+      order,
+      settings: { betType: 'free' },
+    });
+    expect(result.winners).toEqual([
+      { playerId: 'p1', horseId: 'f', sipsToDeal: 4, type: 'last' },
+      { playerId: 'p3', horseId: 'b', sipsToDeal: 1, type: 'place' },
+    ]);
+    expect(result.losers).toEqual([{ playerId: 'p2', horseId: 'f', sipsToDrink: 2, type: 'win' }]);
+    expect(result.houseWins).toBe(false);
+  });
+});

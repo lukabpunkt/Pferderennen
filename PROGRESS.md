@@ -151,19 +151,19 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 
 ### M7 – Sound, Kommentator, Wettarten, Statistik
 
-- [ ] 1. audio.js
-- [ ] 2. sfx.js (alle Cues)
-- [ ] 3. Kommentator-Engine (≥ 80 Zeilen)
-- [ ] 4. Wettarten komplett
-- [ ] 5. Führungswechsel-Regel
-- [ ] 6. Statistik-Screen + Rennhistorie
-- [ ] 7. Alkoholfrei-Modus / strings.js
-- [ ] 8. Einstellungen vollständig
-- [ ] 9. Regeln-Screen + Hinweis
-- [ ] 10. `chore: complete M7`
-- [ ] **Audit A1 bestanden**
-- [ ] **Audit A6 bestanden**
-- [ ] **Audit A2 bestanden** (Re-Run)
+- [x] 1. audio.js
+- [x] 2. sfx.js (alle Cues)
+- [x] 3. Kommentator-Engine (≥ 80 Zeilen)
+- [x] 4. Wettarten komplett
+- [x] 5. Führungswechsel-Regel
+- [x] 6. Statistik-Screen + Rennhistorie
+- [x] 7. Alkoholfrei-Modus / strings.js
+- [x] 8. Einstellungen vollständig
+- [x] 9. Regeln-Screen + Hinweis
+- [x] 10. `chore: complete M7`
+- [x] **Audit A1 bestanden**
+- [x] **Audit A6 bestanden**
+- [x] **Audit A2 bestanden** (Re-Run)
 
 ### M8 – PWA, Offline, Performance, Barrierefreiheit
 
@@ -211,6 +211,9 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A1    | M6          | 2026-09-02 | **bestanden** | Re-Run, Design-Teil; 1 Befund (Attract-Layout) behoben |
 | A3    | M6          | 2026-09-02 | **bestanden** | Polish-Teil; Screenshots in `docs/screenshots/` erneuert |
 | A4    | M6          | 2026-09-02 | **bestanden** | 4 echte Befunde gefunden und behoben, davon 3 Kontrast. CI grün: [Run 33672416432](https://github.com/lukabpunkt/Pferderennen/actions/runs/33672416432) |
+| A2    | M7          | 2026-09-02 | **bestanden** | Re-Run: Zahlen identisch zu M6 – genau das war der Zweck |
+| A6    | M7          | 2026-09-02 | **bestanden** | 2 Befunde behoben; eine begründete Ausnahme (`race.js`, 438 Zeilen) |
+| A1    | M7          | 2026-09-02 | **bestanden** | Wettarten, Statistik, Alkoholfrei-Modus im Browser durchgespielt |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -368,6 +371,18 @@ irgendwann stört, ist `--sub` der Hebel.
 
 _(Datum – Entscheidung – Begründung)_
 
+- **2026-09-02 (M7) – Der Ton ist vollständig synthetisiert, keine einzige Audiodatei.** Das GDD
+  erlaubt kurze OGG/MP3-Dateien als Alternative. Oszillatoren und ein einziger Rausch-Puffer
+  kosten null Bytes Download, funktionieren offline ohne Zutun und lassen sich am Tempo des Feldes
+  entlangregeln – ein Sample-Loop könnte das nur mit Tonhöhen-Artefakten. Die Hufe werden deshalb
+  Schritt für Schritt geplant statt geloopt.
+- **2026-09-02 (M7) – Die Führungswechsel-Regel lebt in der UI, nicht in der Engine.** Sie ist
+  eine Trinkregel, kein Rennverhalten. Die Engine erfährt nichts davon, was sie erfahren müsste,
+  damit die Regel das Ergebnis beeinflussen könnte – und genau das darf nie passieren.
+- **2026-09-02 (M7) – Der Wiederholungsschutz des Kommentators sitzt auf dem fertigen Satz.**
+  Auf dem Template wäre er billiger, aber „{horse} ist vorne" zweimal für dasselbe Pferd ist für
+  jeden am Tisch dieselbe Zeile. Wenn ein Pool leer ist, schweigt der Kommentator lieber einen
+  Takt, als sich zu wiederholen.
 - **2026-09-02 (M6) – Der Primär-Button trägt Tinte statt Weiß.** Weiß auf `--accent` erreicht
   nur 2,84:1 und reißt damit die WCAG-Schwelle am wichtigsten Button des Spiels. Die Alternative
   wäre gewesen, das Orange zu verdunkeln – aber das Orange *ist* die Marke. Tinte darauf ergibt
@@ -796,12 +811,97 @@ Zeile bei 9 → 10 um 14 px, weil der Text länger wird; ein unsichtbarer Sizer 
 möglichen Wert reserviert die Breite. Gemessen: **119 px über den kompletten Bereich, in beide
 Richtungen** – CLS an dieser Stelle exakt 0.
 
+### A1 / A2 / A6 – Audits zu M7 (2026-09-02)
+
+**A2 (Fairness, Re-Run):** Die Zahlen sind **identisch zu M6** – Siegquoten 0,1627–0,1693 je
+Chaos-Level, χ² p = 0,21 bis 0,96, S1 31,24 %, S5 39,59 %, S6 132 Units. Das ist kein Zufall und
+auch keine Nachlässigkeit: M7 hat die Engine nicht angefasst. Der Punkt des Re-Runs steht
+ausdrücklich im Audit („Sicherheit: Wettarten dürfen Engine nicht berühren"), und drei Greps
+belegen ihn zusätzlich:
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| `createRace()` bekommt keine Wettdaten | ✅ `createRace({ seed, duration, chaos })` – sonst nichts |
+| `src/engine/**` importiert nichts aus `render/ui/state` | ✅ nur `data/events.js` und `config.js` |
+| Kein `Math.random`, `Date`, `performance`, `window`, `document` im Engine-Ordner | ✅ 0 Treffer |
+
+Die Wettarten leben vollständig in `payout.js`, das eine reine Funktion über Ids ist und die
+Reihenfolge geschenkt bekommt. Es kann das Rennen gar nicht beeinflussen, weil es erst läuft,
+wenn das Rennen vorbei ist.
+
+**A6 (Code-Audit):**
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| JSDoc-Kopf je Modul, Signaturen an öffentlichen Funktionen | ✅ auch die fünf neuen Module |
+| Keine Datei > 400 Zeilen (außer `data/*`) | ⚠️ eine Ausnahme, siehe unten |
+| Keine Magic Numbers außerhalb `config.js` | ✅ `AUDIO` und `COMMENTARY` sind dafür dazugekommen |
+| Keine Abhängigkeitszyklen | ✅ `madge --circular src/`: **keine**, über 66 Dateien |
+| Jeder `addEventListener` hat sein `remove` | ✅ bis auf die zwei Gesten-Listener in `main.js`, die absichtlich die ganze Seitenlebensdauer halten |
+| Kein `innerHTML` mit Nutzerdaten | ✅ 0 Treffer im ganzen `src/` |
+| Try/Catch um `localStorage`, `AudioContext`, `navigator.vibrate` | ✅ alle drei |
+| Engine ≥ 90 % Zeilen, Reducer/Payout 100 % Branches | ✅ Engine **98,03 %**; `payout.js`, `reducers.js`, `store.js`, `persistence.js` je **100 % Branches** |
+| `npm run lint` ohne Fehler und Warnungen | ✅ |
+| Keine TODO/FIXME ohne PROGRESS-Eintrag | ✅ 0 Treffer |
+
+**Im A6 gefunden und behoben:**
+
+1. **`unlock()` in `audio.js` hatte kein Try/Catch.** Safari wirft, sobald eine Seite zu viele
+   AudioContexts geöffnet hat, und `resume()` lehnt ab, wenn der Aufruf nicht aus einer Geste
+   kommt. Ein Spiel ohne Ton funktioniert; ein Spiel, das beim ersten Tippen eine Exception
+   wirft, nicht. Beides ist jetzt abgefangen und per Test belegt.
+2. **`race.js` war auf 568 Zeilen gewachsen.** Drei Einheiten sind herausgezogen worden, jede mit
+   einer eigenen Aufgabe statt als Zeilenschieberei: `raceNarration.js` (alles, was das Rennen
+   von sich gibt – Kommentar, Ton, Live-Region, Trinkregeln, in genau dieser Reihenfolge in
+   Takt gehalten), `racePhotoFinish.js` (Erkennung, Zeitlupe, Auflösung) und `createReadout()`
+   in `raceDebug.js` (das Debug-Panel baut seinen Text zweimal pro Sekunde neu, nicht 60-mal).
+   Ergebnis: **568 → 438 Zeilen**. Ebenso `sfx.js`: die drei Bausteine Envelope, Ton und
+   Noise-Burst sind nach `audio/voices.js` gewandert, 425 → 344.
+
+**Die verbleibende Ausnahme: `race.js` mit 438 Zeilen.** Der Bildschirm besitzt die
+Simulationsschleife, die Interpolation, die Kamera, beide Bahn-Orientierungen, das HUD, den
+Countdown, die Pause und das Debug-Panel. Jeder weitere Schnitt würde Dinge trennen, die man
+zusammen liest – vor allem `render()`, dessen 75 Zeilen genau eine Sache tun: einen Frame in der
+richtigen Reihenfolge zeichnen. Eine Aufteilung nach Zeilenzahl statt nach Zuständigkeit würde
+zehn Parameter durch eine neue Modulgrenze schieben und die Datei schlechter lesbar machen, nicht
+besser. Dieselbe Begründung wie bei `screens.css` und `components.css` seit M1.
+
+**A1 (UI/UX):** Alle M7-Oberflächen im Browser durchgespielt:
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Sound startet nach dem ersten Tap | ✅ AudioContext `running`, Signal am Bus gemessen (Peaks 0,03–0,07 über 20 Messungen, eine Stille) |
+| Alle 13 Cues und alle 23 Event-Sounds werfen nicht | ✅ einzeln im Browser ausgelöst |
+| Mute wirkt sofort | ✅ Rampe statt Schnitt, per Test belegt |
+| Kommentator: keine doppelte Zeile im Rennen | ✅ 20 Zeilen, 0 Duplikate im gemessenen Rennen; Test über 10 Rennen |
+| Wettarten wirken pro Spieler im „Frei"-Modus | ✅ „Letzter" und „Platz" nebeneinander, Chips in Übersicht und Ergebnis |
+| Führungswechsel-Regel | ✅ 3 Auslösungen im Schlussdrittel, Toast + Rückschau |
+| Alkoholfrei-Modus überall | ✅ 0 hartkodierte „Schluck" außerhalb von `strings.js` und `data/` |
+| Alle Einstellungen wirken und überleben Reload | ✅ inklusive der neuen: Reduzierte Bewegung, Rennen überspringbar |
+
+**Im A1 gefunden und behoben:**
+
+1. **Der Kommentator wiederholte sich doch.** Der Wiederholungsschutz lag auf dem *Template*, aber
+   „{horse} ist vorne" zweimal für dasselbe Pferd ist für jeden am Tisch dieselbe Zeile. Der
+   Schutz sitzt jetzt auf dem fertigen Satz. Aufgefallen ist es dem Test über zehn Rennen, nicht
+   dem Auge – nach 19 Zeilen war eine doppelt.
+2. **Windschatten belegte 6 von 20 Zeilen.** Der Effekt wird nicht wie die anderen Events
+   eingeplant, sondern entsteht immer dann, wenn zwei Pferde hintereinander laufen – also
+   mehrmals pro Rennen. Mit Event-Priorität drängte er die Pointen von der Zeile. Er ist jetzt
+   als `minor` markiert und läuft auf der leiseren Priorität, und hat statt zwei sechs Varianten.
+3. **Im „Frei"-Modus war nicht zu sehen, wer worauf gesetzt hat.** Übersicht und Ergebniskarten
+   zeigen die Wettart jetzt als Chip – aber nur in diesem Modus, wo sie sich unterscheiden kann.
+4. **Die Rückschau listete dieselbe Regel mehrfach.** Drei Führungswechsel lesen sich als
+   „3× Führungswechsel! Alle trinken 1 Schluck!" besser als dreimal derselbe Satz.
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 **Offen (nur der Nutzer kann das):**
 
+- **M7:** Ein Rennen mit Ton hören – stimmt die Mischung? Modus „Letzter" und die
+  Führungswechsel-Regel zu zweit ausprobieren.
 - **M6:** Drei Personen, die das Spiel nicht kennen, spielen ohne Erklärung. Wo stocken sie? Wo
   lachen sie?
 - **M4/M5:** FPS auf einem echten Mittelklasse-Handy mit `?debug=1` messen.
@@ -811,13 +911,13 @@ _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 _(werden hier gesammelt, bevor sie zu Tasks werden)_
 
-- Noch 5 Platzhalter-Module mit JSDoc-Kopf und leerem `export {}`: `render/eventVisuals.js` (M5),
-  `render/sprites.js` (Backlog), `audio/audio.js` und `audio/sfx.js` (M7), `data/commentary.js` (M7).
+- Noch 1 Platzhalter-Modul mit JSDoc-Kopf und leerem `export {}`: `render/sprites.js` (Backlog).
 - Die Rückansicht kennt keine Accessoires. Auf dem Handy sind sie bei rund 50 px Breite ohnehin
   nicht lesbar; Farbe und Nummer tragen die Unterscheidung.
 - Das bleibende Dekor liegt immer an der Bahn des betroffenen Pferdes. Ein Pferd, das über eine
   fremde Bananenschale läuft, merkt davon nichts – das Dekor ist Erinnerung, nicht Physik.
-- `screens.css` (650) und `components.css` (457) liegen weiter über der 400-Zeilen-Richtlinie.
+- `screens.css` (710), `components.css` (616), `race.css` (459) und `ui/screens/race.js` (438)
+  liegen über der 400-Zeilen-Richtlinie. Begründung im A6-Protokoll zu M7.
   Der Produktivcode in `src/**.js` hält sie ein.
 - Das Publikum steht still. Die La-Ola-Welle bei Events und im Finish gehört zu M5.
 - Das Text-Rennen zeigt pro Event nur die erste Kommentar-Variante. Die richtige

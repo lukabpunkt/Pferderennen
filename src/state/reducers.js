@@ -240,14 +240,17 @@ export function rootReducer(state, action) {
     }
 
     case 'race/setResult': {
-      const { seed, order, events } = action.payload ?? {};
+      const { seed, order, events, rules } = action.payload ?? {};
       if (!Array.isArray(order) || order.length === 0) return state;
       return {
         ...state,
         race: {
           seed: seed ?? null,
           phase: 'finished',
-          result: { order, events: events ?? [] },
+          // `rules` are the drinking rules that fired live during the race — the event rules and
+          // the lead-change rule. They are already settled at the table, so the result screen
+          // only recaps them.
+          result: { order, events: events ?? [], rules: rules ?? [] },
           // A fresh result has not been counted into the session statistics yet.
           recorded: false,
         },

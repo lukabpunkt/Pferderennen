@@ -385,7 +385,18 @@ export const SLIPSTREAM = {
     anim: 'gallop_fast',
   },
   lead: 0,
-  commentary: ['Windschatten – clever!', 'Er hängt sich ran und lässt sich ziehen.'],
+  commentary: [
+    'Windschatten – clever!',
+    'Er hängt sich ran und lässt sich ziehen.',
+    'Da wird der Vordermann als Windschutz benutzt.',
+    'Schön eingefädelt, das spart Kraft.',
+    'Sitzt im Sog und wartet ab.',
+    'Kein Kraftakt, nur Physik.',
+  ],
+  // Slipstream is not scheduled like the other events — the engine emits it whenever two runners
+  // line up, so it happens several times a race. It gets the quieter priority, otherwise it would
+  // crowd the funny stuff off the line.
+  minor: true,
   drinkRule: null,
 };
 

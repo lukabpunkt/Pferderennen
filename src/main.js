@@ -10,6 +10,8 @@ import { rootReducer, createInitialState } from './state/reducers.js';
 import { loadState, persist, isPersistenceAvailable } from './state/persistence.js';
 import { createRouter } from './ui/router.js';
 import { toast } from './ui/components/toast.js';
+import { setMuted, unlock } from './audio/audio.js';
+import { uiTap } from './audio/sfx.js';
 import * as start from './ui/screens/start.js';
 import * as players from './ui/screens/players.js';
 import * as betting from './ui/screens/betting.js';
@@ -58,6 +60,51 @@ if (restored?.raceWasAborted) {
     variant: 'warning',
   });
 }
+
+/**
+ * The reduced-motion override.
+ *
+ * The CSS block for `prefers-reduced-motion` follows the system, which is the right default; the
+ * setting can force it either way. A data attribute on the root is all the stylesheet needs.
+ */
+function applyMotion() {
+  const value = store.getState().settings.reducedMotion;
+  if (value === 'auto') delete document.documentElement.dataset.motion;
+  else document.documentElement.dataset.motion = value === 'on' ? 'reduced' : 'full';
+}
+applyMotion();
+store.subscribe(applyMotion);
+
+/**
+ * Sound.
+ *
+ * Browsers refuse to start an AudioContext before the user has touched the page, so the context
+ * is built inside the first pointer or key event and never before. Every later tap gets the
+ * click cue; `uiTap()` is a no-op while sound is off, so there is nothing to unsubscribe.
+ */
+setMuted(!store.getState().settings.sound);
+
+let unlocked = false;
+const onGesture = () => {
+  if (!unlocked) {
+    unlocked = unlock();
+    setMuted(!store.getState().settings.sound);
+    return;
+  }
+  uiTap();
+};
+document.addEventListener('pointerdown', onGesture);
+document.addEventListener('keydown', onGesture);
+
+// The sound setting can change at any time; the master gain follows it.
+let soundWas = store.getState().settings.sound;
+store.subscribe(() => {
+  const now = store.getState().settings.sound;
+  if (now === soundWas) return;
+  soundWas = now;
+  setMuted(!now);
+  if (now) unlock();
+});
 
 if (!isPersistenceAvailable()) {
   toast('Ohne Speicher: Namen und Einstellungen sind nach dem Neuladen weg.', {

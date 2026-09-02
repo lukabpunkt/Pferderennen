@@ -608,6 +608,19 @@
   height: 14px;
   border-radius: var(--radius-pill);
   background: var(--horse-color);
+  box-shadow: inset 0 -2px 0 var(--horse-dark, transparent);
+}
+
+/* On the start screen the strip sits under the roster as a quiet footnote, not a headline. */
+.history--compact {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.history--compact .history__dot {
+  width: 10px;
+  height: 10px;
 }
 
 /* --- Desktop ------------------------------------------------------------- */

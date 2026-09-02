@@ -175,6 +175,13 @@ export function mount(container, store) {
               el('span', { className: 'overview__horse' }, [
                 horseBadge(horse, 'sm'),
                 el('span', { text: horse.name }),
+                // Only worth showing when the players could actually choose differently.
+                state.settings.betType === 'free'
+                  ? el('span', {
+                      className: 'overview__type',
+                      text: BET_TYPE_LABELS[bet.type ?? 'win'],
+                    })
+                  : null,
               ]),
               el('span', { className: 'overview__sips num', text: sips(state.settings, bet.sips) }),
             ]);

@@ -174,6 +174,43 @@ export const DEFAULT_SETTINGS = {
   debugSeed: false,
 };
 
+/**
+ * Audio. Gains are deliberately low: this is a game people put on a table between them, and the
+ * hoofbeat loop runs for the whole race under everything else.
+ */
+export const AUDIO = {
+  /** Master gain when unmuted. */
+  masterGain: 0.55,
+  /** Seconds of fade when muting, so a running loop does not click. */
+  muteFade: 0.12,
+  /** Corner frequency of the master lowpass when nothing is ducking it. */
+  lowpassOpen: 18000,
+  /** Where it lands during a photo finish — muffled, as if the crowd held its breath. */
+  lowpassPhotoFinish: 700,
+  /** Seconds the lowpass takes to travel. */
+  lowpassRamp: 0.35,
+  /** Hoofbeats: steps per second at a runner's base speed, and how far tempo may swing. */
+  hoofBaseRate: 7.2,
+  hoofRateRange: 2.6,
+  hoofGain: 0.22,
+  /** Crowd bed: gain at the start of the race and at the line. */
+  crowdGainStart: 0.05,
+  crowdGainFinish: 0.17,
+  /** Gain of a single one-shot cue. */
+  cueGain: 0.3,
+};
+
+/** The commentator's pacing. */
+export const COMMENTARY = {
+  /** A filler line arrives somewhere between these two, in seconds (GDD asks for 2-4 s). */
+  fillerMin: 2,
+  fillerSpread: 2,
+  /** Where the final stretch begins, as a share of the track. */
+  finalStretchFrom: 0.67,
+  /** How far behind the last runner has to be before it is worth mentioning. */
+  trailingGap: 0.18,
+};
+
 /** Key and version of the persisted game state. */
 export const STORAGE_KEY = 'pferderennen:v1';
 export const STORAGE_VERSION = 1;

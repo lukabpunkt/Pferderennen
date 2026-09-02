@@ -23,19 +23,13 @@ import { createParticles, CONFETTI } from '../../render/particles.js';
 import { createEventVisuals } from '../../render/eventVisuals.js';
 import { createHud } from '../../render/hud.js';
 import { createQualityMonitor, quality, resetQuality } from '../../render/quality.js';
-import {
-  RACE_DURATIONS,
-  RENDER,
-  RUNNER_COUNT,
-  TIMESTEP,
-  TRACK_LENGTH,
-  PHOTO_FINISH,
-} from '../../config.js';
+import { RACE_DURATIONS, RENDER, RUNNER_COUNT, TIMESTEP, TRACK_LENGTH } from '../../config.js';
 import { createCountdown } from '../components/countdown.js';
-import { createCommentary } from '../raceCommentary.js';
+import { createNarration } from '../raceNarration.js';
+import { createPhotoFinish } from '../racePhotoFinish.js';
 import { toResultPayload } from '../raceResult.js';
 import { debugOptions } from '../debug.js';
-import { countingContext, debugReadout } from '../raceDebug.js';
+import { countingContext, createReadout } from '../raceDebug.js';
 
 let cleanup = null;
 
@@ -44,9 +38,6 @@ const CELEBRATION_MS = 2600;
 
 /** How long the starting gates take to swing open. */
 const GATE_OPEN_SECONDS = 0.5;
-
-/** Floor between two spoken lead changes, so a screen reader stays followable (audit A4). */
-const LEAD_ANNOUNCE_MIN_MS = 3000;
 
 /**
  * @param {HTMLElement} container
@@ -73,10 +64,6 @@ export function mount(container, store) {
   const particles = createParticles();
 
   /**
-   * Reduced motion drops the shakes and the flashes and thins the particles, but every prop
-   * stays: a banana is information, not decoration (docs/04_DESIGN_SYSTEM.md §9).
-   */
-  /**
    * A short buzz on the phone. Purely confirmation — nothing in the game depends on it, and it
    * is off when the player has switched vibration off (GDD §6).
    * @param {number|number[]} pattern
@@ -90,6 +77,10 @@ export function mount(container, store) {
     }
   }
 
+  /**
+   * Reduced motion drops the shakes and the flashes and thins the particles, but every prop
+   * stays: a banana is information, not decoration (docs/04_DESIGN_SYSTEM.md §9).
+   */
   const calm =
     settings.reducedMotion === 'on' ||
     (settings.reducedMotion === 'auto' &&
@@ -103,7 +94,13 @@ export function mount(container, store) {
     cheer: () => track?.cheer(),
   });
   const hud = createHud(HORSES);
-  const commentary = createCommentary({ hud, getState: () => store.getState() });
+  const narration = createNarration({
+    hud,
+    canvas,
+    store,
+    baseSpeed: TRACK_LENGTH / duration,
+    buzz,
+  });
   const palettes = HORSES.map(horseColours);
   const poses = HORSES.map((_, index) => createPose(index / RUNNER_COUNT));
 
@@ -123,6 +120,7 @@ export function mount(container, store) {
     el('span', { className: 'race-paused__text', text: 'Pausiert – das Rennen wartet auf euch.' }),
   ]);
   const debugPanel = el('pre', { className: 'race-debug' });
+  const readout = createReadout(debugPanel, debug.enabled);
   /** The stage carries the orientation, because the HUD styles hang off it. */
   const stage = el('div', { className: 'race-stage' });
 
@@ -131,8 +129,6 @@ export function mount(container, store) {
   let phase = 'countdown';
   let gateOpen = 0;
   let handedOver = false;
-  /** True once the finish has turned into a photo finish; it never turns back. */
-  let dramatic = false;
   let timers = [];
   let width = 0;
   let height = 0;
@@ -143,11 +139,8 @@ export function mount(container, store) {
   const drawn = new Float64Array(RUNNER_COUNT);
 
   /** Frame timing, shown with ?debug=1. The frame rate itself comes from the quality monitor. */
-  let debugWindow = 0;
   let updateMs = 0;
   let renderMs = 0;
-  let lastLeader = -1;
-  let lastAnnounce = 0;
 
   resetQuality();
   const monitor = createQualityMonitor((level) => {
@@ -191,8 +184,8 @@ export function mount(container, store) {
       race.step();
       const runners = race.runners;
       for (const runner of runners) current[runner.index] = runner.x;
-      commentary.read(race);
-      checkPhotoFinish(race.runners);
+      narration.step(race);
+      if (phase === 'running') drama.check(race.runners, race.state.t);
       if (race.isFinished) finish();
     }
     updateMs = performance.now() - started;
@@ -266,96 +259,21 @@ export function mount(container, store) {
     hud.update(runners, race.isFinished ? race.order : null);
 
     counter.perFrame = counter.ops;
-    debugWindow += dt;
     monitor.sample(dt);
-    announce(runners);
+    narration.frame(runners);
     renderMs = performance.now() - started;
-    if (debugWindow >= 0.5) {
-      debugWindow = 0;
-      if (debug.enabled) {
-        debugPanel.textContent = debugReadout({
-          seed,
-          fps: monitor.fps(),
-          updateMs,
-          renderMs,
-          particles: particles.count,
-          pathOps: counter.perFrame,
-          orientation,
-          zoom: camera.zoom,
-          quality: quality.level,
-          time: race.state.t,
-        });
-      }
-    }
-  }
-
-  /**
-   * Keeps the canvas label and the live region current, so someone who cannot see the race can
-   * still follow it. Only speaks when the lead actually changes, otherwise a screen reader would
-   * never stop talking (audit A4).
-   * @param {{index: number, x: number}[]} runners
-   */
-  function announce(runners) {
-    if (phase !== 'running') return;
-    let leader = runners[0];
-    for (const runner of runners) if (runner.x > leader.x) leader = runner;
-    if (leader.index === lastLeader) return;
-    // In a tight pack the lead can change several times a second. Announcing each one would
-    // leave a screen reader talking over itself, so lead changes get a floor of 3 s (audit A4);
-    // the milestones below — start, photo finish, winner — are never throttled.
-    const now = performance.now();
-    if (now - lastAnnounce < LEAD_ANNOUNCE_MIN_MS) return;
-    lastAnnounce = now;
-    lastLeader = leader.index;
-
-    const name = horseByIndex(leader.index).name;
-    canvas.setAttribute('aria-label', `Rennbahn. ${name} führt.`);
-    speak(`${name} führt.`);
-  }
-
-  /** Puts one sentence into the page's polite live region. */
-  function speak(text) {
-    const region = document.getElementById('live-region');
-    if (region) region.textContent = text;
-  }
-
-  /**
-   * Turns the last few metres into a photo finish when it deserves one: slow motion, a push in
-   * on the line, a vignette and the banner. The threshold is the same one the fairness audit
-   * measures, so what the audit calls a photo finish is exactly what the player sees.
-   * @param {{x: number}[]} runners
-   */
-  function checkPhotoFinish(runners) {
-    if (dramatic || phase !== 'running' || calm) return;
-
-    let first = -Infinity;
-    let second = -Infinity;
-    for (const runner of runners) {
-      if (runner.x > first) {
-        second = first;
-        first = runner.x;
-      } else if (runner.x > second) {
-        second = runner.x;
-      }
-    }
-    if (first < TRACK_LENGTH * PHOTO_FINISH.fromProgress) return;
-    if (first - second >= PHOTO_FINISH.maxGap) return;
-
-    dramatic = true;
-    loop.setTimeScale(PHOTO_FINISH.timeScale);
-    camera.setZoomBoost(1.4);
-    stage.classList.add('is-photo-finish');
-    hud.say('FOTOFINISH!');
-    speak('Fotofinish!');
-  }
-
-  /** Puts time back to normal once the drama is over. */
-  function endPhotoFinish() {
-    if (!dramatic) return;
-    dramatic = false;
-    loop.setTimeScale(1);
-    camera.setZoomBoost(1);
-    stage.classList.remove('is-photo-finish');
+    readout.tick(dt, () => ({
+      seed,
+      fps: monitor.fps(),
+      updateMs,
+      renderMs,
+      particles: particles.count,
+      pathOps: counter.perFrame,
+      orientation,
+      zoom: camera.zoom,
+      quality: quality.level,
+      time: race.state.t,
+    }));
   }
 
   /** Which animation a runner should be playing right now. */
@@ -374,11 +292,13 @@ export function mount(container, store) {
     handedOver = true;
     phase = 'finished';
 
-    endPhotoFinish();
+    drama.end();
     buzz([60, 60, 60]);
 
     const winner = horseByIndex(race.order[0]);
-    hud.say(`${winner.name} gewinnt!`);
+    const state = store.getState();
+    const houseWins = !state.bets.some((bet) => bet.horseId === winner.id);
+    narration.win(winner, houseWins, race.state.t);
 
     // Confetti in the winner's colour, from both sides of the picture.
     if (!calm) {
@@ -392,10 +312,7 @@ export function mount(container, store) {
       }
     }
     track?.cheer();
-    canvas.setAttribute('aria-label', `Rennen beendet. ${winner.name} gewinnt.`);
-    speak(`${winner.name} gewinnt!`);
-
-    const payload = toResultPayload(race, seed);
+    const payload = { ...toResultPayload(race, seed), rules: narration.rules() };
     timers.push(
       setTimeout(() => {
         store.dispatch({ type: 'race/setResult', payload });
@@ -409,8 +326,7 @@ export function mount(container, store) {
     phase = 'countdown';
     countdown.start(() => {
       phase = 'running';
-      hud.say('Und sie sind los!');
-      speak('Das Rennen läuft.');
+      narration.start();
       // A single bright frame as the gates go, unless reduced motion says otherwise.
       if (!calm) {
         stage.classList.add('is-flashing');
@@ -428,14 +344,12 @@ export function mount(container, store) {
     seed = nextSeed;
     handedOver = false;
     gateOpen = 0;
-    endPhotoFinish();
+    drama.end();
     race = createRace({ seed, duration, chaos: settings.chaos });
-    lastLeader = -1;
-    lastAnnounce = 0;
     resetPoses();
     particles.clear();
     visuals.reset();
-    commentary.reset();
+    narration.reset();
     hud.clearToasts();
     camera.reset();
     previous.fill(0);
@@ -450,6 +364,14 @@ export function mount(container, store) {
     render,
     onPause: () => stage.classList.add('is-paused'),
     onResume: () => stage.classList.remove('is-paused'),
+  });
+
+  const drama = createPhotoFinish({
+    loop,
+    camera,
+    stage,
+    narration,
+    calm: () => calm,
   });
 
   /** Jumps to the end of the race, for the debug key and the skip button. */
@@ -502,6 +424,7 @@ export function mount(container, store) {
   cleanup = () => {
     unlisten();
     loop.stop();
+    narration.stop();
     countdown.stop();
     for (const timer of timers) clearTimeout(timer);
     timers = [];

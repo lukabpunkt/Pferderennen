@@ -2,12 +2,12 @@
  * Settings: race length, chaos level, drinking rules, bet type, sound, accessibility.
  *
  * Every option from docs/01_GAME_DESIGN.md §6 writes straight into the state and survives a
- * reload. Options whose effect only arrives in a later milestone say so plainly rather than
- * pretending to work.
+ * reload.
  */
 
 import { el } from '../dom.js';
 import { modal } from '../components/modal.js';
+import { sipWord } from '../strings.js';
 
 /** Declarative description of every setting, so the markup stays generic. */
 const FIELDS = [
@@ -52,7 +52,8 @@ const FIELDS = [
     key: 'leadChangeRule',
     label: 'Führungswechsel-Regel',
     toggle: true,
-    hint: 'Jeder Führungswechsel im Schlussdrittel kostet alle einen Schluck.',
+    hint: (settings) =>
+      `Jeder Führungswechsel im Schlussdrittel kostet alle einen ${sipWord(settings, 1)}.`,
   },
   {
     key: 'sober',
@@ -60,8 +61,29 @@ const FIELDS = [
     toggle: true,
     hint: 'Aus Schlücken werden Punkte. Gleiches Spiel, gleicher Spaß.',
   },
-  { key: 'sound', label: 'Sound', toggle: true, hint: 'Kommt in M7.' },
+  {
+    key: 'sound',
+    label: 'Sound',
+    toggle: true,
+    hint: 'Hufgetrappel, Menge, Fanfare. Startet beim ersten Tippen.',
+  },
   { key: 'vibration', label: 'Vibration', toggle: true, hint: 'Nur auf dem Handy.' },
+  {
+    key: 'reducedMotion',
+    label: 'Reduzierte Bewegung',
+    options: [
+      ['auto', 'Automatisch'],
+      ['on', 'An'],
+      ['off', 'Aus'],
+    ],
+    hint: 'Automatisch folgt der Systemeinstellung. Weniger Wackeln, weniger Blitze.',
+  },
+  {
+    key: 'debugSkip',
+    label: 'Rennen überspringbar',
+    toggle: true,
+    hint: 'Blendet im Rennen einen Überspringen-Knopf ein.',
+  },
 ];
 
 /**
@@ -135,7 +157,13 @@ export function openSettings(store) {
             field.toggle ? toggle(field, settings, update) : null,
           ]),
           field.toggle ? null : chipRow(field, settings, update),
-          field.hint ? el('p', { className: 'hint', text: field.hint }) : null,
+          field.hint
+            ? el('p', {
+                className: 'hint',
+                // A hint may be a function when its wording depends on the alcohol-free mode.
+                text: typeof field.hint === 'function' ? field.hint(settings) : field.hint,
+              })
+            : null,
         ]),
       ),
     );

@@ -10,7 +10,7 @@ import { button } from '../components/button.js';
 import { page, header, card, horsePortrait, playerChip } from '../components/layout.js';
 import { HORSES_BY_ID } from '../../data/horses.js';
 import { settle } from '../../engine/payout.js';
-import { sips, ICON } from '../strings.js';
+import { sips, BET_TYPE_LABELS, ICON } from '../strings.js';
 import { openStats } from './stats.js';
 
 let cleanup = null;
@@ -53,9 +53,10 @@ function podium(order) {
  * @param {string} options.text
  * @param {'deal'|'drink'} options.kind
  * @param {string} options.horseName
+ * @param {string} [options.betType] shown only when everyone could pick their own
  * @returns {HTMLElement}
  */
-function payoutCard({ player, text, kind, horseName }) {
+function payoutCard({ player, text, kind, horseName, betType }) {
   return el('li', { className: `payout payout--${kind}` }, [
     el('span', {
       className: 'payout__icon',
@@ -66,7 +67,10 @@ function payoutCard({ player, text, kind, horseName }) {
       playerChip(player),
       el('span', { className: 'payout__text', text }),
     ]),
-    el('span', { className: 'payout__horse', text: horseName }),
+    el('span', { className: 'payout__horse' }, [
+      el('span', { text: horseName }),
+      betType ? el('span', { className: 'payout__type', text: betType }) : null,
+    ]),
   ]);
 }
 
@@ -88,6 +92,8 @@ export function mount(container, store) {
   const playerById = (id) => state.players.find((player) => player.id === id);
   const horseName = (id) => HORSES_BY_ID[id]?.name ?? '—';
 
+  const freeChoice = state.settings.betType === 'free';
+
   const cards = el('ul', { className: 'payouts' }, [
     ...settlement.winners.map((winner) =>
       payoutCard({
@@ -95,6 +101,7 @@ export function mount(container, store) {
         text: `verteilt ${sips(state.settings, winner.sipsToDeal)}`,
         kind: 'deal',
         horseName: horseName(winner.horseId),
+        betType: freeChoice ? BET_TYPE_LABELS[winner.type] : null,
       }),
     ),
     ...settlement.losers.map((loser) =>
@@ -103,9 +110,33 @@ export function mount(container, store) {
         text: `trinkt ${sips(state.settings, loser.sipsToDrink)}`,
         kind: 'drink',
         horseName: horseName(loser.horseId),
+        betType: freeChoice ? BET_TYPE_LABELS[loser.type] : null,
       }),
     ),
   ]);
+
+  // What was already drunk during the race: nobody has to remember it, but seeing it listed
+  // settles the "wait, did I drink that one?" arguments.
+  const live = state.race.result?.rules ?? [];
+  // The same rule can fire several times in one race — three lead changes read better as
+  // "3x Führungswechsel" than as the same sentence three times.
+  const counted = live.reduce((map, text) => map.set(text, (map.get(text) ?? 0) + 1), new Map());
+  const recap =
+    counted.size > 0
+      ? card(
+          [
+            el('h3', { className: 'recap__title', text: 'Während des Rennens' }),
+            el(
+              'ul',
+              { className: 'recap__list' },
+              [...counted].map(([text, count]) =>
+                el('li', { text: count > 1 ? `${count}× ${text}` : text }),
+              ),
+            ),
+          ],
+          'card--recap',
+        )
+      : null;
 
   const houseCard = settlement.houseWins
     ? card(
@@ -130,7 +161,7 @@ export function mount(container, store) {
         title: winnerHorse ? `${winnerHorse.name} gewinnt!` : 'Ergebnis',
         subtitle: winnerHorse ? 'Und jetzt wird abgerechnet.' : undefined,
       }),
-      body: [podium(order), houseCard, cards].filter(Boolean),
+      body: [podium(order), houseCard, cards, recap].filter(Boolean),
       footer: el('div', { className: 'results__actions' }, [
         button({
           label: 'Nächstes Rennen',

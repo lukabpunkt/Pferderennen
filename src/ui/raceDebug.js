@@ -57,3 +57,26 @@ export function debugReadout({
     `Zoom ${zoom.toFixed(2)}   Qualität ${quality}   t ${time.toFixed(1)} s`
   );
 }
+
+/**
+ * Drives the debug overlay: it only rebuilds its text twice a second, because a readout that
+ * changes 60 times a second is unreadable and costs more than what it measures.
+ * @param {HTMLElement} panel
+ * @param {boolean} enabled
+ * @returns {{tick: (dt: number, snapshot: () => object) => void}}
+ */
+export function createReadout(panel, enabled) {
+  /** How much simulated time has passed since the last rebuild. */
+  const INTERVAL = 0.5;
+  let elapsed = 0;
+
+  return {
+    tick(dt, snapshot) {
+      if (!enabled) return;
+      elapsed += dt;
+      if (elapsed < INTERVAL) return;
+      elapsed = 0;
+      panel.textContent = debugReadout(snapshot());
+    },
+  };
+}

@@ -331,7 +331,7 @@ describe('race/setResult and race/clear', () => {
     expect(state.race).toEqual({
       seed: 42,
       phase: 'finished',
-      result: { order: ['a', 'b'], events: [{ id: 'banana' }] },
+      result: { order: ['a', 'b'], events: [{ id: 'banana' }], rules: [] },
       recorded: false,
     });
   });
