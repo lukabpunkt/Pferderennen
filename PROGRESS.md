@@ -2,7 +2,7 @@
 
 > **Für Claude Code:** Diese Datei ist deine To-do-Liste und dein Gedächtnis. Beginne jede Session damit, sie zu lesen. Hake Tasks ab, trage Audit-Ergebnisse ein, notiere Entscheidungen. Details zu jedem Task stehen in `docs/05_MILESTONES.md`.
 
-**Aktueller Stand:** **M2 abgeschlossen** (Race Engine & Fairness-Audit; Audits A2 und A6 bestanden). Nächster Schritt: **M3 – Render-Core (Landscape)**.
+**Aktueller Stand:** **M3 abgeschlossen** (Render-Core Landscape; Audits A3 und A5 bestanden). Nächster Schritt: **M4 – Portrait-Modus & Responsive**.
 
 **Live-URL:** _(wird in M9 eingetragen)_
 
@@ -58,19 +58,19 @@
 
 ### M3 – Render-Core (Landscape)
 
-- [ ] 1. loop.js final
-- [ ] 2. Canvas-Setup/DPR/Resize/Layout-Modus
-- [ ] 3. camera.js
-- [ ] 4. track.js Landscape (Offscreen-Cache)
-- [ ] 5. horse.js Seitenansicht + dev/horse-lab.html
-- [ ] 6. horseAnimations.js Basis-States
-- [ ] 7. Race-Screen verdrahtet (Countdown → Rennen → Zieleinlauf → Ergebnis)
-- [ ] 8. Staub-Partikel + Pool
-- [ ] 9. Leaderboard + Fortschrittsbalken
-- [ ] 10. FPS/Frame-Time im Debug-Overlay
-- [ ] 11. `chore: complete M3`
-- [ ] **Audit A3 bestanden** (Pferd, Bahn, Kamera)
-- [ ] **Audit A5 bestanden** (Desktop)
+- [x] 1. loop.js final (Akkumulator, Interpolation, Pause bei `visibilitychange`, `timeScale`)
+- [x] 2. Canvas-Setup mit DPR-Deckel, Resize-Handling
+- [x] 3. camera.js (Follow-Lerp, Zoom-Regel, Shake-Trauma, Start- und Ziel-Klammer)
+- [x] 4. track.js Landscape mit Offscreen-Cache für Hügel und Tribüne
+- [x] 5. horse.js Seitenansicht + `dev/horse-lab.html`
+- [x] 6. horseAnimations.js: idle, gallop, gallop_fast, trot_in, celebrate mit Blend
+- [x] 7. Race-Screen verdrahtet (Countdown → Boxen → Rennen → Jubel → Ergebnis)
+- [x] 8. Staub-Partikel mit festem Pool
+- [x] 9. Leaderboard (FLIP) + Fortschrittsleiste + Kommentar-Zeile
+- [x] 10. FPS, Frame-Time, Partikel und Pfad-Operationen im Debug-Overlay
+- [x] 11. `chore: complete M3`
+- [x] **Audit A3 bestanden** (Pferd, Bahn, Kamera)
+- [x] **Audit A5 bestanden** (Desktop)
 
 ### M4 – Portrait-Modus & Responsive
 
@@ -198,6 +198,8 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | A6    | M1          | 2026-09-02 | **bestanden** | Ausnahme: zwei CSS-Dateien > 400 Zeilen, begründet    |
 | A2    | M2          | 2026-09-02 | **bestanden** | 2 Spannungs-Kriterien nach Messung geändert (S3, S6); CI grün: [Run 33659923149](https://github.com/lukabpunkt/Pferderennen/actions/runs/33659923149) |
 | A6    | M2          | 2026-09-02 | **bestanden** | Engine-Coverage 98 % Zeilen, Isolation per Test belegt |
+| A3    | M3          | 2026-09-02 | **bestanden** | 2 Befunde gefunden und behoben; Portrait-Teil folgt in M4 |
+| A5    | M3          | 2026-09-02 | **bestanden** | Desktop-Teil; Mobile folgt in M4                       |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -374,6 +376,23 @@ _(Datum – Entscheidung – Begründung)_
   übersichtlicher, nur schwerer auffindbar. `tests/fairness/audit.js` (451) ist ein
   CLI-Werkzeug, dessen Kriterienliste bewusst an einer Stelle steht, damit man sie gegen
   `03_RACE_ENGINE.md` §7 lesen kann. Der Produktivcode in `src/` hält die Grenze ein.
+- **2026-09-02 (M3) – Die Bahn wird mit leichter Perspektive gezeichnet.**
+  `04_DESIGN_SYSTEM.md` §6 beschreibt sechs Bahnen; sechs exakt gleich hohe Streifen sehen aber
+  aus wie ein Balkendiagramm. Die hinteren Bahnen sind deshalb schmaler und ihre Pferde kleiner
+  (Exponent 1,3). Das verändert nichts am Rennen – die Bahn ist rein kosmetisch, die Engine liest
+  sie nie.
+- **2026-09-02 (M3) – `render/shapes.js` und `render/horseTack.js` zusätzlich angelegt.**
+  `horse.js` war mit 527 Zeilen über der A6-Grenze. Sattelzeug, Jockey und Accessoires sind eine
+  eigene Zuständigkeit („alles, was der Reiter mitbringt"), die gemeinsamen Primitiven liegen in
+  `shapes.js`. Danach: horse.js 282, horseTack.js 223, shapes.js 48.
+- **2026-09-02 (M3) – `src/styles/race.css` abgetrennt.**
+  Die in M1 notierte Bedingung ist eingetreten: `screens.css` war auf 857 Zeilen gewachsen. Der
+  Rennen-Screen ist kein Dokument-Screen (kein Header, kein Footer, kein Scroll-Body), sondern
+  ein Vollbild-Canvas mit HUD – eine saubere Trennlinie. `screens.css` liegt jetzt bei 650, immer
+  noch über der Richtlinie; die nächste Aufteilung wäre nach Screens, wenn es nötig wird.
+- **2026-09-02 (M3) – Der Kamera-Ausschnitt reicht vor die Startlinie.**
+  Sonst sind die Startboxen und die darin stehenden Pferde beim Countdown halb vom linken Rand
+  abgeschnitten. Die Kamera darf bis 32 % der Sichtbreite vor Position 0 schauen.
 - **2026-09-02 (M2) – Varianz-Rampe im Phasenprofil statt konstanter Streuung.**
   `03_RACE_ENGINE.md` §5.1 beschreibt K Stützstellen mit *einer* Standardabweichung σ_P. Damit
   sind S1 und S3 nachweislich unerreichbar (siehe Tuning-Protokoll). Die Streuung wächst jetzt
@@ -464,6 +483,60 @@ Ohne den Check wäre der Fehler nie aufgefallen, weil er die geprüften Zahlen n
 | `npm run lint` 0 Fehler | ✅ |
 | Keine TODO/FIXME | ✅ |
 
+### A3 – Visual- & Animations-Audit (2026-09-02, M3, Landscape-Teil)
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Gallop-Zyklus bei jedem Tempo flüssig, keine Sprünge bei Tempowechsel | ✅ Die Phase wird **integriert**, nicht aus der Zeit berechnet. Ein Test fährt das Tempo zwischen 0,3 und 1,9 hin und her und misst die größte Winkeländerung je Frame: 0,25 rad – exakt das physikalische Maximum. Zur Gegenprobe habe ich die Phase absichtlich aus der Uhr berechnet: dann springt sie auf 1,39 rad, und der Test schlägt an. |
+| Mähne/Schweif mit Follow-Through, bei Stillstand ruhig | ✅ Federkette mit vier Segmenten; im `idle`-Zustand hängen beide senkrecht (im Lab geprüft) |
+| Körper-Bounce und Schatten-Skalierung synchron zur Flugphase | ✅ Der Schatten schrumpft und wird heller, je höher das Pferd steht |
+| Alle 6 Pferde unterscheidbar an Fell, Accessoire und Signaturfarbe; Nummern lesbar | ✅ Nummer auf Satteldecke **und** Startbox |
+| Jeder Animations-State im Lab geprüft (Seitenansicht) | ✅ idle, gallop, gallop_fast, trot_in, celebrate; Rückansicht folgt in M4 |
+| Sieger-`celebrate` eindeutig, 2–3 s | ✅ 2,6 s, Pferd bäumt sich auf |
+| Parallax-Layer mit unterschiedlicher Geschwindigkeit, keine Kachel-Nähte | ✅ Hügel 0,15 · Tribüne 0,45 · Bahn 1,0 · Rasen 1,25 |
+| Startboxen in der Signaturfarbe des zugelosten Pferdes | ✅ Der Lane-Shuffle ist dadurch direkt sichtbar |
+| Kamera ruckelt nicht, Feld immer sichtbar | ✅ Frame-Rate-unabhängiger Lerp; ein Test prüft, dass 30 und 144 fps dieselbe Bewegung ergeben |
+| Zieleinlauf erkennbar, Reihenfolge stimmt mit Engine-`order` überein | ✅ **nach einer Korrektur**, siehe unten |
+| Screenshots in `docs/screenshots/` | ✅ `m3-race-landscape.jpg` |
+
+**Im Audit gefunden und behoben:**
+
+1. **Das Leaderboard widersprach dem Ergebnis-Screen.** Im Ziel stehen alle sechs Läufer auf
+   exakt Position 1000, die Sortierung nach Position war dort also willkürlich – das Board zeigte
+   Sir Trabsalot auf 1, während der Kommentator „Prosecco Rakete gewinnt!" sagte. Die Rangfolge
+   kommt jetzt nach dem Zieleinlauf aus der Engine-`order`. Die Regel steckt in der reinen
+   Funktion `rankRunners()` und hat einen eigenen Test.
+2. **Ritterhelm und Ushanka saßen am Pferdekopf statt am Jockey** und schwebten als graue Pille
+   neben dem Kopf. Laut GDD §2 gehören sie an den Jockey. Accessoires sind jetzt nach Trageort
+   getrennt: Jockey-Kopfbedeckung, Pferdekopf (Sonnenbrille, Kleeblatt) und Sattel (Kaffeebecher,
+   Brezel).
+
+Kleinere Korrekturen: Hals und Kopf waren giraffenhaft lang, der Jockey lehnte nach hinten statt
+nach vorn, Mähne und Schweif standen als Klaue nach oben (Feder-Basiswinkel und Ablenkung
+addierten sich falsch – die Feder liefert jetzt nur noch den Flick, die Richtung kommt aus dem
+Tempo), die Tribüne erschlug mit übergroßen Zuschauern das ganze Bild, und am Start waren die
+Startboxen halb vom linken Rand abgeschnitten.
+
+### A5 – Performance-Audit (2026-09-02, M3, Desktop-Teil)
+
+Gemessen auf einem M-Mac in Chrome, 1200 × 637 CSS-Pixel, `?debug=1`.
+
+| Prüfpunkt | Budget | Gemessen |
+| --- | --- | --- |
+| FPS | 60 | **60**, stabil über ein ganzes Rennen |
+| Frame-Time Update | ≤ 2 ms | **0,00–0,10 ms** |
+| Frame-Time Render | ≤ 10 ms | **1,0–1,5 ms** (mit dem Debug-Zähler-Proxy; ohne ihn 1,0 ms) |
+| Pfad-Operationen je Frame | ≤ ~600 | **453–480** |
+| Partikel gleichzeitig | ≤ 400 | 20–30 im normalen Rennen |
+| Partikel-Pool ohne Allokation | – | ✅ Typed Arrays, feste Größe, tote Partikel werden getauscht statt entfernt |
+| Hintergrund aus Offscreen-Canvas | – | ✅ Hügel und Tribüne werden einmal gezeichnet und nur noch geblittet |
+| Initial Load | < 300 KB | **239 KB** |
+
+Der Pfad-Operationen-Zähler ist ein Proxy um den 2D-Kontext, der nur mit `?debug=1` aktiv ist –
+er kostet selbst etwas Zeit, und genau so etwas darf nicht im Hot Path landen.
+
+Mobile-Teil und `quality: 'auto'` folgen in M4.
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
@@ -472,8 +545,11 @@ _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 _(werden hier gesammelt, bevor sie zu Tasks werden)_
 
-- Noch 19 Platzhalter-Module mit JSDoc-Kopf und leerem `export {}` (M3–M7): das komplette
-  `render/`-Verzeichnis außer `loop.js`, `audio/*`, `data/commentary.js` und `render/sprites.js`.
+- Noch 5 Platzhalter-Module mit JSDoc-Kopf und leerem `export {}`: `render/eventVisuals.js` (M5),
+  `render/sprites.js` (Backlog), `audio/audio.js` und `audio/sfx.js` (M7), `data/commentary.js` (M7).
+- Das Pferd gibt es bisher nur in der Seitenansicht. Die Rückansicht für den Portrait-Modus
+  kommt in M4, die Event-Animationen (stolpern, kotzen, schlafen …) in M5.
+- Das Publikum steht still. Die La-Ola-Welle bei Events und im Finish gehört zu M5.
 - Das Text-Rennen zeigt pro Event nur die erste Kommentar-Variante. Die richtige
   Kommentator-Engine mit Zeilen-Pool und Wiederholungsschutz kommt in M7.
 - Der Display-Font „Fredoka" ist in `tokens.css` als `--font-display` gesetzt, aber noch nicht
