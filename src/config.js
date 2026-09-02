@@ -152,6 +152,35 @@ export const EFFECTS = {
   finalZoom: 1.12,
 };
 
+/**
+ * The prize giving on the result screen (docs/04_DESIGN_SYSTEM.md §4.5).
+ *
+ * All timings are in seconds from the moment the scene appears. The whole thing has to be over
+ * quickly — it sits above the settlement, which is what people are actually waiting for.
+ */
+export const CEREMONY = {
+  /** Frame cap. It is a short animation on a screen people read, not a race. */
+  frameMs: 1000 / 30,
+  /** Where the turf starts, and how big a horse is, as shares of the canvas height. */
+  ground: 0.9,
+  horseSize: 0.3,
+  /** How far behind the plinths the horses stand, as a share of the canvas height. */
+  horseSetBack: 0.05,
+  /** Plinth width as a share of a slot, and the height of one step as a share of the canvas. */
+  plinthWidth: 0.32,
+  plinthStep: 0.15,
+  /** Seconds between third, second and first arriving. */
+  stagger: 0.25,
+  /** How long the walk in and the climb up take. */
+  walkSeconds: 0.9,
+  climbSeconds: 0.5,
+  /** When the cannons go off, and when the scene is considered still. */
+  confettiAt: 1.9,
+  settledAt: 3.2,
+  confettiAmount: 22,
+  confettiPool: 120,
+};
+
 /** The starter beside the gates who fires the race off. Purely cosmetic. */
 export const STARTER = {
   /**

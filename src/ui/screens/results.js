@@ -7,7 +7,7 @@
 
 import { el } from '../dom.js';
 import { button } from '../components/button.js';
-import { page, header, card, horsePortrait, playerChip } from '../components/layout.js';
+import { page, header, card, playerChip } from '../components/layout.js';
 import { HORSES_BY_ID } from '../../data/horses.js';
 import { settle } from '../../engine/payout.js';
 import { sips, BET_TYPE_LABELS, ICON } from '../strings.js';
@@ -15,35 +15,98 @@ import { openStats } from './stats.js';
 
 let cleanup = null;
 
-/** Podium heights in the order first, second, third. */
-const PODIUM_ORDER = [1, 0, 2];
+/** Left to right under the scene: second, first, third, matching where they stand. */
+const CAPTION_ORDER = [1, 0, 2];
 
 /**
- * Builds the podium for the top three horses.
- * @param {string[]} order
- * @returns {HTMLElement}
+ * Is reduced motion in force? Same rule as the start screen and the race.
+ * @param {{reducedMotion?: string}} settings
+ * @returns {boolean}
  */
-function podium(order) {
-  return el(
+function prefersCalm(settings) {
+  if (settings.reducedMotion === 'on') return true;
+  if (settings.reducedMotion === 'off') return false;
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+}
+
+/**
+ * The prize giving: a canvas scene with the three names written out underneath it.
+ *
+ * The names stay real text on purpose. They are what a screen reader reads and what anyone
+ * glancing at the screen actually needs — the scene is the celebration, not the information
+ * (audit A4).
+ *
+ * @param {string[]} order finishing order, as horse ids
+ * @param {any} settings
+ * @returns {{node: HTMLElement, start: () => void, stop: () => void}}
+ */
+function ceremony(order, settings) {
+  const podiumHorses = [0, 1, 2].map((place) => HORSES_BY_ID[order[place]]).filter(Boolean);
+
+  const stage = el('canvas', {
+    className: 'ceremony__stage',
+    attrs: {
+      role: 'img',
+      'aria-label': podiumHorses.length
+        ? `Siegerehrung. ${podiumHorses.map((horse, i) => `${i + 1}. ${horse.name}`).join(', ')}.`
+        : 'Siegerehrung',
+    },
+  });
+
+  const captions = el(
     'ol',
-    { className: 'podium', attrs: { 'aria-label': 'Podium' } },
-    PODIUM_ORDER.map((place) => {
+    { className: 'ceremony__names' },
+    CAPTION_ORDER.map((place) => {
       const horse = HORSES_BY_ID[order[place]];
       if (!horse) return null;
       return el(
         'li',
         {
-          className: `podium__slot podium__slot--${place + 1}`,
+          className: `ceremony__name ceremony__name--${place + 1}`,
           vars: { '--horse-color': horse.color, '--horse-dark': horse.colorDark },
         },
         [
-          horsePortrait(horse, 76),
-          el('span', { className: 'podium__name', text: horse.name }),
-          el('span', { className: 'podium__place num', text: `${place + 1}.` }),
+          el('span', { className: 'ceremony__place num', text: `${place + 1}.` }),
+          el('span', { className: 'ceremony__horse', text: horse.name }),
         ],
       );
     }).filter(Boolean),
   );
+
+  const node = el('div', { className: 'ceremony' }, [stage, captions]);
+  let scene = null;
+  let dropped = false;
+
+  return {
+    node,
+
+    /**
+     * Loads and runs the scene.
+     *
+     * Loaded on demand because this screen is imported eagerly: pulling the horse renderer into
+     * it directly would drag the whole drawing layer into the first paint, which is exactly the
+     * budget M5 had to claw back.
+     */
+    start() {
+      if (podiumHorses.length < 3) return;
+      import('../../render/ceremony.js')
+        .then(({ startCeremony }) => {
+          if (dropped) return;
+          scene = startCeremony(stage, {
+            horses: podiumHorses,
+            calm: prefersCalm(settings),
+          });
+        })
+        .catch(() => {
+          // No ceremony is a missing flourish; the names below it still say who won.
+        });
+    },
+
+    stop() {
+      dropped = true;
+      scene?.stop();
+    },
+  };
 }
 
 /**
@@ -117,6 +180,8 @@ export function mount(container, store) {
 
   // What was already drunk during the race: nobody has to remember it, but seeing it listed
   // settles the "wait, did I drink that one?" arguments.
+  const ceremonyStage = ceremony(order, state.settings);
+
   const live = state.race.result?.rules ?? [];
   // The same rule can fire several times in one race — three lead changes read better as
   // "3x Führungswechsel" than as the same sentence three times.
@@ -161,7 +226,7 @@ export function mount(container, store) {
         title: winnerHorse ? `${winnerHorse.name} gewinnt!` : 'Ergebnis',
         subtitle: winnerHorse ? 'Und jetzt wird abgerechnet.' : undefined,
       }),
-      body: [podium(order), houseCard, cards, recap].filter(Boolean),
+      body: [ceremonyStage.node, houseCard, cards, recap].filter(Boolean),
       footer: el('div', { className: 'results__actions' }, [
         button({
           label: 'Nächstes Rennen',
@@ -198,7 +263,8 @@ export function mount(container, store) {
     store.dispatch({ type: 'race/markRecorded' });
   }
 
-  cleanup = () => {};
+  ceremonyStage.start();
+  cleanup = () => ceremonyStage.stop();
 }
 
 export function unmount() {

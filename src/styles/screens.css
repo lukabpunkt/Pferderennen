@@ -343,63 +343,59 @@
 
 /* --- Results ------------------------------------------------------------- */
 
-.podium {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  align-items: end;
+/* The prize giving. The canvas keeps a fixed aspect ratio so nothing moves when the scene
+   finishes loading — the layout shift budget is zero (audit A5). */
+.ceremony {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
 }
 
-.podium__slot {
+.ceremony__stage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 20 / 7;
+  /* Capped, because the settlement underneath is what people are waiting for. On a wide screen
+     the scene simply gets wider rather than taller. */
+  max-height: 190px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--bg-sky-top), var(--bg-sky-bottom));
+}
+
+.ceremony__names {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ceremony__name {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-2);
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  background: color-mix(in srgb, var(--horse-color) 18%, var(--cream));
-  border-bottom: 6px solid var(--horse-color);
-  animation: pop-up var(--dur-slow) var(--ease-bounce) backwards;
+  gap: 2px;
+  padding-top: var(--space-1);
+  border-top: 4px solid var(--horse-color);
 }
 
-/* Clearly stepped heights, so first place reads as first place at a glance. */
-.podium__slot--1 {
-  padding-top: var(--space-8);
-  animation-delay: 0ms;
-}
-.podium__slot--2 {
-  padding-top: var(--space-6);
-  animation-delay: 120ms;
-}
-.podium__slot--3 {
-  padding-top: var(--space-3);
-  animation-delay: 240ms;
+.ceremony__place {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
 }
 
-/* The winner gets a touch more presence than the two beside it. */
-.podium__slot--1 .podium__place {
+.ceremony__name--1 .ceremony__place {
+  font-size: var(--text-lg);
   color: var(--ink);
-  font-size: var(--text-xl);
 }
 
-@keyframes pop-up {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-}
-
-.podium__name {
+.ceremony__horse {
   font-family: var(--font-display);
   font-size: var(--text-xs);
   text-align: center;
   line-height: 1.2;
-}
-
-.podium__place {
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  color: var(--ink-soft);
 }
 
 .payouts {
