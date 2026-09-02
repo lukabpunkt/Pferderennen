@@ -13,10 +13,22 @@ import { toast } from './ui/components/toast.js';
 import * as start from './ui/screens/start.js';
 import * as players from './ui/screens/players.js';
 import * as betting from './ui/screens/betting.js';
-import * as race from './ui/screens/race.js';
 import * as results from './ui/screens/results.js';
 
-const screens = { start, players, betting, race, results };
+/**
+ * The race screen is loaded on demand.
+ *
+ * It pulls in the whole renderer — the horses, both tracks, the event props, the particles —
+ * which is by far the largest part of the code and which nobody needs before they have placed a
+ * bet. Loading it lazily keeps the first paint small (docs/02_ARCHITECTURE.md §8).
+ */
+const screens = {
+  start,
+  players,
+  betting,
+  race: () => import('./ui/screens/race.js'),
+  results,
+};
 
 const restored = loadState();
 const store = createStore(rootReducer, restored?.state ?? createInitialState());
@@ -31,7 +43,13 @@ if (restored?.raceWasAborted) {
 
 const app = document.getElementById('app');
 if (app) {
-  createRouter({ store, container: app, screens }).start();
+  const router = createRouter({ store, container: app, screens });
+  router.start();
+  // Fetch the renderer in the background while the players are still typing their names, so the
+  // lazy load never becomes a wait anybody notices.
+  const warm = () => router.preload('race');
+  if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 4000 });
+  else setTimeout(warm, 1500);
 }
 
 if (restored?.raceWasAborted) {

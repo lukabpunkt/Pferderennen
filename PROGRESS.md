@@ -2,7 +2,7 @@
 
 > **Für Claude Code:** Diese Datei ist deine To-do-Liste und dein Gedächtnis. Beginne jede Session damit, sie zu lesen. Hake Tasks ab, trage Audit-Ergebnisse ein, notiere Entscheidungen. Details zu jedem Task stehen in `docs/05_MILESTONES.md`.
 
-**Aktueller Stand:** **M4 abgeschlossen** (Portrait-Modus & Responsive; Audits A3, A4 und A5 bestanden – Mobile-Messung offen als Nutzer-Test). Nächster Schritt: **M5 – Events**.
+**Aktueller Stand:** **M5 abgeschlossen** (Events; Audits A2, A3 und A5 bestanden). Nächster Schritt: **M6 – Design-Polish**.
 
 **Live-URL:** _(wird in M9 eingetragen)_
 
@@ -89,47 +89,49 @@
 
 ### M5 – Events
 
-- [ ] 1. Alle Event-Animations-States (beide Ansichten)
-- [ ] 2. eventVisuals.js (alle Requisiten mit Vorlauf)
-- [ ] 3. Bleibende Dekor-Objekte
-- [ ] 4. Alle Partikel-Typen
-- [ ] 5. Kamera-Shake + Publikum-Reaktion
-- [ ] 6. Event-Toasts (Trinkregeln)
-- [ ] 7. Kommentar-Zeilen je Event
-- [ ] 8. Reduced-Motion-Pfad
-- [ ] 9. Fairness-Audit Re-Run
-- [ ] 10. `chore: complete M5`
-- [ ] **Audit A3 bestanden** (Events)
-- [ ] **Audit A2 bestanden** (Re-Run)
-- [ ] **Audit A5 bestanden**
+- [x] 1. Alle 12 Event-Animations-States, im Lab per Dropdown abspielbar
+- [x] 2. `eventVisuals.js` mit Vorlauf; aufgeteilt in Registry, Requisiten und Emitter
+- [x] 3. Bleibende Dekor-Objekte: Bananenschale, Kotz- und Pinkelpfütze, Hufeisen, Jockey
+- [x] 4. Alle zehn Partikel-Typen
+- [x] 5. Kamera-Shake bei Sturz, Banane und Flitzer; Publikum hüpft bei jedem Event
+- [x] 6. Event-Toasts mit Spielernamen, gestapelt max. 2, 3 s
+- [x] 7. Zwei Kommentar-Varianten je Event, im Wechsel
+- [x] 8. Reduced-Motion-Pfad: kein Shake, keine Blitze, Partikel −70 %, Requisiten bleiben
+- [x] 9. Fairness-Audit erneut grün
+- [x] 10. `chore: complete M5`
+- [x] **Audit A3 bestanden** (Events)
+- [x] **Audit A2 bestanden** (Re-Run)
+- [x] **Audit A5 bestanden**
 
-Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
+Event-Checkliste (im horse-lab **und** im echten Rennen gesehen). Das Lab hat dafür in M5 einen
+Event-Wähler bekommen, der die Requisite mit demselben Vorlauf abspielt wie ein echtes Rennen –
+ohne ihn wäre die Liste nur zu erraten gewesen.
 
-| Event        | Lab Seite | Lab Rück | Rennen |
-| ------------ | --------- | -------- | ------ |
-| banana       | ☐         | ☐        | ☐      |
-| stumble      | ☐         | ☐        | ☐      |
-| vomit        | ☐         | ☐        | ☐      |
-| pee          | ☐         | ☐        | ☐      |
-| nap          | ☐         | ☐        | ☐      |
-| pigeon       | ☐         | ☐        | ☐      |
-| hiccup       | ☐         | ☐        | ☐      |
-| mud          | ☐         | ☐        | ☐      |
-| selfie       | ☐         | ☐        | ☐      |
-| grass        | ☐         | ☐        | ☐      |
-| confused     | ☐         | ☐        | ☐      |
-| wardrobe     | ☐         | ☐        | ☐      |
-| carrot       | ☐         | ☐        | ☐      |
-| rainbow_fart | ☐         | ☐        | ☐      |
-| jockey_off   | ☐         | ☐        | ☐      |
-| espresso     | ☐         | ☐        | ☐      |
-| tailwind     | ☐         | ☐        | ☐      |
-| slipstream   | ☐         | ☐        | ☐      |
-| rocket_boots | ☐         | ☐        | ☐      |
-| streaker     | –         | –        | ☐      |
-| tumbleweed   | –         | –        | ☐      |
-| camera_flash | –         | –        | ☐      |
-| ufo          | –         | –        | ☐      |
+| Event        | Requisite / Partikel                       | Lab | Rennen |
+| ------------ | ------------------------------------------ | --- | ------ |
+| banana       | Banane fliegt ein, landet, bleibt als Schale liegen | ✅ | ✅ |
+| stumble      | Sturzhaltung, Staubwolke, Kamera-Shake     | ✅  | ✅     |
+| vomit        | Kopf am Boden, grüne Fontäne, Pfütze bleibt | ✅ | ✅     |
+| pee          | Schweif hoch, Pfütze bleibt                | ✅  | ✅     |
+| nap          | ZZZ steigen auf, dann Schreck-Sprint       | ✅  | ✅     |
+| pigeon       | Taube fliegt ein, Pferd schüttelt sich     | ✅  | ✅     |
+| hiccup       | „hicks"-Sprechblase, Konfetti-Zucken       | ✅  | ✅     |
+| mud          | braune Spritzer, humpelnder Gang           | ✅  | ✅     |
+| selfie       | Fan am Rand mit Handy und Blitz            | ✅  | ✅     |
+| grass        | Kopf im Gras, Halme fliegen                | ✅  | ✅     |
+| confused     | Fragezeichen, Pferd dreht sich um          | ✅  | ✅     |
+| wardrobe     | Hufeisen segelt weg und bleibt liegen      | ✅  | ✅     |
+| carrot       | Möhre am Stock von oben, Funkeln           | ✅  | ✅     |
+| rainbow_fart | Regenbogen-Trail hinter dem Pferd          | ✅  | ✅     |
+| jockey_off   | Jockey verschwindet vom Pferd und sitzt am Rand | ✅ | ✅ |
+| espresso     | Kaffeetasse vor der Nase, Herzchen         | ✅  | ✅     |
+| tailwind     | Windlinien                                 | ✅  | ✅     |
+| slipstream   | Windlinien                                 | ✅  | ✅     |
+| rocket_boots | Funkeln, weite Sprünge                     | ✅  | ✅     |
+| streaker     | zwei Figuren queren das Bild, Shake        | ✅  | ✅     |
+| tumbleweed   | Steppenläufer rollt durch                  | ✅  | ✅     |
+| camera_flash | Blitze am Rand (bei Reduced Motion aus)    | ✅  | ✅     |
+| ufo          | UFO mit Traktorstrahl                      | ✅  | ✅     |
 
 ### M6 – Design-Polish
 
@@ -200,9 +202,12 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | A6    | M2          | 2026-09-02 | **bestanden** | Engine-Coverage 98 % Zeilen, Isolation per Test belegt |
 | A3    | M3          | 2026-09-02 | **bestanden** | 2 Befunde gefunden und behoben; Portrait-Teil folgt in M4. CI grün: [Run 33663483553](https://github.com/lukabpunkt/Pferderennen/actions/runs/33663483553) |
 | A5    | M3          | 2026-09-02 | **bestanden** | Desktop-Teil; Mobile folgt in M4                       |
-| A3    | M4          | 2026-09-02 | **bestanden** | Portrait-Teil; 2 Befunde gefunden und behoben          |
+| A3    | M4          | 2026-09-02 | **bestanden** | Portrait-Teil; 2 Befunde gefunden und behoben. CI grün: [Run 33666325625](https://github.com/lukabpunkt/Pferderennen/actions/runs/33666325625) |
 | A4    | M4          | 2026-09-02 | **bestanden** | Basis; vollständig in M8                               |
 | A5    | M4          | 2026-09-02 | **bestanden** | mit einer offenen Messung auf echtem Gerät             |
+| A3    | M5          | 2026-09-02 | **bestanden** | Event-Teil; alle 23 Events geprüft                     |
+| A2    | M5          | 2026-09-02 | **bestanden** | Re-Run: Fairness von der Render-Schicht unberührt      |
+| A5    | M5          | 2026-09-02 | **bestanden** | Ladebudget gerissen und durch Lazy-Loading gelöst      |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -379,6 +384,20 @@ _(Datum – Entscheidung – Begründung)_
   übersichtlicher, nur schwerer auffindbar. `tests/fairness/audit.js` (451) ist ein
   CLI-Werkzeug, dessen Kriterienliste bewusst an einer Stelle steht, damit man sie gegen
   `03_RACE_ENGINE.md` §7 lesen kann. Der Produktivcode in `src/` hält die Grenze ein.
+- **2026-09-02 (M5) – Der Rennen-Renderer wird lazy geladen.**
+  Nach M5 lag der Initial Load bei 307 KB, 7 KB über dem Budget. Die Alternative wäre gewesen,
+  Kommentare zu streichen – 23 % der JS-Zeilen sind Dokumentation, und die ist in diesem Projekt
+  ausdrücklich gewollt. Stattdessen lädt der Renderer jetzt erst, wenn er gebraucht wird, und
+  wird im Hintergrund vorgewärmt. Der Router nimmt dafür auch Lade-Funktionen statt nur Module
+  und schützt sich mit einem Token gegen überlappende Ladevorgänge. 307 KB → 127 KB.
+- **2026-09-02 (M5) – `eventVisuals.js` in drei Module geteilt.**
+  In einer Datei wären es 738 Zeilen gewesen. Die Aufteilung folgt der Zuständigkeit: die
+  Registry mit dem Lebenszyklus, die reinen Zeichenroutinen (`eventProps.js`) und die
+  Partikel-Tabelle (`eventEmitters.js`). Die letzten beiden sind Nachschlagewerke, kein Ablauf –
+  man schlägt dort nach, wenn eine Requisite hübscher werden soll.
+- **2026-09-02 (M5) – Das Publikum hüpft als Ganzes statt Zuschauer für Zuschauer.**
+  Die Tribüne liegt in einem Offscreen-Cache; einzelne Zuschauer zu animieren hieße, den Cache
+  aufzugeben. Aus der Zuschauerperspektive im Spiel liest sich beides gleich.
 - **2026-09-02 (M4) – Die Kamera kennt nur eine Achse.**
   Statt zweier Kameras rechnet sie in Streckeneinheiten und liefert einen Pixel-Versatz *entlang*
   der Bahn; ob das ein Bildschirm-x (Landscape) oder ein -y (Portrait, invertiert) ist, entscheidet
@@ -622,6 +641,58 @@ zwei Sekunden lang unter 50, verschwinden Verläufe und ein Teil des Staubs – 
 bleibt unverändert. **Nutzer-Test:** ein Rennen auf dem Handy mit `?debug=1` ansehen und die
 FPS-Zahl notieren.
 
+### A3 / A2 / A5 – Audits zu M5 (2026-09-02)
+
+**A2 (Fairness, Re-Run):** unverändert grün. Siegquoten 0,1644–0,1684 bei 30.000 Rennen
+(erlaubt ±0,0086), χ² p = 0,84; Events gleichverteilt (p = 0,66), nie mehr als zwei je Läufer;
+S1–S6 alle im Ziel. Das war zu erwarten und ist trotzdem der Punkt: Die gesamte M5-Arbeit steckt
+in `render/`, und die Engine hat davon nichts mitbekommen.
+
+**A3 (Events):**
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Jedes Event hat Requisite, Animation, Partikel und Kommentar | ✅ Checkliste oben, alle 23 |
+| Requisiten-Timing exakt: Effekt beginnt im selben Frame, in dem die Requisite trifft | ✅ **konstruktiv garantiert**: Die Ankunft wird als `(jetzt − Zündzeit) / Vorlauf` gerechnet, ist bei der Zündzeit also genau 1 – und genau dann beginnt der Effekt |
+| Bleibende Dekor-Objekte werden gezeichnet | ✅ Schale, zwei Pfützen, Hufeisen, sitzender Jockey |
+| Kein Event verdeckt das HUD länger als 1 s | ✅ Requisiten sind auf 0,15–0,2 der Pferdegröße skaliert |
+| Reduced-Motion: kein Shake, keine Blitze, Events trotzdem verständlich | ✅ Requisiten bleiben, nur Bewegung und Menge werden reduziert |
+| Publikum reagiert auf jedes Event | ✅ die ganze Tribüne hüpft |
+
+**Im Audit gefunden und behoben:**
+
+1. **`turn` und `spin` wurden berechnet, aber nie angewendet.** Der Rutsch auf der Banane drehte
+   das Pferd nicht, und „orientierungslos" ließ es nicht rückwärts schauen. Beide wirken jetzt im
+   Zeichnen – das Umdrehen als horizontale Stauchung durch Null, der klassische 2D-Weg.
+2. **Der Jockey saß nach `jockey_off` weiter auf dem Pferd**, während seine Kopie am Rand winkte.
+   Laut GDD läuft das Pferd ohne ihn weiter; es hat jetzt ein `riderless`-Flag und verliert dabei
+   auch die Zügel.
+
+Kleinere Korrekturen: Requisiten waren doppelt so groß wie nötig (die Banane fast so groß wie der
+Pferdekopf), die Espresso-Tasse stand hinter statt vor dem Pferd, der Fan schwebte in der
+Tribüne statt am Geländer, und der Trinkregel-Toast stand neben statt über der Kommentarzeile.
+
+**A5 (Performance):**
+
+| Prüfpunkt | Budget | Gemessen |
+| --- | --- | --- |
+| FPS mit Events bei Chaos „Vollgas" | 60 | **60** |
+| Render-Zeit | ≤ 10 ms | 0,6–3,2 ms |
+| Pfad-Operationen je Frame | ≤ ~600 | 452–514 |
+| Partikel gleichzeitig | ≤ 400 | 20–60 |
+| Initial Load | < 300 KB | **127 KB** (siehe unten) |
+
+**Das Ladebudget war gerissen und wurde behoben.** Nach M5 lag der Initial Load bei **307 KB** –
+7 KB über dem Budget aus `02_ARCHITECTURE.md` §8. Gzip-komprimiert (so liefert GitHub Pages aus)
+wären es 86 KB gewesen, das eigentliche Ziel „< 1 s auf 4G" also nie in Gefahr. Trotzdem ist ein
+gerissenes Budget ein gerissenes Budget.
+
+Die Lösung ist keine Diät bei den Kommentaren, sondern die richtige: **Der Rennen-Renderer wird
+erst bei Bedarf geladen.** Horses, beide Bahnen, Requisiten, Partikel – 180 KB, die niemand
+braucht, bevor eine Wette steht. Der Router akzeptiert jetzt auch Lade-Funktionen statt nur
+Module, und `main.js` wärmt den Renderer im Hintergrund vor, während die Spieler noch ihre Namen
+tippen. **Ergebnis: 307 KB → 127 KB**, ohne spürbare Wartezeit (im Browser durchgespielt).
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
@@ -632,11 +703,12 @@ _(werden hier gesammelt, bevor sie zu Tasks werden)_
 
 - Noch 5 Platzhalter-Module mit JSDoc-Kopf und leerem `export {}`: `render/eventVisuals.js` (M5),
   `render/sprites.js` (Backlog), `audio/audio.js` und `audio/sfx.js` (M7), `data/commentary.js` (M7).
-- Die Event-Animationen (stolpern, kotzen, schlafen …) kommen in M5 – aktuell galoppieren die
-  Pferde auch während eines Events unbeirrt weiter, nur ihr Tempo ändert sich.
-- Die Rückansicht kennt bislang keine Accessoires. Auf dem Handy sind sie bei rund 50 px Breite
-  ohnehin nicht lesbar; Farbe und Nummer tragen die Unterscheidung. Falls sie in M5 gebraucht
-  werden, ist `horseTack.js` die Stelle.
+- Die Rückansicht kennt keine Accessoires. Auf dem Handy sind sie bei rund 50 px Breite ohnehin
+  nicht lesbar; Farbe und Nummer tragen die Unterscheidung.
+- Das bleibende Dekor liegt immer an der Bahn des betroffenen Pferdes. Ein Pferd, das über eine
+  fremde Bananenschale läuft, merkt davon nichts – das Dekor ist Erinnerung, nicht Physik.
+- `screens.css` (650) und `components.css` (457) liegen weiter über der 400-Zeilen-Richtlinie.
+  Der Produktivcode in `src/**.js` hält sie ein.
 - Das Publikum steht still. Die La-Ola-Welle bei Events und im Finish gehört zu M5.
 - Das Text-Rennen zeigt pro Event nur die erste Kommentar-Variante. Die richtige
   Kommentator-Engine mit Zeilen-Pool und Wiederholungsschutz kommt in M7.
