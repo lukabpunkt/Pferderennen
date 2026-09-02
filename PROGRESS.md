@@ -213,7 +213,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A4    | M6          | 2026-09-02 | **bestanden** | 4 echte Befunde gefunden und behoben, davon 3 Kontrast. CI grün: [Run 33672416432](https://github.com/lukabpunkt/Pferderennen/actions/runs/33672416432) |
 | A2    | M7          | 2026-09-02 | **bestanden** | Re-Run: Zahlen identisch zu M6 – genau das war der Zweck |
 | A6    | M7          | 2026-09-02 | **bestanden** | 2 Befunde behoben; eine begründete Ausnahme (`race.js`, 438 Zeilen) |
-| A1    | M7          | 2026-09-02 | **bestanden** | Wettarten, Statistik, Alkoholfrei-Modus im Browser durchgespielt |
+| A1    | M7          | 2026-09-02 | **bestanden** | Wettarten, Statistik, Alkoholfrei-Modus im Browser durchgespielt. CI grün: [Run 33676165873](https://github.com/lukabpunkt/Pferderennen/actions/runs/33676165873) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
