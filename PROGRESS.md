@@ -231,7 +231,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A2    | M10         | 2026-09-03 | **bestanden** | Re-Run: Zahlen Ziffer für Ziffer identisch – der Beweis, dass M10 kosmetisch ist |
 | A3    | M10         | 2026-09-03 | **bestanden** | Startpistole, Zielband, Ehrung in beiden Orientierungen geprüft |
 | A4    | M10         | 2026-09-03 | **bestanden** | Ehrung ersetzt echten Text: Namen bleiben DOM, Canvas mit `role="img"` |
-| A5    | M10         | 2026-09-03 | **bestanden** | Lighthouse 91/100/100, CLS 0, Initial Load 184 KB; 2 Altlasten gefunden |
+| A5    | M10         | 2026-09-03 | **bestanden** | Lighthouse 91/100/100, CLS 0, Initial Load 184 KB; 2 Altlasten gefunden. CI grün: [Run 33689072183](https://github.com/lukabpunkt/Pferderennen/actions/runs/33689072183) |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
