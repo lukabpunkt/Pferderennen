@@ -52,6 +52,11 @@ jobs:
             exit 1
           fi
 
+      # Schlägt mit "Get Pages site failed" fehl, solange Pages im Repo nicht aktiviert ist.
+      # Einmalig nötig: Settings → Pages → Source = "GitHub Actions"
+      # (oder: gh api -X POST repos/lukabpunkt/Pferderennen/pages -f build_type=workflow).
+      # Bewusst nicht `enablement: true` – eine Seite öffentlich zu schalten ist eine
+      # Entscheidung, die der Mensch trifft, nicht ein Workflow nebenbei.
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v4

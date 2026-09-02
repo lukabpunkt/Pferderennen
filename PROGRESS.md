@@ -1069,6 +1069,12 @@ _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 **Offen (nur der Nutzer kann das):**
 
+- **M9 – einmalig, blockiert den Live-Gang:** In den Repo-Settings → Pages → Source auf
+  **„GitHub Actions"** stellen. Danach `deploy.yml` einmal von Hand starten (Actions → Deploy to
+  GitHub Pages → Run workflow); ab dann läuft es bei jedem grünen CI-Lauf auf `main` von selbst.
+  Der Workflow ist geprüft: Staging und Pfad-Check laufen durch, er scheitert nur an
+  `configure-pages`, weil Pages noch nicht aktiviert ist ([Run 33682199554](https://github.com/lukabpunkt/Pferderennen/actions/runs/33682199554)).
+- **M9:** Der echte Spieleabend – Vorlage in [`docs/PLAYTEST_TEMPLATE.md`](docs/PLAYTEST_TEMPLATE.md).
 - **M8:** Auf dem Handy „Zum Home-Bildschirm" hinzufügen, Flugmodus an, spielen. Dazu die
   Deuteranopie-Simulation im DevTools-Rendering-Tab.
 - **M7:** Ein Rennen mit Ton hören – stimmt die Mischung? Modus „Letzter" und die
