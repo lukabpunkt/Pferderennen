@@ -25,9 +25,10 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      # Mandatory gate: no merge unless fairness is proven.
-      - name: Fairness audit (100k races)
-        run: npm run audit:fairness -- --n=100000
+      # Mandatory gate: no merge unless fairness is proven. 100k main races plus four
+      # comparison batches of 30k, spread across the runner's cores.
+      - name: Fairness audit (220k races)
+        run: npm run audit:fairness -- --n=100000 --sub=30000 --verify-partition
 
       - name: E2E smoke tests
         if: hashFiles('tests/e2e/**/*.spec.js') != ''
