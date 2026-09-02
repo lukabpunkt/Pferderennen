@@ -171,7 +171,6 @@ export const DEFAULT_SETTINGS = {
   sober: false,
   reducedMotion: 'auto',
   debugSkip: false,
-  debugSeed: false,
 };
 
 /**

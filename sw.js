@@ -10,8 +10,11 @@
  * fall behind the source. Do not edit it by hand.
  */
 
-/** Bump on release. A new value means a new cache and a fresh copy of every file. */
-const VERSION = 'v1';
+/**
+ * The released version. A new value means a new cache and a fresh copy of every file; the page
+ * notices the new worker and offers a reload rather than swapping anything mid-race.
+ */
+const VERSION = 'v1.0.0';
 const CACHE = `pferderennen-${VERSION}`;
 
 /* --- precache:start --- */

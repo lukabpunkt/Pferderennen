@@ -402,7 +402,7 @@ export function mount(container, store) {
 
   stage.append(canvas, hud.root, photoFinish, paused, countdown.node);
   if (debug.enabled) stage.append(debugPanel);
-  if (settings.debugSkip) {
+  if (settings.debugSkip || debug.skip) {
     stage.append(
       el('button', {
         className: 'race-skip',

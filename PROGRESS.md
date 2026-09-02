@@ -179,15 +179,15 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 
 ### M9 – Release v1.0.0
 
-- [ ] 1. E2E-Tests
-- [ ] 2. deploy.yml + Pages-Konfiguration
-- [ ] 3. Fairness-Report N=1M
-- [ ] 4. Release-Audit-Dokument
-- [ ] 5. README final
-- [ ] 6. CHANGELOG + Tag + Release
-- [ ] 7. Playtest-Template
-- [ ] 8. Backlog v1.1 notiert, `chore: complete M9 – release v1.0.0`
-- [ ] **Audit A7 bestanden**
+- [x] 1. E2E-Tests
+- [x] 2. deploy.yml + Pages-Konfiguration
+- [x] 3. Fairness-Report N=1M
+- [x] 4. Release-Audit-Dokument
+- [x] 5. README final
+- [x] 6. CHANGELOG + Tag + Release
+- [x] 7. Playtest-Template
+- [x] 8. Backlog v1.1 notiert, `chore: complete M9 – release v1.0.0`
+- [x] **Audit A7 bestanden**
 
 ---
 
@@ -216,6 +216,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A1    | M7          | 2026-09-02 | **bestanden** | Wettarten, Statistik, Alkoholfrei-Modus im Browser durchgespielt. CI grün: [Run 33676165873](https://github.com/lukabpunkt/Pferderennen/actions/runs/33676165873) |
 | A4    | M8          | 2026-09-02 | **bestanden** | vollständig; 3 echte Befunde behoben, Lighthouse A11y 100 |
 | A5    | M8          | 2026-09-02 | **bestanden** | vollständig; Lighthouse Mobile 92/100/100/100, TBT 1590 → 0 ms. CI grün: [Run 33679400617](https://github.com/lukabpunkt/Pferderennen/actions/runs/33679400617) |
+| A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -373,6 +374,15 @@ irgendwann stört, ist `--sub` der Hebel.
 
 _(Datum – Entscheidung – Begründung)_
 
+- **2026-09-02 (M9) – Der Deploy hängt per `workflow_run` an der CI, nicht an einem eigenen
+  Trigger.** Zwei Workflows können sich nicht per `needs` verketten. Ein Deploy, der parallel zur
+  CI läuft, könnte eine Version live stellen, deren Fairness-Audit gerade rot wird – und genau das
+  ist der eine Fehler, den dieses Projekt sich nicht leisten darf.
+- **2026-09-02 (M9) – Der Deploy staged nach `_site/`, statt das Repo-Root hochzuladen.**
+  `docs/07_DEPLOYMENT.md` schlägt `path: .` vor. Damit lägen `node_modules`, `tests`, `coverage`
+  und `test-results` auf einer öffentlichen Seite. Der Staging-Schritt kopiert, was der Browser
+  braucht, plus `docs/` und `README.md` für die Links aus dem README. Das ist kein Build-Schritt,
+  sondern eine Auswahl.
 - **2026-09-02 (M8) – Die PWA-Icons werden aus dem Spiel gerendert, nicht gezeichnet.**
   `npm run icons` fährt einen Headless-Browser hoch und lässt `render/horsePortrait.js` – genau
   den Code, der auch die Wett-Karten malt – in ein Canvas zeichnen. Ein von Hand gebautes Icon
@@ -1019,6 +1029,40 @@ Reload im Rennen (zurück zu den Wetten mit Hinweis), Private Mode ohne `localSt
 WebAudio und `prefers-reduced-motion` – alle sechs abgedeckt, die letzten drei zusätzlich durch
 Unit-Tests, die genau diese Umgebungen nachstellen.
 
+### A7 – Release-Audit zu M9 (2026-09-02)
+
+Das vollständige Dokument ist [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md) – es
+fasst A1–A6 zusammen, listet die Browser-Matrix und den Fairness-Nachweis. Hier nur, was beim
+Release-Durchlauf **neu gefunden** wurde:
+
+1. **Eine Einstellung, die man ändert und sofort neu lädt, war weg.** Die Persistenz schreibt
+   entprellt nach 200 ms – damit ein gehaltener Stepper nicht zehnmal schreibt. Der Preis war ein
+   Fenster, in dem eine Änderung nur im Arbeitsspeicher steht. Der E2E-Test „Einstellungen
+   überleben einen Reload" ist genau darüber gestolpert; von Hand hätte ich es nie getroffen, weil
+   ein Mensch zwischen Klick und Reload immer länger als 200 ms braucht. Die ausstehende Schreibung
+   fließt jetzt bei `pagehide` und beim Wechsel auf `visibilityState === 'hidden'` ab – das deckt
+   Reload, Navigation und das Wegwischen der App auf iOS ab.
+2. **`debugSkip` war im normalen Spiel sichtbar.** Der Schalter „Rennen überspringbar" stand in
+   den Einstellungen, wo ihn jeder finden konnte; A7 verlangt ausdrücklich, dass er im
+   Produktions-Flow unsichtbar ist. Die Einstellung bleibt (die GDD-Tabelle §6 führt sie), aber
+   der Schalter erscheint nur noch mit `?debug=1`. Für die E2E-Tests gibt es zusätzlich
+   `?debugSkip=1`, damit kein Test dreißig Sekunden Pferden zusieht.
+3. **`debugSeed` war toter Code.** Stand seit M0 in `DEFAULT_SETTINGS` und war nie verdrahtet.
+   Entfernt.
+
+**Der Service-Worker-Update-Mechanismus wurde einmal komplett durchgespielt**, nicht nur gelesen:
+Version hochgezählt → `updatefound` → neuer Worker erreicht `installed` → Toast „Neue Version –
+neu laden." erscheint → Reload aktiviert ihn → der alte Cache ist gelöscht, der neue hat wieder
+78 Dateien. Danach zurück auf `v1.0.0`.
+
+**Die E2E-Tests haben zwei Anläufe gebraucht, und beide Fehlversuche waren lehrreich.** Erst
+löschte ein `addInitScript` den `localStorage` bei *jeder* Navigation – also auch bei dem Reload,
+um den es im Persistenz-Test gerade ging. Playwright gibt ohnehin jedem Test einen frischen
+Browser-Kontext, das Skript war schlicht überflüssig. Und der Determinismus-Test spielte zweimal
+hintereinander in derselben Sitzung, wo beim zweiten Mal die Wetten noch standen; er benutzt jetzt
+zwei getrennte Kontexte, was auch besser ausdrückt, was er behauptet: Der Seed entscheidet das
+Rennen, sonst nichts.
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
@@ -1061,4 +1105,29 @@ _(werden hier gesammelt, bevor sie zu Tasks werden)_
 
 ## Backlog v1.1+
 
-- Jackpot-Runde, Pechvogel-Bonus, Sudden Death, Wetter-/Strecken-Varianten, Share-Card, Zuschauer-Emojis, Sprite-Sheet-Option (siehe `docs/01_GAME_DESIGN.md` §5 Prio B)
+Jedes Feature bekommt einen eigenen Mini-Meilenstein mit denselben Regeln: Definition of Done,
+Audit, und ein Fairness-Re-Run. Nichts davon darf die 1/6 antasten.
+
+**Aus dem GDD §5 Priorität B:**
+
+| Idee | Was es ist | Fairness-Risiko |
+| --- | --- | --- |
+| **Jackpot-Runde** | Jede 5. Runde zählt doppelt, mit Sirenen-Overlay | keins – reine Auszahlungsregel in `payout.js` |
+| **Pechvogel-Bonus** | Wer 3× in Folge verliert, darf 2 Schlücke gratis setzen (nur verteilen) | keins – berührt die Engine nicht |
+| **Sudden Death** | Finales Rennen um alle verbliebenen Schlücke × 2 | keins |
+| **Wetter-Varianten** | Regen, Nacht, Schnee – andere Event-Gewichte, gleiche für alle | **gering, aber prüfen**: Event-Gewichte je Wetter müssen für jedes Pferd identisch bleiben |
+| **Strecken-Varianten** | Rasen, Sand, Strand, Mond (niedrigere Gravitation) | **gering, aber prüfen**: Sprunghöhe ist rein visuell, Geschwindigkeit darf sich nicht je Pferd ändern |
+| **Share-Card** | Ergebnis als Bild zum Teilen | keins |
+| **Zuschauer-Emojis** | Tribüne reagiert mit Emojis | keins |
+| **Sprite-Sheet-Option** | Vorgerenderte Pferde statt Pfad-Zeichnung, für schwache Geräte | keins – `render/sprites.js` steht als leeres Modul bereit |
+
+**Aus der Arbeit an v1.0 übrig geblieben:**
+
+- `ui/screens/race.js` liegt mit 438 Zeilen über der 400-Zeilen-Richtlinie, ebenso drei
+  CSS-Dateien. Begründet im A6-Protokoll zu M7 – aber wenn der Screen nochmal wächst, ist ein
+  Schnitt fällig.
+- Die fünf Stylesheets sind render-blocking (~9 KB gzip). Ohne Bundler ist das der ehrliche
+  Kompromiss; falls das Ladebudget je knapp wird, wäre kritisches Inline-CSS der nächste Schritt.
+- Es gibt keinen DOM-Test für die Stepper-Ziffernrolle, weil alle Unit-Tests in der schnellen
+  Node-Umgebung laufen. Jetzt, wo Playwright ohnehin da ist, gehört diese Prüfung in die E2E-Suite.
+- `render/sprites.js` ist noch ein leeres Platzhalter-Modul.

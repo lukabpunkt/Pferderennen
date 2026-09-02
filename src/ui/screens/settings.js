@@ -8,6 +8,7 @@
 import { el } from '../dom.js';
 import { modal } from '../components/modal.js';
 import { sipWord } from '../strings.js';
+import { debugOptions } from '../debug.js';
 
 /** Declarative description of every setting, so the markup stays generic. */
 const FIELDS = [
@@ -83,6 +84,9 @@ const FIELDS = [
     label: 'Rennen überspringbar',
     toggle: true,
     hint: 'Blendet im Rennen einen Überspringen-Knopf ein.',
+    // A debug switch has no business in a normal evening: nobody should be able to skip the race
+    // by accident (audit A7). It is in the GDD's settings table, so it stays — behind ?debug=1.
+    debugOnly: true,
   },
 ];
 
@@ -147,10 +151,12 @@ export function openSettings(store) {
     render();
   };
 
+  const showDebug = debugOptions().enabled;
+
   function render() {
     const settings = store.getState().settings;
     content.replaceChildren(
-      ...FIELDS.map((field) =>
+      ...FIELDS.filter((field) => !field.debugOnly || showDebug).map((field) =>
         el('div', { className: 'setting' }, [
           el('div', { className: 'setting__head' }, [
             el('span', { className: 'setting__label', text: field.label }),

@@ -122,12 +122,27 @@ export function clearState() {
 
 /**
  * Subscribes to the store and writes every change debounced.
+ *
+ * The debounce exists so that holding down the stepper does not write ten times. Its price is a
+ * window in which a change is only in memory — and somebody who flips a setting and immediately
+ * reloads would lose it. So the pending write is flushed when the page goes away: `pagehide`
+ * fires on a reload, a navigation and on iOS when the app is swiped away, which `beforeunload`
+ * does not.
+ *
  * @param {{getState: () => any, subscribe: (listener: () => void) => () => void}} store
  * @param {number} delay
  * @returns {() => void} stops persisting and flushes any pending write
  */
 export function persist(store, delay = WRITE_DELAY) {
   let timer = null;
+
+  /** Writes now if something is waiting to be written. */
+  function flush() {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    saveState(store.getState());
+  }
 
   const unsubscribe = store.subscribe(() => {
     if (timer !== null) clearTimeout(timer);
@@ -137,13 +152,16 @@ export function persist(store, delay = WRITE_DELAY) {
     }, delay);
   });
 
+  const onHide = () => flush();
+  globalThis.addEventListener?.('pagehide', onHide);
+  globalThis.addEventListener?.('visibilitychange', () => {
+    if (globalThis.document?.visibilityState === 'hidden') flush();
+  });
+
   return () => {
     unsubscribe();
-    if (timer !== null) {
-      clearTimeout(timer);
-      timer = null;
-      saveState(store.getState());
-    }
+    globalThis.removeEventListener?.('pagehide', onHide);
+    flush();
   };
 }
 
