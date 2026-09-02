@@ -21,7 +21,7 @@ describe('createCamera', () => {
     camera.setViewport(1200);
     expect(camera.zoom).toBe(1);
     // The start line has to sit comfortably inside the view, not on the edge.
-    const start = camera.toScreenX(0);
+    const start = camera.toAlong(0);
     expect(start).toBeGreaterThan(120);
     expect(start).toBeLessThan(400);
   });
@@ -41,7 +41,7 @@ describe('createCamera', () => {
     settle(camera, spread, 6);
 
     for (const position of spread) {
-      const x = camera.toScreenX(position);
+      const x = camera.toAlong(position);
       expect(x, `${position} liegt ausserhalb`).toBeGreaterThan(-20);
       expect(x).toBeLessThan(1220);
     }
@@ -60,7 +60,7 @@ describe('createCamera', () => {
     const camera = createCamera({ viewUnits: 340 });
     camera.setViewport(1200);
     settle(camera, [0, 0, 0, 0, 0, 0], 4);
-    const gates = camera.toScreenX(0);
+    const gates = camera.toAlong(0);
     expect(gates).toBeGreaterThan(120);
     expect(gates).toBeLessThan(600);
   });
@@ -71,7 +71,7 @@ describe('createCamera', () => {
     settle(camera, new Array(6).fill(TRACK_LENGTH), 8);
     expect(camera.centre).toBeLessThanOrEqual(TRACK_LENGTH);
     // The finish line stays inside the view.
-    const finish = camera.toScreenX(TRACK_LENGTH);
+    const finish = camera.toAlong(TRACK_LENGTH);
     expect(finish).toBeGreaterThan(0);
     expect(finish).toBeLessThan(1200);
   });
@@ -93,9 +93,9 @@ describe('createCamera', () => {
     camera.setViewport(1200);
     camera.shake(1);
     camera.update([500], 1, STEP);
-    expect(Math.abs(camera.shakeOffsetY)).toBeGreaterThan(0);
+    expect(Math.abs(camera.shakeCross)).toBeGreaterThan(0);
     settle(camera, [500], 2);
-    expect(camera.shakeOffsetY).toBe(0);
+    expect(camera.shakeCross).toBe(0);
   });
 
   it('resets to the start line', () => {
@@ -104,6 +104,6 @@ describe('createCamera', () => {
     settle(camera, [800, 800, 800, 800, 800, 800]);
     camera.reset();
     expect(camera.zoom).toBe(1);
-    expect(camera.toScreenX(0)).toBeGreaterThan(120);
+    expect(camera.toAlong(0)).toBeGreaterThan(120);
   });
 });

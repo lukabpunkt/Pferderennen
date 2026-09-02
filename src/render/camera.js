@@ -1,9 +1,13 @@
 /**
  * Race camera: follows the field, zooms out when it spreads, and can be shaken.
  *
- * The camera works in track units and converts to pixels on demand. It always keeps the whole
- * field visible — a viewer must never lose sight of their own horse (audit A3) — but it leans
- * ahead of the field so you can see where the race is going.
+ * The camera knows nothing about the screen. It works along a single axis in track units and
+ * hands back a pixel offset along that axis; the track decides whether that offset is a screen x
+ * (landscape, running left to right) or a screen y (portrait, running bottom to top). That is
+ * why the same camera serves both orientations without a branch.
+ *
+ * It always keeps the whole field visible — a viewer must never lose sight of their own horse
+ * (audit A3) — but leans ahead of the field so you can see where the race is going.
  */
 
 import { TRACK_LENGTH } from '../config.js';
@@ -39,9 +43,9 @@ export function createCamera({ viewUnits = 340 } = {}) {
   let centre = viewUnits * START_MARGIN;
   let zoom = ZOOM_MAX;
   let trauma = 0;
-  let shakeX = 0;
-  let shakeY = 0;
-  let width = 1;
+  let shakeAlong = 0;
+  let shakeCross = 0;
+  let axisPixels = 1;
 
   /** Deterministic-ish wobble; the camera is decoration, so Math.random is fine outside the engine. */
   function wobble() {
@@ -49,9 +53,13 @@ export function createCamera({ viewUnits = 340 } = {}) {
   }
 
   const camera = {
-    /** Pixels per track unit at the current zoom. Set by the renderer on resize. */
-    setViewport(pixelWidth) {
-      width = pixelWidth;
+    /**
+     * How many pixels the track axis spans on screen: the width in landscape, the height in
+     * portrait. Set by the track on resize.
+     * @param {number} pixels
+     */
+    setViewport(pixels) {
+      axisPixels = pixels;
     },
 
     /**
@@ -87,11 +95,11 @@ export function createCamera({ viewUnits = 340 } = {}) {
       if (trauma > 0) {
         trauma = Math.max(0, trauma - TRAUMA_DECAY * dt);
         const amount = trauma * trauma * TRAUMA_MAX_OFFSET;
-        shakeX = wobble() * amount;
-        shakeY = wobble() * amount;
+        shakeAlong = wobble() * amount;
+        shakeCross = wobble() * amount;
       } else {
-        shakeX = 0;
-        shakeY = 0;
+        shakeAlong = 0;
+        shakeCross = 0;
       }
     },
 
@@ -102,7 +110,7 @@ export function createCamera({ viewUnits = 340 } = {}) {
 
     /** Pixels per track unit right now. */
     get pixelsPerUnit() {
-      return (width / viewUnits) * zoom;
+      return (axisPixels / viewUnits) * zoom;
     },
 
     get zoom() {
@@ -113,17 +121,18 @@ export function createCamera({ viewUnits = 340 } = {}) {
       return centre;
     },
 
-    get shakeOffsetY() {
-      return shakeY;
+    /** Shake offset across the track, for the renderer to apply to the other axis. */
+    get shakeCross() {
+      return shakeCross;
     },
 
     /**
-     * Track units to screen pixels.
+     * Track units to a pixel offset along the track axis, measured from the axis start.
      * @param {number} x
      * @returns {number}
      */
-    toScreenX(x) {
-      return (x - centre) * camera.pixelsPerUnit + width / 2 + shakeX;
+    toAlong(x) {
+      return (x - centre) * camera.pixelsPerUnit + axisPixels / 2 + shakeAlong;
     },
 
     /** How many track units are visible right now. */
@@ -136,8 +145,8 @@ export function createCamera({ viewUnits = 340 } = {}) {
       centre = camera.visibleUnits * START_MARGIN;
       zoom = ZOOM_MAX;
       trauma = 0;
-      shakeX = 0;
-      shakeY = 0;
+      shakeAlong = 0;
+      shakeCross = 0;
     },
   };
 
