@@ -16,12 +16,17 @@ import {
   legAngles,
 } from '../src/render/horseAnimations.js';
 import { RENDER } from '../src/config.js';
+import { EVENTS, SLIPSTREAM, EVENTS_BY_ID } from '../src/data/events.js';
+import { effectAnimation, effectDuration } from '../src/engine/effects.js';
+import { createParticles } from '../src/render/particles.js';
+import { createEventVisuals } from '../src/render/eventVisuals.js';
 
 const canvas = document.getElementById('lab');
 const ctx = canvas.getContext('2d');
 const speedInput = document.getElementById('speed');
 const sizeInput = document.getElementById('size');
 const animSelect = document.getElementById('anim');
+const eventSelect = document.getElementById('event');
 const viewSelect = document.getElementById('view');
 const skeletonInput = document.getElementById('skeleton');
 const singleInput = document.getElementById('single');
@@ -34,6 +39,51 @@ for (const state of ANIMATION_STATES) {
   animSelect.append(option);
 }
 animSelect.value = 'gallop';
+
+// Every event, so each one can be played on demand — that is how the M5 checklist gets ticked.
+const noEvent = document.createElement('option');
+noEvent.value = '';
+noEvent.textContent = '– keins –';
+eventSelect.append(noEvent);
+for (const event of [...EVENTS, SLIPSTREAM]) {
+  const option = document.createElement('option');
+  option.value = event.id;
+  option.textContent = `${event.id} (${event.kind})`;
+  eventSelect.append(option);
+}
+
+/** A miniature of the race plumbing, so the props behave exactly as they do in a race. */
+const particles = createParticles(300);
+const visuals = createEventVisuals({
+  particles,
+  shake: () => {},
+  reducedMotion: () => false,
+});
+
+/** A stand-in race: one planned event on runner 0, replayed in a loop. */
+let eventClock = 0;
+let currentEvent = '';
+const fakeRace = {
+  plannedEvents: [],
+  eventLog: [],
+  state: { t: 0 },
+};
+
+/** Restarts the chosen event from the top. */
+function restartEvent() {
+  const id = eventSelect.value;
+  currentEvent = id;
+  eventClock = 0;
+  visuals.reset();
+  particles.clear();
+  fakeRace.plannedEvents = [];
+  fakeRace.eventLog = [];
+  if (!id) return;
+  const definition = EVENTS_BY_ID[id];
+  const lead = definition.lead ?? 0;
+  fakeRace.plannedEvents = [{ id, runner: 0, time: lead + 0.4, lead, fired: false }];
+}
+eventSelect.addEventListener('change', restartEvent);
 
 const poses = HORSES.map((_, index) => createPose(index / HORSES.length));
 const palettes = HORSES.map(horseColours);
@@ -117,6 +167,22 @@ function frame(now) {
   ctx.fillStyle = 'rgba(232, 200, 138, 0.55)';
   ctx.fillRect(0, height * 0.62, width, height);
 
+  // Drive the stand-in race, so the prop timing matches a real one exactly.
+  if (eventSelect.value !== currentEvent) restartEvent();
+  if (currentEvent) {
+    eventClock += dt;
+    fakeRace.state.t = eventClock;
+    const planned = fakeRace.plannedEvents[0];
+    if (planned && !planned.fired && eventClock >= planned.time) {
+      planned.fired = true;
+      fakeRace.eventLog.push({ id: planned.id, runner: 0, t: planned.time });
+    }
+    const definition = EVENTS_BY_ID[currentEvent];
+    const total =
+      (definition.effect ? effectDuration(definition.effect) : 3) + (definition.lead ?? 0) + 2.2;
+    if (eventClock > total + 0.8) restartEvent();
+  }
+
   const shown = single ? [0] : HORSES.map((_, i) => i);
   const columns = single ? 1 : 3;
   const rows = Math.ceil(shown.length / columns);
@@ -133,8 +199,31 @@ function frame(now) {
     // The rear view is much taller than it is wide, so it needs to sit lower in its cell.
     const y = 40 + cellHeight * (row + (viewSelect.value === 'rear' ? 0.95 : 0.85));
 
+    // While an event is selected it drives the animation of the first horse.
+    let state = anim;
+    if (currentEvent && index === 0) {
+      const definition = EVENTS_BY_ID[currentEvent];
+      const local = eventClock - (fakeRace.plannedEvents[0]?.time ?? 0);
+      state = (definition.effect && effectAnimation(definition.effect, local)) || anim;
+    }
+    updatePose(pose, 0, { anim: state, speed });
+
+    if (index === 0 && currentEvent) {
+      const locate = () => ({ x, y, size, units: 0 });
+      const frame = { locate, width, height };
+      visuals.sync(fakeRace, fakeRace.state.t);
+      visuals.update(fakeRace.state.t, locate);
+      visuals.drawDecor(ctx, () => ({ x, y, size }));
+      visuals.draw(ctx, 'behind', fakeRace.state.t, frame);
+    }
+
     const draw = viewSelect.value === 'rear' ? drawHorseRear : drawHorse;
     draw(ctx, { horse: HORSES[index], colours: palettes[index], pose, x, y, size });
+
+    if (index === 0 && currentEvent) {
+      const locate = () => ({ x, y, size, units: 0 });
+      visuals.draw(ctx, 'front', fakeRace.state.t, { locate, width, height });
+    }
     if (skeletonInput.checked && viewSelect.value === 'side') drawSkeleton(pose, x, y, size);
 
     ctx.fillStyle = '#2B1D2E';
@@ -143,7 +232,12 @@ function frame(now) {
     ctx.fillText(HORSES[index].name, x, y + 22);
   }
 
-  readout.textContent = `${fps} fps · Phase ${poses[0].phase.toFixed(2)} · Tempo ${speed.toFixed(2)}`;
+  particles.update(dt);
+  particles.draw(ctx);
+
+  readout.textContent =
+    `${fps} fps · Phase ${poses[0].phase.toFixed(2)} · Tempo ${speed.toFixed(2)}` +
+    (currentEvent ? ` · ${currentEvent} bei ${eventClock.toFixed(1)} s` : '');
   requestAnimationFrame(frame);
 }
 

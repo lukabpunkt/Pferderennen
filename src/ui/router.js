@@ -4,6 +4,10 @@
  * Navigation is hash based, so the browser back button works and a reload lands on the same
  * screen (audit A1). Guards make sure a hand-typed hash cannot drop the player into a screen
  * that has no data yet — a race without bets simply redirects back to the betting screen.
+ *
+ * A screen may be given as a module or as a function returning one. The race screen pulls in the
+ * whole renderer — horses, track, props, particles — which nobody needs before they have placed
+ * a bet, so it is loaded on demand and the first paint stays small.
  */
 
 import { BETTING } from '../config.js';
@@ -52,6 +56,23 @@ export function createRouter({ store, container, screens }) {
   let currentModule = null;
   let unsubscribe = null;
   let transitionTimer = null;
+  /** Guards against two loads overlapping: only the newest one may mount. */
+  let renderToken = 0;
+  /** Modules already loaded, so a screen is only fetched once. */
+  const loaded = new Map();
+
+  /**
+   * Resolves a screen entry, loading it if it is lazy.
+   * @param {string} name
+   * @returns {Promise<{mount: Function, unmount: Function}>}
+   */
+  async function resolve(name) {
+    if (loaded.has(name)) return loaded.get(name);
+    const entry = screens[name];
+    const module = typeof entry === 'function' ? await entry() : entry;
+    loaded.set(name, module);
+    return module;
+  }
 
   /** Reads the screen name out of the URL hash. */
   const screenFromHash = () => window.location.hash.replace(/^#\/?/, '') || 'start';
@@ -63,15 +84,20 @@ export function createRouter({ store, container, screens }) {
   };
 
   /** Swaps the mounted screen, running the leave animation first. */
-  function render(name) {
+  async function render(name) {
     if (name === currentName) return;
 
     // An overlay belongs to the screen that opened it and must not outlive it.
     closeAllModals();
 
+    const token = ++renderToken;
+    const module = await resolve(name);
+    // Somebody navigated again while this screen was loading; that navigation wins.
+    if (token !== renderToken) return;
+
     const previous = container.firstElementChild;
     currentModule?.unmount();
-    currentModule = screens[name];
+    currentModule = module;
     currentName = name;
 
     const view = document.createElement('div');
@@ -85,12 +111,23 @@ export function createRouter({ store, container, screens }) {
     }
 
     container.append(view);
-    currentModule.mount(view, store);
+    module.mount(view, store);
 
     // Force a reflow so the entering class actually animates instead of being skipped.
     void view.offsetWidth;
     view.classList.remove('screen--entering');
     container.scrollTop = 0;
+  }
+
+  /**
+   * Warms a lazy screen up in the background, so the wait never lands on the player.
+   * @param {string} name
+   */
+  function preload(name) {
+    if (loaded.has(name)) return;
+    resolve(name).catch(() => {
+      // A failed preload is not an error: the screen simply loads when it is needed.
+    });
   }
 
   /** Brings state, hash and rendered screen back in line. */
@@ -127,6 +164,8 @@ export function createRouter({ store, container, screens }) {
       window.addEventListener('hashchange', onHashChange);
       sync();
     },
+
+    preload,
 
     stop() {
       unsubscribe?.();

@@ -5,6 +5,7 @@
  * player into a dead screen (audit A1, "Reload auf jedem Screen").
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { resolveScreen } from '../../src/ui/router.js';
 import { createInitialState, rootReducer } from '../../src/state/reducers.js';
 
@@ -60,5 +61,25 @@ describe('resolveScreen', () => {
     expect(resolveScreen('results', stateWith({ players: 3, bets: true, result: true }))).toBe(
       'results',
     );
+  });
+});
+
+describe('lazy screens', () => {
+  it('exposes the race screen as a loader, not as a module', async () => {
+    // The race screen pulls in the whole renderer — horses, both tracks, props, particles —
+    // which nobody needs before they have placed a bet. main.js therefore hands the router a
+    // function instead of a module, and this is what keeps the first paint at 127 KB
+    // instead of 307 KB. A regression here would be invisible except on the scale.
+    const source = readFileSync('src/main.js', 'utf8');
+    expect(source).toMatch(/race:\s*\(\)\s*=>\s*import\(/);
+    // And the other screens stay eager, so the first screen needs no round trip at all.
+    for (const name of ['start', 'players', 'betting', 'results']) {
+      expect(source, name).toMatch(new RegExp(`import \\* as ${name} from`));
+    }
+  });
+
+  it('warms the race screen up in the background rather than on demand', () => {
+    const source = readFileSync('src/main.js', 'utf8');
+    expect(source).toMatch(/router\.preload\('race'\)/);
   });
 });

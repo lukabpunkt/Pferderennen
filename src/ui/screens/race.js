@@ -11,20 +11,22 @@
 
 import { el, listen } from '../dom.js';
 import { HORSES, horseByIndex } from '../../data/horses.js';
-import { EVENTS_BY_ID } from '../../data/events.js';
 import { createRace } from '../../engine/race.js';
 import { randomSeed } from '../../engine/rng.js';
 import { createLoop } from '../../render/loop.js';
 import { createCamera } from '../../render/camera.js';
 import { createTrack, orientationFor } from '../../render/track.js';
-import { drawHorse, horseColours } from '../../render/horse.js';
-import { drawHorseRear } from '../../render/horseRear.js';
-import { createPose, updatePose } from '../../render/horseAnimations.js';
+import { horseColours } from '../../render/horse.js';
+import { createPose } from '../../render/horseAnimations.js';
+import { drawField } from '../../render/field.js';
 import { createParticles } from '../../render/particles.js';
+import { createEventVisuals } from '../../render/eventVisuals.js';
 import { createHud } from '../../render/hud.js';
 import { createQualityMonitor, quality, resetQuality } from '../../render/quality.js';
-import { RACE_DURATIONS, RENDER, TRACK_LENGTH, RUNNER_COUNT, TIMESTEP } from '../../config.js';
+import { RACE_DURATIONS, RENDER, RUNNER_COUNT, TIMESTEP } from '../../config.js';
 import { createCountdown } from '../components/countdown.js';
+import { createCommentary } from '../raceCommentary.js';
+import { toResultPayload } from '../raceResult.js';
 import { debugOptions } from '../debug.js';
 import { countingContext, debugReadout } from '../raceDebug.js';
 
@@ -59,9 +61,32 @@ export function mount(container, store) {
   let orientation = null;
   let track = null;
   const particles = createParticles();
+
+  /**
+   * Reduced motion drops the shakes and the flashes and thins the particles, but every prop
+   * stays: a banana is information, not decoration (docs/04_DESIGN_SYSTEM.md §9).
+   */
+  const calm =
+    settings.reducedMotion === 'on' ||
+    (settings.reducedMotion === 'auto' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true);
+  particles.setDensity(calm ? 0.3 : 1);
+
+  const visuals = createEventVisuals({
+    particles,
+    shake: (amount) => camera.shake(amount),
+    reducedMotion: () => calm,
+    cheer: () => track?.cheer(),
+  });
   const hud = createHud(HORSES);
+  const commentary = createCommentary({ hud, getState: () => store.getState() });
   const palettes = HORSES.map(horseColours);
   const poses = HORSES.map((_, index) => createPose(index / RUNNER_COUNT));
+
+  /** Puts every horse back together for a new race. */
+  function resetPoses() {
+    for (const pose of poses) pose.riderless = false;
+  }
 
   const countdown = createCountdown();
   const debugPanel = el('pre', { className: 'race-debug' });
@@ -74,7 +99,6 @@ export function mount(container, store) {
   let gateOpen = 0;
   let handedOver = false;
   let timers = [];
-  let loggedEvents = 0;
   let width = 0;
   let height = 0;
 
@@ -120,19 +144,6 @@ export function mount(container, store) {
     track.resize(width, height);
   }
 
-  /** Reads the newest events out of the log and puts them on the commentary line. */
-  function updateCommentary() {
-    const log = race.eventLog;
-    while (loggedEvents < log.length) {
-      const entry = log[loggedEvents];
-      loggedEvents += 1;
-      const definition = EVENTS_BY_ID[entry.id];
-      if (!definition) continue;
-      const horse = entry.runner >= 0 ? horseByIndex(entry.runner) : null;
-      hud.say(horse ? `${horse.name}: ${definition.commentary[0]}` : definition.commentary[0]);
-    }
-  }
-
   /** One simulation step, plus the bookkeeping the drawing needs. */
   function update() {
     if (phase === 'countdown') return;
@@ -144,7 +155,7 @@ export function mount(container, store) {
       race.step();
       const runners = race.runners;
       for (const runner of runners) current[runner.index] = runner.x;
-      updateCommentary();
+      commentary.read(race);
       if (race.isFinished) finish();
     }
     updateMs = performance.now() - started;
@@ -165,6 +176,7 @@ export function mount(container, store) {
       gateOpen = Math.min(1, gateOpen + dt / GATE_OPEN_SECONDS);
     }
 
+    track.tick(dt);
     ctx.clearRect(0, 0, width, height);
     track.drawBackdrop(ctx);
     track.drawTrack(ctx);
@@ -173,41 +185,44 @@ export function mount(container, store) {
     const laneOfRunner = race.metrics.lanes;
     track.drawGates(ctx, gateOpen, laneOfRunner);
     track.drawFinish(ctx);
-    particles.draw(ctx);
 
-    const drawOne = track.view === 'rear' ? drawHorseRear : drawHorse;
-    // Furthest away first, so a horse in front overlaps the one behind it.
-    const order = [...runners].sort(
-      (a, b) =>
-        track.depthKey(drawn[a.index], laneOfRunner[a.index]) -
-        track.depthKey(drawn[b.index], laneOfRunner[b.index]),
-    );
+    // Where a runner is on screen right now, for the props that hang off a horse.
+    const locate = (runner) => {
+      const place = track.positionOf(drawn[runner], laneOfRunner[runner]);
+      return { ...place, size: track.horseSize(laneOfRunner[runner]), units: drawn[runner] };
+    };
+    const frame = { locate, width, height };
 
-    for (const runner of order) {
-      const lane = laneOfRunner[runner.index];
-      const pose = poses[runner.index];
-      const speed = runner.v / (TRACK_LENGTH / duration);
-
-      updatePose(pose, dt, { anim: animationFor(runner), speed: Math.max(0.15, speed) });
-
-      const { x, y } = track.positionOf(drawn[runner.index], lane);
-      const size = track.horseSize(lane);
-      const margin = size * 2.5;
-      if (x > -margin && x < width + margin && y > -margin && y < height + margin) {
-        const hoof = drawOne(ctx, {
-          horse: HORSES[runner.index],
-          colours: palettes[runner.index],
-          pose,
-          x,
-          y,
-          size,
-        });
-        if (pose.hoofStrike && phase === 'running') {
-          particles.hoofDust(hoof.hoofX, hoof.hoofY, size, speed);
-        }
-      }
+    // A horse whose jockey came off keeps going without him for the rest of the race.
+    for (const entry of race.eventLog) {
+      if (entry.id === 'jockey_off' && entry.runner >= 0) poses[entry.runner].riderless = true;
     }
 
+    visuals.sync(race, race.state.t);
+    visuals.update(race.state.t, locate);
+    visuals.drawDecor(ctx, (units, runner) => ({
+      ...track.positionOf(units, laneOfRunner[runner]),
+      size: track.horseSize(laneOfRunner[runner]),
+    }));
+    visuals.draw(ctx, 'behind', race.state.t, frame);
+    particles.draw(ctx);
+
+    drawField(ctx, {
+      runners,
+      lanes: laneOfRunner,
+      positions: drawn,
+      poses,
+      palettes,
+      track,
+      particles,
+      dt,
+      duration,
+      animationFor,
+      running: phase === 'running',
+      view: { width, height },
+    });
+
+    visuals.draw(ctx, 'front', race.state.t, frame);
     particles.update(dt);
     track.drawOverhead(ctx);
     track.drawForeground(ctx);
@@ -262,7 +277,8 @@ export function mount(container, store) {
       return race.order[0] === runner.index ? 'celebrate' : 'trot_in';
     }
     if (phase === 'countdown') return 'idle';
-    return runner.anim === 'gallop_fast' ? 'gallop_fast' : 'gallop';
+    // The engine already names the animation an active effect asks for; anything else gallops.
+    return runner.anim;
   }
 
   /** The race is over: celebrate, then hand the result to the result screen. */
@@ -277,17 +293,10 @@ export function mount(container, store) {
     const region = document.getElementById('live-region');
     if (region) region.textContent = `${winner.name} gewinnt!`;
 
-    const order = race.order.map((index) => horseByIndex(index).id);
-    const events = race.eventLog.map((entry) => ({
-      id: entry.id,
-      horseId: entry.runner >= 0 ? horseByIndex(entry.runner).id : null,
-      t: entry.t,
-      drinkRule: EVENTS_BY_ID[entry.id]?.drinkRule ?? null,
-    }));
-
+    const payload = toResultPayload(race, seed);
     timers.push(
       setTimeout(() => {
-        store.dispatch({ type: 'race/setResult', payload: { seed, order, events } });
+        store.dispatch({ type: 'race/setResult', payload });
         store.dispatch({ type: 'screen/go', payload: 'results' });
       }, CELEBRATION_MS),
     );
@@ -309,11 +318,14 @@ export function mount(container, store) {
     countdown.stop();
     seed = nextSeed;
     handedOver = false;
-    loggedEvents = 0;
     gateOpen = 0;
     race = createRace({ seed, duration, chaos: settings.chaos });
     lastLeader = -1;
+    resetPoses();
     particles.clear();
+    visuals.reset();
+    commentary.reset();
+    hud.clearToasts();
     camera.reset();
     previous.fill(0);
     current.fill(0);
@@ -324,7 +336,15 @@ export function mount(container, store) {
 
   const loop = createLoop({ update, render });
 
-  // Debug keys from docs/03_RACE_ENGINE.md §9.
+  /** Jumps to the end of the race, for the debug key and the skip button. */
+  function fastForward() {
+    while (!race.isFinished) race.step();
+    for (const runner of race.runners) current[runner.index] = runner.x;
+    previous.set(current);
+    finish();
+  }
+
+  // Debug keys from docs/03_RACE_ENGINE.md §9: F fast-forwards, R rerolls, S replays this seed.
   const unlisten = listen([
     [window, 'resize', resize],
     // Some phones fire orientationchange before the viewport has actually resized.
@@ -335,16 +355,9 @@ export function mount(container, store) {
       (event) => {
         if (!debug.enabled || event.metaKey || event.ctrlKey) return;
         const key = event.key.toLowerCase();
-        if (key === 'f') {
-          while (!race.isFinished) race.step();
-          for (const runner of race.runners) current[runner.index] = runner.x;
-          previous.set(current);
-          finish();
-        } else if (key === 'r') {
-          startRace(randomSeed());
-        } else if (key === 's') {
-          startRace(seed);
-        }
+        if (key === 'f') fastForward();
+        else if (key === 'r') startRace(randomSeed());
+        else if (key === 's') startRace(seed);
       },
     ],
   ]);
@@ -357,14 +370,7 @@ export function mount(container, store) {
         className: 'race-skip',
         text: 'Überspringen',
         attrs: { type: 'button' },
-        on: {
-          click: () => {
-            while (!race.isFinished) race.step();
-            for (const runner of race.runners) current[runner.index] = runner.x;
-            previous.set(current);
-            finish();
-          },
-        },
+        on: { click: fastForward },
       }),
     );
   }
