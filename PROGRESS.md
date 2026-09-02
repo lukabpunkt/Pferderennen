@@ -210,7 +210,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A5    | M5          | 2026-09-02 | **bestanden** | Ladebudget gerissen und durch Lazy-Loading gelöst      |
 | A1    | M6          | 2026-09-02 | **bestanden** | Re-Run, Design-Teil; 1 Befund (Attract-Layout) behoben |
 | A3    | M6          | 2026-09-02 | **bestanden** | Polish-Teil; Screenshots in `docs/screenshots/` erneuert |
-| A4    | M6          | 2026-09-02 | **bestanden** | 4 echte Befunde gefunden und behoben, davon 3 Kontrast |
+| A4    | M6          | 2026-09-02 | **bestanden** | 4 echte Befunde gefunden und behoben, davon 3 Kontrast. CI grün: [Run 33672416432](https://github.com/lukabpunkt/Pferderennen/actions/runs/33672416432) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
