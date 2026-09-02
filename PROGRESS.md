@@ -205,7 +205,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A3    | M4          | 2026-09-02 | **bestanden** | Portrait-Teil; 2 Befunde gefunden und behoben. CI grün: [Run 33666325625](https://github.com/lukabpunkt/Pferderennen/actions/runs/33666325625) |
 | A4    | M4          | 2026-09-02 | **bestanden** | Basis; vollständig in M8                               |
 | A5    | M4          | 2026-09-02 | **bestanden** | mit einer offenen Messung auf echtem Gerät             |
-| A3    | M5          | 2026-09-02 | **bestanden** | Event-Teil; alle 23 Events geprüft                     |
+| A3    | M5          | 2026-09-02 | **bestanden** | Event-Teil; alle 23 Events geprüft. CI grün: [Run 33668940879](https://github.com/lukabpunkt/Pferderennen/actions/runs/33668940879) |
 | A2    | M5          | 2026-09-02 | **bestanden** | Re-Run: Fairness von der Render-Schicht unberührt      |
 | A5    | M5          | 2026-09-02 | **bestanden** | Ladebudget gerissen und durch Lazy-Loading gelöst      |
 
