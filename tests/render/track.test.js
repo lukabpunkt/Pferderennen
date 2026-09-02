@@ -128,6 +128,18 @@ describe('the portrait track', () => {
   });
 });
 
+describe('the crowd', () => {
+  it('settles back down after cheering', () => {
+    for (const kind of ['landscape', 'portrait']) {
+      const { track } = build(kind, 1000, 800);
+      expect(() => {
+        track.cheer();
+        for (let i = 0; i < 200; i += 1) track.tick(1 / 60);
+      }, kind).not.toThrow();
+    }
+  });
+});
+
 describe('both orientations', () => {
   it('expose the same interface, so the race screen never has to branch', () => {
     const landscape = build('landscape', 1200, 700).track;
@@ -144,6 +156,8 @@ describe('both orientations', () => {
       'drawFinish',
       'drawOverhead',
       'drawForeground',
+      'cheer',
+      'tick',
     ];
     for (const key of required) {
       expect(landscape[key], `landscape.${key}`).toBeDefined();

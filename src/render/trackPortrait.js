@@ -33,6 +33,8 @@ export function createPortraitTrack({ camera, horses }) {
   let width = 0;
   let height = 0;
   let stand = null;
+  /** How excited the crowd is right now; decays back to zero. */
+  let cheer = 0;
 
   /** Left edge of the racing surface, and how wide it is. */
   function trackLeft() {
@@ -77,8 +79,10 @@ export function createPortraitTrack({ camera, horses }) {
       ctx.scale(1, -1);
       ctx.translate(0, -depth);
     }
+    // The whole stand hops when something happens; in portrait that is sideways on screen.
+    const lift = -Math.abs(Math.sin(cheer * 9)) * cheer * 6;
     for (let x = shift - stand.width; x < height + stand.width; x += stand.width) {
-      ctx.drawImage(stand, Math.round(x), 0);
+      ctx.drawImage(stand, Math.round(x), Math.round(lift));
     }
     ctx.restore();
   }
@@ -86,6 +90,16 @@ export function createPortraitTrack({ camera, horses }) {
   const track = {
     /** Which horse drawing this orientation needs. */
     view: 'rear',
+
+    /** The crowd reacts to an event. Decays on its own. */
+    cheer() {
+      cheer = 1;
+    },
+
+    /** Advances anything the track animates by itself. */
+    tick(dt) {
+      if (cheer > 0) cheer = Math.max(0, cheer - dt * 0.9);
+    },
 
     resize(pixelWidth, pixelHeight) {
       width = pixelWidth;

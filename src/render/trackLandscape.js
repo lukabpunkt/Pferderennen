@@ -38,6 +38,8 @@ export function createLandscapeTrack({ camera, horses }) {
   let height = 0;
   let hills = null;
   let stand = null;
+  /** How excited the crowd is right now; decays back to zero. */
+  let cheer = 0;
 
   /** Top edge of lane i, in pixels. Lane 0 is at the back. */
   function laneEdge(index) {
@@ -76,18 +78,31 @@ export function createLandscapeTrack({ camera, horses }) {
     drawGrandstandStrip(standCtx, tile, standDepth);
   }
 
-  /** Blits a cached strip across the view with a parallax offset. */
-  function blit(ctx, canvas, parallax) {
+  /**
+   * Blits a cached strip across the view with a parallax offset.
+   * @param {number} lift vertical offset, used for the crowd jumping up at an event
+   */
+  function blit(ctx, canvas, parallax, lift = 0) {
     if (!canvas) return;
     const shift = -(camera.centre * camera.pixelsPerUnit * parallax) % canvas.width;
     for (let x = shift - canvas.width; x < width + canvas.width; x += canvas.width) {
-      ctx.drawImage(canvas, Math.round(x), 0);
+      ctx.drawImage(canvas, Math.round(x), Math.round(lift));
     }
   }
 
   const track = {
     /** Which horse drawing this orientation needs. */
     view: 'side',
+
+    /** The crowd reacts to an event. Decays on its own. */
+    cheer() {
+      cheer = 1;
+    },
+
+    /** Advances anything the track animates by itself. */
+    tick(dt) {
+      if (cheer > 0) cheer = Math.max(0, cheer - dt * 0.9);
+    },
 
     /** Rebuilds everything that depends on the canvas size. */
     resize(pixelWidth, pixelHeight) {
@@ -148,7 +163,9 @@ export function createLandscapeTrack({ camera, horses }) {
       ctx.fillRect(0, 0, width, height * TRACK_TOP + 1);
 
       blit(ctx, hills, HILL_PARALLAX);
-      blit(ctx, stand, STAND_PARALLAX);
+      // The whole stand hops when something happens. Animating individual spectators would mean
+      // giving up the cache, and this reads the same from where the viewer sits.
+      blit(ctx, stand, STAND_PARALLAX, -Math.abs(Math.sin(cheer * 9)) * cheer * 7);
     },
 
     /** The six sand lanes with their dividing lines. */

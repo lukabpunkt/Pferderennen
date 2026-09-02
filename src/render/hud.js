@@ -71,9 +71,12 @@ export function createHud(horses) {
 
   const commentary = el('p', { className: 'commentary' });
 
+  /** Drinking-rule toasts, stacked above the commentary line. */
+  const toasts = el('div', { className: 'event-toasts', attrs: { 'aria-live': 'polite' } });
+
   const root = el('div', { className: 'hud' }, [
     el('div', { className: 'hud__top' }, [progress, board]),
-    el('div', { className: 'hud__bottom' }, [commentary]),
+    el('div', { className: 'hud__bottom' }, [toasts, commentary]),
   ]);
 
   /** Last known order, so the board is only rebuilt when it actually changes. */
@@ -119,6 +122,42 @@ export function createHud(horses) {
           { duration: 260, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
         );
       }
+    },
+
+    /**
+     * Shows a drinking rule as a toast: who is affected and how much.
+     * At most two are on screen at once, so they never bury the race (GDD §4.4).
+     * @param {string} text
+     * @param {string} colour the horse's signature colour, or null for a rule that hits everyone
+     */
+    toast(text, colour = null) {
+      while (toasts.children.length >= 2) toasts.firstElementChild?.remove();
+
+      const node = el(
+        'div',
+        {
+          className: 'event-toast',
+          vars: colour ? { '--horse-color': colour } : {},
+        },
+        [
+          el('span', {
+            className: 'event-toast__icon',
+            text: '🍺',
+            attrs: { 'aria-hidden': 'true' },
+          }),
+          el('span', { text }),
+        ],
+      );
+      toasts.append(node);
+      setTimeout(() => {
+        node.classList.add('event-toast--leaving');
+        setTimeout(() => node.remove(), 320);
+      }, 3000);
+    },
+
+    /** Removes every toast, for a fresh race. */
+    clearToasts() {
+      toasts.replaceChildren();
     },
 
     /** Sets the commentary line. */
