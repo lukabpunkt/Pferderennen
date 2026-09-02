@@ -45,6 +45,11 @@ export function drawHorseRear(ctx, { horse, colours, pose, x, y, size }) {
   ctx.fill();
 
   ctx.translate(0, -lift);
+  if (pose.spin > 0.02) ctx.rotate(pose.spinAngle * pose.spin);
+  if (pose.turn > 0.02) {
+    const facing = Math.cos(pose.turn * Math.PI);
+    ctx.scale(Math.abs(facing) < 0.12 ? Math.sign(facing) * 0.12 || 0.12 : facing, 1);
+  }
   ctx.rotate(roll);
 
   // --- Head and neck, receding away above the jockey ------------------------
@@ -132,6 +137,11 @@ export function drawHorseRear(ctx, { horse, colours, pose, x, y, size }) {
 
   // --- Jockey from behind ---------------------------------------------------
   const bob = Math.sin(pose.phase * Math.PI * 2 + Math.PI) * 0.02;
+  if (pose.riderless) {
+    const hoofOnly = drawLegPair(ctx, pose, colours, false);
+    ctx.restore();
+    return { hoofX: x + hoofOnly.x * size, hoofY: y + hoofOnly.y * size };
+  }
   ctx.save();
   ctx.translate(0, -1.06 + bob);
 

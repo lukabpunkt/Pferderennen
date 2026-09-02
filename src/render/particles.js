@@ -5,8 +5,8 @@
  * garbage collector has nothing to do mid-race (docs/02_ARCHITECTURE.md §8). Dead particles are
  * swapped with the last live one, which keeps the live range contiguous.
  *
- * M3 only needs dust from the hooves. The remaining types — confetti, stars, sparkles, rainbow,
- * splashes and the rest — arrive with the events in M5.
+ * Under reduced motion, and when the quality has stepped down, the pool is thinned rather than
+ * switched off: the events stay readable, they just cost less (docs/04_DESIGN_SYSTEM.md §9).
  */
 
 import { RENDER } from '../config.js';
@@ -14,9 +14,43 @@ import { quality } from './quality.js';
 
 /** Particle kinds, as small integers so they fit in a typed array. */
 export const DUST = 0;
+export const CONFETTI = 1;
+export const STAR = 2;
+export const SPARKLE = 3;
+export const RAINBOW = 4;
+export const SPLASH = 5;
+export const ZZZ = 6;
+export const HEART = 7;
+export const QUESTION = 8;
+export const SPEEDLINE = 9;
 
-/** Per-kind look. Extended in M5. */
-const KINDS = [{ colour: '198, 160, 106', gravity: -14, drag: 2.6, fade: 1 }];
+/**
+ * How each kind behaves and looks.
+ * `gravity` is in pixels per second squared, negative pulls upwards on screen.
+ * `shape` picks the drawing routine.
+ */
+const KINDS = [
+  { colour: '198, 160, 106', gravity: -14, drag: 2.6, shape: 'blob', alpha: 0.55 },
+  { colour: null, gravity: 220, drag: 0.6, shape: 'flake', alpha: 1 },
+  { colour: '255, 214, 84', gravity: -30, drag: 2, shape: 'star', alpha: 0.95 },
+  { colour: '255, 255, 255', gravity: -50, drag: 2.4, shape: 'star', alpha: 0.9 },
+  { colour: null, gravity: -10, drag: 3, shape: 'bar', alpha: 0.8 },
+  { colour: '110, 170, 70', gravity: 320, drag: 0.4, shape: 'blob', alpha: 0.9 },
+  { colour: '255, 255, 255', gravity: -34, drag: 1.6, shape: 'glyph', alpha: 0.95, glyph: 'z' },
+  { colour: '236, 72, 153', gravity: -40, drag: 2, shape: 'glyph', alpha: 0.95, glyph: '♥' },
+  { colour: '43, 29, 46', gravity: -32, drag: 2, shape: 'glyph', alpha: 0.9, glyph: '?' },
+  { colour: '255, 255, 255', gravity: 0, drag: 1.2, shape: 'bar', alpha: 0.55 },
+];
+
+/** Rainbow stripe colours, cycled by the trail. */
+const RAINBOW_COLOURS = [
+  '239,68,68',
+  '245,158,11',
+  '250,204,21',
+  '34,197,94',
+  '6,182,212',
+  '139,92,246',
+];
 
 /**
  * @param {number} capacity how many particles may be alive at once
@@ -30,10 +64,16 @@ export function createParticles(capacity = RENDER.particlePoolSize) {
   const life = new Float32Array(capacity);
   const maxLife = new Float32Array(capacity);
   const size = new Float32Array(capacity);
+  const spin = new Float32Array(capacity);
+  const spinRate = new Float32Array(capacity);
+  const tint = new Uint8Array(capacity);
   const kind = new Uint8Array(capacity);
   let count = 0;
 
-  return {
+  /** Set by the renderer; thins every spawn without touching the events themselves. */
+  let density = 1;
+
+  const api = {
     get count() {
       return count;
     },
@@ -44,11 +84,32 @@ export function createParticles(capacity = RENDER.particlePoolSize) {
     },
 
     /**
-     * Adds one particle. Silently does nothing when the pool is full, which is the right
-     * behaviour for decoration: a missing speck of dust is better than a dropped frame.
+     * Sets how many particles actually get spawned, from 0 to 1.
+     * Reduced motion asks for a 70 % cut (docs/04_DESIGN_SYSTEM.md §9).
+     * @param {number} value
      */
-    spawn(type, atX, atY, { speedX = 0, speedY = 0, radius = 4, seconds = 0.6 } = {}) {
+    setDensity(value) {
+      density = value;
+    },
+
+    /**
+     * Adds one particle. Silently does nothing when the pool is full, which is the right
+     * behaviour for decoration: a missing speck of dust beats a dropped frame.
+     */
+    spawn(type, atX, atY, options = {}) {
       if (count >= capacity) return;
+      if (density < 1 && Math.random() > density) return;
+
+      const {
+        speedX = 0,
+        speedY = 0,
+        radius = 4,
+        seconds = 0.6,
+        rotation = 0,
+        rotationRate = 0,
+        colourIndex = 0,
+      } = options;
+
       const i = count;
       count += 1;
       x[i] = atX;
@@ -58,6 +119,9 @@ export function createParticles(capacity = RENDER.particlePoolSize) {
       life[i] = seconds;
       maxLife[i] = seconds;
       size[i] = radius;
+      spin[i] = rotation;
+      spinRate[i] = rotationRate;
+      tint[i] = colourIndex;
       kind[i] = type;
     },
 
@@ -69,23 +133,36 @@ export function createParticles(capacity = RENDER.particlePoolSize) {
      * @param {number} intensity 1 at a normal gallop, more when sprinting
      */
     hoofDust(atX, atY, scale, intensity = 1) {
-      if (quality.level === 'low') {
-        // One speck instead of two or three; the effect survives, the cost does not.
-        this.spawn(DUST, atX, atY, {
-          speedX: -26 * intensity * (scale / 60),
-          speedY: -10 * (scale / 60),
-          radius: scale * 0.07,
-          seconds: 0.4,
-        });
-        return;
-      }
-      const puffs = intensity > 1.2 ? 3 : 2;
+      const puffs = quality.level === 'low' ? 1 : intensity > 1.2 ? 3 : 2;
       for (let i = 0; i < puffs; i += 1) {
-        this.spawn(DUST, atX + (Math.random() - 0.5) * scale * 0.2, atY, {
+        api.spawn(DUST, atX + (Math.random() - 0.5) * scale * 0.2, atY, {
           speedX: -(18 + Math.random() * 34) * intensity * (scale / 60),
           speedY: -(6 + Math.random() * 16) * (scale / 60),
           radius: scale * (0.05 + Math.random() * 0.05),
           seconds: 0.35 + Math.random() * 0.3,
+        });
+      }
+    },
+
+    /**
+     * A burst of particles in every direction, which is what most events need.
+     * @param {number} type
+     * @param {number} atX
+     * @param {number} atY
+     * @param {object} options
+     */
+    burst(type, atX, atY, { amount = 8, speed = 90, radius = 5, seconds = 0.7, spread = 1 } = {}) {
+      for (let i = 0; i < amount; i += 1) {
+        const angle = Math.PI * 2 * (i / amount) + Math.random() * 0.5;
+        const power = speed * (0.5 + Math.random() * 0.7);
+        api.spawn(type, atX, atY, {
+          speedX: Math.cos(angle) * power * spread,
+          speedY: Math.sin(angle) * power,
+          radius: radius * (0.7 + Math.random() * 0.6),
+          seconds: seconds * (0.7 + Math.random() * 0.6),
+          rotation: Math.random() * Math.PI,
+          rotationRate: (Math.random() - 0.5) * 9,
+          colourIndex: i % RAINBOW_COLOURS.length,
         });
       }
     },
@@ -108,6 +185,9 @@ export function createParticles(capacity = RENDER.particlePoolSize) {
           life[i] = life[count];
           maxLife[i] = maxLife[count];
           size[i] = size[count];
+          spin[i] = spin[count];
+          spinRate[i] = spinRate[count];
+          tint[i] = tint[count];
           kind[i] = kind[count];
           i -= 1;
           continue;
@@ -117,6 +197,7 @@ export function createParticles(capacity = RENDER.particlePoolSize) {
         vy[i] = vy[i] * drag + behaviour.gravity * dt;
         x[i] += vx[i] * dt;
         y[i] += vy[i] * dt;
+        spin[i] += spinRate[i] * dt;
       }
     },
 
@@ -128,11 +209,67 @@ export function createParticles(capacity = RENDER.particlePoolSize) {
       for (let i = 0; i < count; i += 1) {
         const behaviour = KINDS[kind[i]];
         const age = life[i] / maxLife[i];
-        ctx.fillStyle = `rgba(${behaviour.colour}, ${age * 0.55 * behaviour.fade})`;
-        ctx.beginPath();
-        ctx.arc(x[i], y[i], size[i] * (1.5 - age * 0.5), 0, Math.PI * 2);
-        ctx.fill();
+        const colour = behaviour.colour ?? RAINBOW_COLOURS[tint[i] % RAINBOW_COLOURS.length];
+        const alpha = age * behaviour.alpha;
+
+        switch (behaviour.shape) {
+          case 'flake':
+            ctx.save();
+            ctx.translate(x[i], y[i]);
+            ctx.rotate(spin[i]);
+            ctx.fillStyle = `rgba(${colour}, ${Math.min(1, alpha * 1.6)})`;
+            ctx.fillRect(-size[i] * 0.5, -size[i] * 0.28, size[i], size[i] * 0.56);
+            ctx.restore();
+            break;
+
+          case 'bar':
+            ctx.strokeStyle = `rgba(${colour}, ${alpha})`;
+            ctx.lineWidth = size[i] * 0.55;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x[i], y[i]);
+            ctx.lineTo(x[i] - size[i] * 2.4, y[i]);
+            ctx.stroke();
+            break;
+
+          case 'star':
+            ctx.save();
+            ctx.translate(x[i], y[i]);
+            ctx.rotate(spin[i]);
+            ctx.fillStyle = `rgba(${colour}, ${alpha})`;
+            ctx.beginPath();
+            for (let point = 0; point < 4; point += 1) {
+              const a = (point / 4) * Math.PI * 2;
+              ctx.lineTo(Math.cos(a) * size[i], Math.sin(a) * size[i]);
+              ctx.lineTo(
+                Math.cos(a + Math.PI / 4) * size[i] * 0.35,
+                Math.sin(a + Math.PI / 4) * size[i] * 0.35,
+              );
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+            break;
+
+          case 'glyph':
+            ctx.fillStyle = `rgba(${colour}, ${alpha})`;
+            ctx.font = `700 ${size[i] * 2.4}px system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(behaviour.glyph, x[i], y[i]);
+            break;
+
+          case 'blob':
+          default:
+            ctx.fillStyle = `rgba(${colour}, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(x[i], y[i], size[i] * (1.5 - age * 0.5), 0, Math.PI * 2);
+            ctx.fill();
+            break;
+        }
       }
     },
   };
+
+  return api;
 }

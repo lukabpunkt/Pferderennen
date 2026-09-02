@@ -15,6 +15,9 @@ const BASE_STRIDE = 0.55;
 /** How quickly the pose eases towards the current state, per second. */
 const BLEND_RATE = 9;
 
+/** How long one full turn of the banana slip takes. */
+const SPIN_SECONDS = 0.8;
+
 /** Mane and tail segments, and the spring that gives them their follow-through. */
 const HAIR_SEGMENTS = 4;
 const HAIR_STIFFNESS = 90;
@@ -31,28 +34,13 @@ const HAIR_DAMPING = 13;
  * neck      neck extension, 1 is normal, higher reaches forward
  * tailLift  how high the tail is carried
  * rear      how far the horse is up on its hind legs
+ * turn      0 faces forward, 1 has turned right around — used for the confused horse
+ * spin      how much of the slip rotation is applied, so it fades in and out
+ * lids      1 forces the eyes shut, for the sleeper
  */
 const STATES = {
-  idle: {
-    cycle: 0,
-    bounce: 0.012,
-    swing: 0.1,
-    lean: 0,
-    headPitch: 0.05,
-    neck: 1,
-    tailLift: 0,
-    rear: 0,
-  },
-  gallop: {
-    cycle: 1,
-    bounce: 0.075,
-    swing: 1,
-    lean: 0.05,
-    headPitch: 0,
-    neck: 1,
-    tailLift: 0.5,
-    rear: 0,
-  },
+  idle: { cycle: 0, bounce: 0.012, swing: 0.1, lean: 0, headPitch: 0.05, neck: 1, tailLift: 0 },
+  gallop: { cycle: 1, bounce: 0.075, swing: 1, lean: 0.05, headPitch: 0, neck: 1, tailLift: 0.5 },
   gallop_fast: {
     cycle: 1.22,
     bounce: 0.09,
@@ -61,7 +49,6 @@ const STATES = {
     headPitch: -0.06,
     neck: 1.12,
     tailLift: 0.85,
-    rear: 0,
   },
   trot_in: {
     cycle: 0.5,
@@ -71,7 +58,6 @@ const STATES = {
     headPitch: 0.22,
     neck: 0.92,
     tailLift: 0.1,
-    rear: 0,
   },
   celebrate: {
     cycle: 0.35,
@@ -83,7 +69,150 @@ const STATES = {
     tailLift: 1,
     rear: 1,
   },
+
+  // --- Event states (M5) ---------------------------------------------------
+
+  /** The front end drops as the leg buckles; the nose goes down and forward. */
+  stumble: {
+    cycle: 0.35,
+    bounce: 0.015,
+    swing: 0.55,
+    lean: 0.3,
+    headPitch: 0.4,
+    neck: 0.85,
+    tailLift: 0.2,
+  },
+  /** Uneven and careful, favouring the sore leg. */
+  limp: {
+    cycle: 0.8,
+    bounce: 0.045,
+    swing: 0.72,
+    lean: 0.02,
+    headPitch: 0.16,
+    neck: 0.94,
+    tailLift: 0.25,
+  },
+  /** Standing still, head right down. */
+  vomit: {
+    cycle: 0,
+    bounce: 0.008,
+    swing: 0.04,
+    lean: 0.06,
+    headPitch: 0.8,
+    neck: 0.78,
+    tailLift: 0.15,
+  },
+  /** Standing still, tail up, thoroughly unbothered. */
+  pee: {
+    cycle: 0,
+    bounce: 0.005,
+    swing: 0.03,
+    lean: 0,
+    headPitch: 0.02,
+    neck: 1,
+    tailLift: 1,
+  },
+  /** Asleep on its feet: head down, eyes shut. */
+  sleep: {
+    cycle: 0,
+    bounce: 0.006,
+    swing: 0.02,
+    lean: 0,
+    headPitch: 0.55,
+    neck: 0.72,
+    tailLift: 0,
+    lids: 1,
+  },
+  /** Bolts awake, head up, everything wide open. */
+  wake: {
+    cycle: 0.7,
+    bounce: 0.055,
+    swing: 0.8,
+    lean: -0.18,
+    headPitch: -0.38,
+    neck: 1.16,
+    tailLift: 1,
+    rear: 0.18,
+  },
+  /** Every hiccup jolts the whole horse. */
+  hiccup: {
+    cycle: 1,
+    bounce: 0.135,
+    swing: 0.9,
+    lean: 0.02,
+    headPitch: -0.05,
+    neck: 1,
+    tailLift: 0.6,
+  },
+  /** Turned right around and heading the wrong way. */
+  confused: {
+    cycle: 0.55,
+    bounce: 0.035,
+    swing: 0.5,
+    lean: -0.04,
+    headPitch: 0.02,
+    neck: 1,
+    tailLift: 0.3,
+    turn: 1,
+  },
+  /** Sliding on the banana, spinning as it goes. */
+  slip: {
+    cycle: 0.15,
+    bounce: 0.02,
+    swing: 0.2,
+    lean: 0.14,
+    headPitch: -0.22,
+    neck: 1.05,
+    tailLift: 1,
+    spin: 1,
+  },
+  /** Stopped and posing for the camera. */
+  pose: {
+    cycle: 0,
+    bounce: 0.008,
+    swing: 0.04,
+    lean: -0.12,
+    headPitch: -0.28,
+    neck: 1.16,
+    tailLift: 0.8,
+    rear: 0.12,
+  },
+  /** Head down in the grass, which is very good grass. */
+  graze: {
+    cycle: 0.12,
+    bounce: 0.006,
+    swing: 0.08,
+    lean: 0.02,
+    headPitch: 0.9,
+    neck: 0.82,
+    tailLift: 0.1,
+  },
+  /** Bounding, with real air under the hooves. */
+  fly: {
+    cycle: 0.85,
+    bounce: 0.17,
+    swing: 1.25,
+    lean: 0.07,
+    headPitch: -0.12,
+    neck: 1.1,
+    tailLift: 1,
+  },
 };
+
+/** Every field a state may set. Anything a state leaves out falls back to zero. */
+const FIELDS = [
+  'cycle',
+  'bounce',
+  'swing',
+  'lean',
+  'headPitch',
+  'neck',
+  'tailLift',
+  'rear',
+  'turn',
+  'spin',
+  'lids',
+];
 
 /**
  * Creates the pose of one horse.
@@ -101,6 +230,13 @@ export function createPose(desync = 0) {
     neck: 1,
     tailLift: 0,
     rear: 0,
+    turn: 0,
+    spin: 0,
+    lids: 0,
+    /** How far through the slip spin the horse is, in radians. */
+    spinAngle: 0,
+    /** True once the jockey has fallen off; the horse finishes the race on its own. */
+    riderless: false,
     /** Angles of the mane and tail segments, plus their velocities, for the spring. */
     mane: new Float64Array(HAIR_SEGMENTS),
     maneVelocity: new Float64Array(HAIR_SEGMENTS),
@@ -146,9 +282,14 @@ export function updatePose(pose, dt, { anim, speed = 1 }) {
   pose.state = anim;
 
   const blend = 1 - Math.exp(-BLEND_RATE * dt);
-  for (const key of ['cycle', 'bounce', 'swing', 'lean', 'headPitch', 'neck', 'tailLift', 'rear']) {
-    pose[key] += (target[key] - pose[key]) * blend;
+  for (const key of FIELDS) {
+    pose[key] += ((target[key] ?? 0) - pose[key]) * blend;
   }
+
+  // The slip keeps turning while it lasts; multiplying by `spin` fades the rotation back out
+  // as the state blends away, so the horse never snaps back upright.
+  if (target.spin) pose.spinAngle += (dt / SPIN_SECONDS) * Math.PI * 2;
+  else if (pose.spin < 0.02) pose.spinAngle = 0;
 
   // The stride shortens as the horse speeds up, and the phase carries over continuously.
   const previous = pose.phase;
@@ -175,6 +316,8 @@ export function updatePose(pose, dt, { anim, speed = 1 }) {
   } else if (pose.eye < 1) {
     pose.eye = Math.min(1, pose.eye + dt * 9);
   }
+  // A sleeping horse keeps its eyes shut whatever the blink timer thinks.
+  if (pose.lids > 0.5) pose.eye = 0;
 }
 
 /**

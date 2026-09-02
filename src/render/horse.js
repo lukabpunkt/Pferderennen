@@ -251,6 +251,15 @@ export function drawHorse(ctx, { horse, colours, pose, x, y, size }) {
   ctx.fill();
 
   ctx.translate(0, -lift);
+  // The banana slip spins the whole horse; multiplying by `spin` fades the rotation out with
+  // the state, so it never snaps back upright.
+  if (pose.spin > 0.02) ctx.rotate(pose.spinAngle * pose.spin);
+  // Turning round is a horizontal squash through zero and out the other side — the classic
+  // two-dimensional way to face the other way without a second sprite.
+  if (pose.turn > 0.02) {
+    const facing = Math.cos(pose.turn * Math.PI);
+    ctx.scale(Math.abs(facing) < 0.12 ? Math.sign(facing) * 0.12 || 0.12 : facing, 1);
+  }
   ctx.rotate(-pose.lean - pose.rear * 0.55);
 
   // Far legs sit behind everything, in a darker shade so the depth reads.
@@ -278,10 +287,12 @@ export function drawHorse(ctx, { horse, colours, pose, x, y, size }) {
 
   drawTack(ctx, horse, head);
   drawSaddleAccessory(ctx, horse.accessory);
-  const jockey = drawJockey(ctx, horse, pose, colours);
 
-  // The rein: bit to hands, thin, drawn last over the neck.
-  capsule(ctx, head.bitX, head.bitY, jockey.handX, jockey.handY, 0.018, colours.ink);
+  // Once the jockey has come off, the horse carries on without him — and without the reins.
+  if (!pose.riderless) {
+    const jockey = drawJockey(ctx, horse, pose, colours);
+    capsule(ctx, head.bitX, head.bitY, jockey.handX, jockey.handY, 0.018, colours.ink);
+  }
 
   drawLeg(ctx, LEGS[3], pose, colours, false);
 
