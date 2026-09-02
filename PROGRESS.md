@@ -216,7 +216,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A1    | M7          | 2026-09-02 | **bestanden** | Wettarten, Statistik, Alkoholfrei-Modus im Browser durchgespielt. CI grün: [Run 33676165873](https://github.com/lukabpunkt/Pferderennen/actions/runs/33676165873) |
 | A4    | M8          | 2026-09-02 | **bestanden** | vollständig; 3 echte Befunde behoben, Lighthouse A11y 100 |
 | A5    | M8          | 2026-09-02 | **bestanden** | vollständig; Lighthouse Mobile 92/100/100/100, TBT 1590 → 0 ms. CI grün: [Run 33679400617](https://github.com/lukabpunkt/Pferderennen/actions/runs/33679400617) |
-| A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben |
+| A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
