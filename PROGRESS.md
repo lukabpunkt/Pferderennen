@@ -198,7 +198,7 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | A6    | M1          | 2026-09-02 | **bestanden** | Ausnahme: zwei CSS-Dateien > 400 Zeilen, begründet    |
 | A2    | M2          | 2026-09-02 | **bestanden** | 2 Spannungs-Kriterien nach Messung geändert (S3, S6); CI grün: [Run 33659923149](https://github.com/lukabpunkt/Pferderennen/actions/runs/33659923149) |
 | A6    | M2          | 2026-09-02 | **bestanden** | Engine-Coverage 98 % Zeilen, Isolation per Test belegt |
-| A3    | M3          | 2026-09-02 | **bestanden** | 2 Befunde gefunden und behoben; Portrait-Teil folgt in M4 |
+| A3    | M3          | 2026-09-02 | **bestanden** | 2 Befunde gefunden und behoben; Portrait-Teil folgt in M4. CI grün: [Run 33663483553](https://github.com/lukabpunkt/Pferderennen/actions/runs/33663483553) |
 | A5    | M3          | 2026-09-02 | **bestanden** | Desktop-Teil; Mobile folgt in M4                       |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
