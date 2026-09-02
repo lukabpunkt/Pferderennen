@@ -1,8 +1,140 @@
 /**
  * Screen router: renders the screen matching state.screen and animates transitions.
- * Screen modules export mount(container, store) and unmount().
  *
- * Implementation follows in M1 (see docs/05_MILESTONES.md).
+ * Navigation is hash based, so the browser back button works and a reload lands on the same
+ * screen (audit A1). Guards make sure a hand-typed hash cannot drop the player into a screen
+ * that has no data yet — a race without bets simply redirects back to the betting screen.
  */
 
-export {};
+import { BETTING } from '../config.js';
+import { closeAllModals } from './components/modal.js';
+
+/** How long the leave animation runs; must match --dur-base in tokens.css. */
+const TRANSITION_MS = 220;
+
+/**
+ * Decides whether a screen may be shown with the current state.
+ * @param {string} screen
+ * @param {any} state
+ * @returns {string} the screen itself, or the closest reachable one
+ */
+export function resolveScreen(screen, state) {
+  const hasPlayers = state.players.length >= BETTING.minPlayers;
+  const everyoneHasBet = hasPlayers && state.bets.length === state.players.length;
+
+  switch (screen) {
+    case 'players':
+      return 'players';
+    case 'betting':
+      return hasPlayers ? 'betting' : 'players';
+    case 'race':
+      if (!hasPlayers) return 'players';
+      return everyoneHasBet ? 'race' : 'betting';
+    case 'results':
+      if (!hasPlayers) return 'players';
+      return state.race.result ? 'results' : 'betting';
+    case 'start':
+    default:
+      return 'start';
+  }
+}
+
+/**
+ * Creates the router.
+ * @param {object} options
+ * @param {{getState: () => any, dispatch: Function, subscribe: Function}} options.store
+ * @param {HTMLElement} options.container
+ * @param {Record<string, {mount: Function, unmount: Function}>} options.screens
+ * @returns {{start: () => void, stop: () => void}}
+ */
+export function createRouter({ store, container, screens }) {
+  let currentName = null;
+  let currentModule = null;
+  let unsubscribe = null;
+  let transitionTimer = null;
+
+  /** Reads the screen name out of the URL hash. */
+  const screenFromHash = () => window.location.hash.replace(/^#\/?/, '') || 'start';
+
+  /** Writes the screen into the hash without adding a second identical history entry. */
+  const syncHash = (screen) => {
+    const target = `#/${screen}`;
+    if (window.location.hash !== target) window.location.hash = target;
+  };
+
+  /** Swaps the mounted screen, running the leave animation first. */
+  function render(name) {
+    if (name === currentName) return;
+
+    // An overlay belongs to the screen that opened it and must not outlive it.
+    closeAllModals();
+
+    const previous = container.firstElementChild;
+    currentModule?.unmount();
+    currentModule = screens[name];
+    currentName = name;
+
+    const view = document.createElement('div');
+    view.className = 'screen screen--entering';
+    view.dataset.screen = name;
+
+    if (previous) {
+      previous.classList.add('screen--leaving');
+      if (transitionTimer !== null) clearTimeout(transitionTimer);
+      transitionTimer = setTimeout(() => previous.remove(), TRANSITION_MS);
+    }
+
+    container.append(view);
+    currentModule.mount(view, store);
+
+    // Force a reflow so the entering class actually animates instead of being skipped.
+    void view.offsetWidth;
+    view.classList.remove('screen--entering');
+    container.scrollTop = 0;
+  }
+
+  /** Brings state, hash and rendered screen back in line. */
+  function sync() {
+    const state = store.getState();
+    const allowed = resolveScreen(state.screen, state);
+    if (allowed !== state.screen) {
+      store.dispatch({ type: 'screen/go', payload: allowed });
+      return;
+    }
+    syncHash(allowed);
+    render(allowed);
+  }
+
+  /** The browser navigated: adopt the hash, subject to the same guards. */
+  function onHashChange() {
+    const state = store.getState();
+    const wanted = resolveScreen(screenFromHash(), state);
+    if (wanted === state.screen) {
+      syncHash(wanted);
+      return;
+    }
+    store.dispatch({ type: 'screen/go', payload: wanted });
+  }
+
+  return {
+    start() {
+      const state = store.getState();
+      // A hash in the URL wins on load, so a bookmark or a reload lands where it should.
+      const wanted = resolveScreen(window.location.hash ? screenFromHash() : state.screen, state);
+      if (wanted !== state.screen) store.dispatch({ type: 'screen/go', payload: wanted });
+
+      unsubscribe = store.subscribe(sync);
+      window.addEventListener('hashchange', onHashChange);
+      sync();
+    },
+
+    stop() {
+      unsubscribe?.();
+      window.removeEventListener('hashchange', onHashChange);
+      if (transitionTimer !== null) clearTimeout(transitionTimer);
+      currentModule?.unmount();
+      currentModule = null;
+      currentName = null;
+    },
+  };
+}
