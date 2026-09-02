@@ -27,6 +27,8 @@ import {
   RACE_DURATIONS,
   RENDER,
   RUNNER_COUNT,
+  COMMENTARY,
+  EFFECTS,
   STARTER,
   TIMESTEP,
   TRACK_LENGTH,
@@ -169,6 +171,8 @@ export function mount(container, store) {
   /** Which countdown step is on screen, and how long ago the pistol went off. */
   let countdownStep = -1;
   let sinceShot = -1;
+  /** The gentle push in over the final stretch; the photo finish returns to this, not to 1. */
+  let stretchZoom = 1;
   let width = 0;
   let height = 0;
 
@@ -247,6 +251,7 @@ export function mount(container, store) {
     }
 
     if (sinceShot >= 0) sinceShot += dt;
+    followTheFinish(dt);
 
     if (phase !== 'countdown') {
       camera.update(drawn, RUNNER_COUNT, dt);
@@ -299,6 +304,7 @@ export function mount(container, store) {
       duration,
       animationFor,
       running: phase === 'running',
+      calm,
       view: { width, height },
     });
 
@@ -329,6 +335,26 @@ export function mount(container, store) {
       quality: quality.level,
       time: race.state.t,
     }));
+  }
+
+  /**
+   * Leans into the end of the race: the crowd's cameras come out, and the picture closes in a
+   * little. Both are driven by how far the leader has got, so they build rather than switch on.
+   * @param {number} dt
+   */
+  function followTheFinish(dt) {
+    if (phase === 'countdown' || calm) return;
+    let lead = 0;
+    for (let i = 0; i < RUNNER_COUNT; i += 1) if (drawn[i] > lead) lead = drawn[i];
+    const progress = Math.min(1, lead / TRACK_LENGTH);
+    track.setCrowdEnergy(progress ** 2);
+
+    const from = COMMENTARY.finalStretchFrom;
+    const stretch = progress <= from ? 0 : (progress - from) / (1 - from);
+    const target = 1 + (EFFECTS.finalZoom - 1) * stretch;
+    // Eased rather than set, so the push is something you notice only afterwards.
+    stretchZoom += (target - stretchZoom) * Math.min(1, dt * 2);
+    if (!drama.isActive()) camera.setZoomBoost(stretchZoom);
   }
 
   /**
@@ -452,6 +478,7 @@ export function mount(container, store) {
     gateOpen = 0;
     countdownStep = -1;
     sinceShot = -1;
+    stretchZoom = 1;
     drama.end();
     tape.reset();
     race = createRace({ seed, duration, chaos: settings.chaos });
@@ -481,6 +508,7 @@ export function mount(container, store) {
     stage,
     narration,
     calm: () => calm,
+    baseZoom: () => stretchZoom,
   });
 
   /** Jumps to the end of the race, for the debug key and the skip button. */

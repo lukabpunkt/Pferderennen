@@ -40,6 +40,7 @@ const PRECACHE = [
   './src/main.js',
   './src/render/attract.js',
   './src/render/camera.js',
+  './src/render/crowdFlashes.js',
   './src/render/eventEmitters.js',
   './src/render/eventProps.js',
   './src/render/eventVisuals.js',

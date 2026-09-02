@@ -10,7 +10,7 @@ import { drawHorse } from './horse.js';
 import { drawHorseRear } from './horseRear.js';
 import { updatePose } from './horseAnimations.js';
 import { HORSES } from '../data/horses.js';
-import { TRACK_LENGTH } from '../config.js';
+import { EFFECTS, TRACK_LENGTH } from '../config.js';
 
 /**
  * @param {CanvasRenderingContext2D} ctx
@@ -26,6 +26,7 @@ import { TRACK_LENGTH } from '../config.js';
  * @param {number} options.duration       target race duration, for the speed factor
  * @param {(runner: object) => string} options.animationFor
  * @param {boolean} options.running       dust only flies while the race is on
+ * @param {boolean} [options.calm]        reduced motion: no streaks flying across the picture
  * @param {{width: number, height: number}} options.view
  */
 export function drawField(
@@ -42,6 +43,7 @@ export function drawField(
     duration,
     animationFor,
     running,
+    calm = false,
     view,
   },
 ) {
@@ -76,5 +78,10 @@ export function drawField(
       size,
     });
     if (pose.hoofStrike && running) particles.hoofDust(hoof.hoofX, hoof.hoofY, size, speed);
+    // A horse that is genuinely flying drags streaks behind it. The threshold is the one the
+    // engine already uses to switch to the fast gallop, so the picture and the animation agree.
+    if (running && !calm && speed > EFFECTS.speedLineFromSpeed) {
+      particles.speedLines(x - size * 0.5, y - size * 0.55, size, speed);
+    }
   }
 }

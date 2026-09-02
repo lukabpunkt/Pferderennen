@@ -9,7 +9,7 @@
  * switched off: the events stay readable, they just cost less (docs/04_DESIGN_SYSTEM.md §9).
  */
 
-import { RENDER } from '../config.js';
+import { EFFECTS, RENDER } from '../config.js';
 import { quality } from './quality.js';
 
 /** Particle kinds, as small integers so they fit in a typed array. */
@@ -23,6 +23,7 @@ export const ZZZ = 6;
 export const HEART = 7;
 export const QUESTION = 8;
 export const SPEEDLINE = 9;
+export const CLOD = 10;
 
 /**
  * How each kind behaves and looks.
@@ -40,6 +41,8 @@ const KINDS = [
   { colour: '236, 72, 153', gravity: -40, drag: 2, shape: 'glyph', alpha: 0.95, glyph: '♥' },
   { colour: '43, 29, 46', gravity: -32, drag: 2, shape: 'glyph', alpha: 0.9, glyph: '?' },
   { colour: '255, 255, 255', gravity: 0, drag: 1.2, shape: 'bar', alpha: 0.55 },
+  // Kicked-up turf: heavier than dust, so it arcs and comes back down.
+  { colour: '150, 108, 62', gravity: 520, drag: 0.5, shape: 'blob', alpha: 0.95 },
 ];
 
 /** Rainbow stripe colours, cycled by the trail. */
@@ -142,6 +145,37 @@ export function createParticles(capacity = RENDER.particlePoolSize) {
           seconds: 0.35 + Math.random() * 0.3,
         });
       }
+
+      // A clod of turf on top of the dust, but only sometimes and only at pace — turf flying off
+      // every single hoofbeat of six horses would be a snowstorm.
+      if (quality.level === 'low' || intensity < EFFECTS.clodFromSpeed) return;
+      if (Math.random() > EFFECTS.clodChance) return;
+      api.spawn(CLOD, atX, atY, {
+        speedX: -(60 + Math.random() * 90) * (scale / 60),
+        speedY: -(70 + Math.random() * 80) * (scale / 60),
+        radius: scale * (0.035 + Math.random() * 0.03),
+        seconds: 0.9,
+        rotation: Math.random() * Math.PI,
+        rotationRate: (Math.random() - 0.5) * 12,
+      });
+    },
+
+    /**
+     * Streaks behind a horse that is genuinely flying. Drawn as bars pointing the way it runs.
+     * @param {number} atX
+     * @param {number} atY
+     * @param {number} scale
+     * @param {number} intensity above 1 is faster than a normal gallop
+     */
+    speedLines(atX, atY, scale, intensity) {
+      if (quality.level === 'low') return;
+      if (Math.random() > EFFECTS.speedLineChance) return;
+      api.spawn(SPEEDLINE, atX, atY + (Math.random() - 0.5) * scale * 0.5, {
+        speedX: -(150 + Math.random() * 120) * (scale / 60),
+        speedY: 0,
+        radius: scale * (0.12 + Math.random() * 0.14) * intensity,
+        seconds: 0.28,
+      });
     },
 
     /**

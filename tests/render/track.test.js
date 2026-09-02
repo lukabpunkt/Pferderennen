@@ -154,6 +154,7 @@ describe('both orientations', () => {
       'drawTrack',
       'drawGates',
       'starterAnchor',
+      'setCrowdEnergy',
       'drawFinish',
       'drawOverhead',
       'drawForeground',

@@ -13,6 +13,7 @@
 
 import { TRACK_LENGTH, RUNNER_COUNT, STARTER } from '../config.js';
 import { TRACK_COLOURS as COLOURS, MARKER_SPACING, drawGrandstandStrip } from './trackTheme.js';
+import { createCrowdFlashes } from './crowdFlashes.js';
 
 /** Vertical layout, as shares of the canvas height. */
 const TRACK_TOP = 0.44;
@@ -40,6 +41,8 @@ export function createLandscapeTrack({ camera, horses }) {
   let stand = null;
   /** How excited the crowd is right now; decays back to zero. */
   let cheer = 0;
+  let energy = 0;
+  const flashes = createCrowdFlashes();
 
   /** Top edge of lane i, in pixels. Lane 0 is at the back. */
   function laneEdge(index) {
@@ -99,9 +102,19 @@ export function createLandscapeTrack({ camera, horses }) {
       cheer = 1;
     },
 
+    /**
+     * How worked up the stand is, 0 at the start of a race and 1 at the line. Drives the
+     * flashbulbs.
+     * @param {number} value
+     */
+    setCrowdEnergy(value) {
+      energy = Math.max(0, Math.min(1, value));
+    },
+
     /** Advances anything the track animates by itself. */
     tick(dt) {
       if (cheer > 0) cheer = Math.max(0, cheer - dt * 0.9);
+      flashes.update(dt, energy);
     },
 
     /** Rebuilds everything that depends on the canvas size. */
@@ -165,7 +178,17 @@ export function createLandscapeTrack({ camera, horses }) {
       blit(ctx, hills, HILL_PARALLAX);
       // The whole stand hops when something happens. Animating individual spectators would mean
       // giving up the cache, and this reads the same from where the viewer sits.
-      blit(ctx, stand, STAND_PARALLAX, -Math.abs(Math.sin(cheer * 9)) * cheer * 7);
+      const hop = -Math.abs(Math.sin(cheer * 9)) * cheer * 7;
+      blit(ctx, stand, STAND_PARALLAX, hop);
+      // On top of the blit, because the stand is a cached strip and these change every frame.
+      // The stand cache is a band whose lower 40 % is the tiers; the flashes belong in there.
+      const bandTop = height * TRACK_TOP - stand.height;
+      flashes.draw(ctx, {
+        x: 0,
+        y: bandTop + stand.height * 0.66 + hop,
+        width,
+        height: stand.height * 0.3,
+      });
     },
 
     /** The six sand lanes with their dividing lines. */

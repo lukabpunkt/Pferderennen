@@ -130,6 +130,28 @@ export const PHOTO_FINISH = {
   duration: 1.5,
 };
 
+/**
+ * The extra life in the race: turf, streaks, flashbulbs and a slow push in on the finish.
+ *
+ * Everything here is decoration and everything here is optional — it all sits behind the quality
+ * level, so a phone that cannot hold the frame rate loses the decoration and keeps the race.
+ */
+export const EFFECTS = {
+  /** Turf only flies once a horse is going somewhere, and then only now and then. */
+  clodFromSpeed: 0.95,
+  clodChance: 0.34,
+  /** Speed lines: how fast a horse has to be, and how often a frame spawns one. */
+  speedLineFromSpeed: 1.15,
+  speedLineChance: 0.22,
+  /** Flashbulbs in the stand: how many a second at the start of a race and at the line. */
+  flashRateStart: 1.2,
+  flashRateFinish: 16,
+  /** Seconds a single flashbulb is visible. */
+  flashSeconds: 0.16,
+  /** How far the camera pushes in over the final stretch. */
+  finalZoom: 1.12,
+};
+
 /** The starter beside the gates who fires the race off. Purely cosmetic. */
 export const STARTER = {
   /**

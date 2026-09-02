@@ -12,6 +12,7 @@
 
 import { TRACK_LENGTH, RUNNER_COUNT, STARTER } from '../config.js';
 import { TRACK_COLOURS as COLOURS, MARKER_SPACING, drawGrandstandStrip } from './trackTheme.js';
+import { createCrowdFlashes } from './crowdFlashes.js';
 
 /** Share of the width taken by the grandstand down each side. */
 const SIDE_WIDTH = 0.085;
@@ -35,6 +36,8 @@ export function createPortraitTrack({ camera, horses }) {
   let stand = null;
   /** How excited the crowd is right now; decays back to zero. */
   let cheer = 0;
+  let energy = 0;
+  const flashes = createCrowdFlashes();
 
   /** Left edge of the racing surface, and how wide it is. */
   function trackLeft() {
@@ -84,6 +87,8 @@ export function createPortraitTrack({ camera, horses }) {
     for (let x = shift - stand.width; x < height + stand.width; x += stand.width) {
       ctx.drawImage(stand, Math.round(x), Math.round(lift));
     }
+    // Inside the rotated frame, so the band follows whichever side this stand is on.
+    flashes.draw(ctx, { x: 0, y: lift + depth * 0.66, width: height, height: depth * 0.3 });
     ctx.restore();
   }
 
@@ -96,9 +101,18 @@ export function createPortraitTrack({ camera, horses }) {
       cheer = 1;
     },
 
+    /**
+     * How worked up the stand is, 0 at the start of a race and 1 at the line.
+     * @param {number} value
+     */
+    setCrowdEnergy(value) {
+      energy = Math.max(0, Math.min(1, value));
+    },
+
     /** Advances anything the track animates by itself. */
     tick(dt) {
       if (cheer > 0) cheer = Math.max(0, cheer - dt * 0.9);
+      flashes.update(dt, energy);
     },
 
     resize(pixelWidth, pixelHeight) {

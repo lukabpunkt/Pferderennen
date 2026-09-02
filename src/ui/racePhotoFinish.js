@@ -20,9 +20,11 @@ const ZOOM_BOOST = 1.4;
  * @param {HTMLElement} options.stage
  * @param {{photoFinish: Function, photoFinishOver: Function}} options.narration
  * @param {() => boolean} options.calm reduced motion is on, so no drama at all
+ * @param {() => number} options.baseZoom what the zoom should return to afterwards — the race
+ *   already pushes in gently over the final stretch, and snapping back to 1 would undo it
  * @returns {{check: Function, end: Function, isActive: () => boolean}}
  */
-export function createPhotoFinish({ loop, camera, stage, narration, calm }) {
+export function createPhotoFinish({ loop, camera, stage, narration, calm, baseZoom }) {
   let active = false;
 
   return {
@@ -60,7 +62,7 @@ export function createPhotoFinish({ loop, camera, stage, narration, calm }) {
       active = false;
       narration.photoFinishOver();
       loop.setTimeScale(1);
-      camera.setZoomBoost(1);
+      camera.setZoomBoost(baseZoom?.() ?? 1);
       stage.classList.remove('is-photo-finish');
     },
 
