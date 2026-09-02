@@ -193,7 +193,7 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 
 | Audit | Meilenstein | Datum      | Ergebnis      | Offene Punkte / Link                             |
 | ----- | ----------- | ---------- | ------------- | ------------------------------------------------ |
-| A0    | M0          | 2026-09-02 | **bestanden** | CI-Lauf auf GitHub: siehe Actions-Tab nach Push. |
+| A0    | M0          | 2026-09-02 | **bestanden** | CI grün: [Run 33649824727](https://github.com/lukabpunkt/Pferderennen/actions/runs/33649824727) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -201,7 +201,7 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `npm ci` ohne Peer-Dep-Warnungen                     | ✅ 139 Pakete, 0 Warnungen, **0 Vulnerabilities**                                                                          |
 | `dev` / `lint` / `test` / `audit:fairness` Exit 0    | ✅ alle 0; `dev` startet auf :5173 (Vite) bzw. :5174 (`serve`)                                                              |
-| CI-Workflow grün                                     | ⏳ Workflow angelegt; grün, sobald der erste Push durch ist                                                                 |
+| CI-Workflow grün                                     | ✅ [Run 33649824727](https://github.com/lukabpunkt/Pferderennen/actions/runs/33649824727) in 13 s, ohne Warnungen           |
 | `index.html` ohne Konsolenfehler, CSP blockiert nichts | ✅ im Browser geprüft – 0 Seitenfehler, 0 CSP-Verstöße (einzige Meldung stammt von einer Chrome-Erweiterung)             |
 | Verzeichnisstruktur = `02_ARCHITECTURE.md` §2        | ✅ automatisch abgeglichen, 0 fehlende Dateien/Ordner (offen nur, was planmäßig in M1/M3/M8/M9 entsteht)                    |
 | `.gitignore` deckt node_modules, Artefakte, OS-Dateien | ✅ node_modules, dist, coverage, test-results, playwright-report, .DS_Store                                               |
