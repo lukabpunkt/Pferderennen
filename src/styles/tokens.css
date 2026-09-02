@@ -78,6 +78,7 @@
   /* --- Typography --- */
   --font-display: 'Fredoka', system-ui, sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
 
   --text-xs: 14px;
   --text-sm: 16px;
