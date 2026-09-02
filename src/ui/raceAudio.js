@@ -67,6 +67,12 @@ export function createRaceAudio({ enabled, baseSpeed }) {
       sfx.playEvent(id);
     },
 
+    /** The winner goes through the tape. */
+    tape() {
+      if (!on()) return;
+      sfx.tapeRip();
+    },
+
     /** Shutters, and the mix ducks. */
     photoFinish() {
       if (!on()) return;

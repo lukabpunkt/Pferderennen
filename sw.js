@@ -44,6 +44,7 @@ const PRECACHE = [
   './src/render/eventProps.js',
   './src/render/eventVisuals.js',
   './src/render/field.js',
+  './src/render/finishTape.js',
   './src/render/horse.js',
   './src/render/horseAnimations.js',
   './src/render/horsePortrait.js',

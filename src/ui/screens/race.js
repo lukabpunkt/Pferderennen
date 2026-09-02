@@ -27,6 +27,7 @@ import { RACE_DURATIONS, RENDER, RUNNER_COUNT, TIMESTEP, TRACK_LENGTH } from '..
 import { createCountdown } from '../components/countdown.js';
 import { createNarration } from '../raceNarration.js';
 import { createPhotoFinish } from '../racePhotoFinish.js';
+import { createFinishTape } from '../../render/finishTape.js';
 import { toResultPayload } from '../raceResult.js';
 import { debugOptions } from '../debug.js';
 import { countingContext, createReadout } from '../raceDebug.js';
@@ -35,6 +36,9 @@ let cleanup = null;
 
 /** How long the winner is celebrated before the game moves to the result screen. */
 const CELEBRATION_MS = 2600;
+
+/** Time scale of the debug slow motion, on the P key with ?debug=1. */
+const DEBUG_SLOW_MOTION = 0.08;
 
 /** How long the starting gates take to swing open. */
 const GATE_OPEN_SECONDS = 0.5;
@@ -109,6 +113,7 @@ export function mount(container, store) {
     for (const pose of poses) pose.riderless = false;
   }
 
+  const tape = createFinishTape();
   const countdown = createCountdown();
   /** The photo-finish overlay: vignette, flashes and the banner. */
   const photoFinish = el('div', { className: 'photo-finish', attrs: { 'aria-hidden': 'true' } }, [
@@ -130,6 +135,7 @@ export function mount(container, store) {
   let gateOpen = 0;
   let handedOver = false;
   let timers = [];
+  let slowMotion = false;
   let width = 0;
   let height = 0;
 
@@ -191,10 +197,16 @@ export function mount(container, store) {
     updateMs = performance.now() - started;
   }
 
-  /** Draws one frame. `alpha` sits between the last two simulation steps. */
-  function render(alpha) {
+  /**
+   * Draws one frame.
+   * @param {number} alpha where we are between the last two simulation steps
+   * @param {number} frameSeconds how long the previous frame really took
+   */
+  function render(alpha, frameSeconds) {
     const started = performance.now();
-    const dt = TIMESTEP;
+    // Everything that animates follows the simulation clock, slow motion included — legs that
+    // keep galloping at full speed while the horse crawls through a photo finish look wrong.
+    const dt = TIMESTEP * loop.timeScale();
     counter.ops = 0;
 
     for (let i = 0; i < RUNNER_COUNT; i += 1) {
@@ -254,12 +266,17 @@ export function mount(container, store) {
 
     visuals.draw(ctx, 'front', race.state.t, frame);
     particles.update(dt);
+    // In front of the field, because a tape you can see through is not a tape; under the banner,
+    // because the banner hangs above everything.
+    tape.update(dt, calm);
+    tearTape();
+    tape.draw(ctx, track, width, height);
     track.drawOverhead(ctx);
     track.drawForeground(ctx);
     hud.update(runners, race.isFinished ? race.order : null);
 
     counter.perFrame = counter.ops;
-    monitor.sample(dt);
+    monitor.sample(frameSeconds);
     narration.frame(runners);
     renderMs = performance.now() - started;
     readout.tick(dt, () => ({
@@ -274,6 +291,23 @@ export function mount(container, store) {
       quality: quality.level,
       time: race.state.t,
     }));
+  }
+
+  /**
+   * Tears the tape as soon as somebody is drawn past the line.
+   *
+   * It reads the interpolated drawing positions rather than the engine's, so the tape gives way
+   * in the same frame the horse's nose is on the line rather than a step later. That also makes
+   * it structurally impossible for the tape to affect the race: it only ever looks at what has
+   * already been decided and drawn.
+   */
+  function tearTape() {
+    if (tape.isTorn() || phase === 'countdown') return;
+    for (let i = 0; i < RUNNER_COUNT; i += 1) {
+      if (drawn[i] < TRACK_LENGTH) continue;
+      if (tape.tear(race.metrics.lanes[i])) narration.tape();
+      return;
+    }
   }
 
   /** Which animation a runner should be playing right now. */
@@ -345,6 +379,7 @@ export function mount(container, store) {
     handedOver = false;
     gateOpen = 0;
     drama.end();
+    tape.reset();
     race = createRace({ seed, duration, chaos: settings.chaos });
     resetPoses();
     particles.clear();
@@ -396,6 +431,11 @@ export function mount(container, store) {
         if (key === 'f') fastForward();
         else if (key === 'r') startRace(randomSeed());
         else if (key === 's') startRace(seed);
+        // Extreme slow motion, for looking at a single moment — the gates, the tape, the finish.
+        else if (key === 'p') {
+          slowMotion = !slowMotion;
+          loop.setTimeScale(slowMotion ? DEBUG_SLOW_MOTION : 1);
+        }
       },
     ],
   ]);

@@ -1,7 +1,7 @@
 /**
  * Debug switches read from the URL (docs/03_RACE_ENGINE.md §9).
  *
- *   ?debug=1      shows the seed, a live state dump and the F/R/S keys
+ *   ?debug=1      shows the seed, a live state dump and the F/R/S/P keys
  *   ?seed=123     forces a seed, so a render bug can be reproduced on the exact same race
  *   ?debugSkip=1  puts the skip button on the race, so a test does not have to sit
  *                 through thirty seconds of horses

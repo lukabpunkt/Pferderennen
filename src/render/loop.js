@@ -48,7 +48,9 @@ export function createLoop({ update, render, onPause, onResume }) {
     // Whatever is left over would only pile up; drop it rather than run a burst next frame.
     if (steps === MAX_STEPS_PER_FRAME) accumulator = 0;
 
-    render(accumulator / TIMESTEP);
+    // The real frame time goes with it: the quality monitor has to see how long a frame actually
+    // took, and the fixed simulation step would tell it a comfortable lie every time.
+    render(accumulator / TIMESTEP, elapsed);
   }
 
   /**

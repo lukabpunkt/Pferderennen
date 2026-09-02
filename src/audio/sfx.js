@@ -148,6 +148,14 @@ export function fanfare() {
   });
 }
 
+/** The finish tape giving way: a very short, bright rip. */
+export function tapeRip() {
+  if (!ready()) return;
+  const at = now();
+  burst({ at, duration: 0.05, gain: 0.14, freq: 5200, filter: 'highpass', q: 0.8 });
+  burst({ at: at + 0.03, duration: 0.09, gain: 0.08, freq: 3200, filter: 'highpass', q: 0.8 });
+}
+
 /** Rising zip — anything that suddenly speeds up. */
 export function zip() {
   if (!ready()) return;

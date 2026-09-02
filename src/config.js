@@ -130,6 +130,33 @@ export const PHOTO_FINISH = {
   duration: 1.5,
 };
 
+/** The tape across the finish line that the winner runs through. Purely cosmetic. */
+export const FINISH_TAPE = {
+  /** Thickness of the band in pixels, and how far it bows towards the runners. */
+  thickness: 8,
+  bow: 26,
+  /** How high above the track the tape is strung, as a share of a horse's height. */
+  height: 0.62,
+  /** How far past the outermost lane centres the tape reaches, as a share of a lane. */
+  overhang: 0.55,
+  /** After the tear: initial swing of a half, and how fast it settles hanging down. */
+  kick: 4.2,
+  stiffness: 26,
+  damping: 5.5,
+  /**
+   * How far the runner drags the torn halves forward before they drop. Without this they settle
+   * straight down, which in the side view is the same direction the tape was already running in —
+   * the halves would collapse onto the finish line and vanish into the chequerboard.
+   */
+  carry: 0.75,
+  /** Flutter along a torn half: waves per length and how fast they travel. */
+  waves: 2.5,
+  waveSpeed: 9,
+  waveAmount: 7,
+  /** Seconds a torn half stays visible. */
+  fade: 2.2,
+};
+
 /** How many seconds after the winner the race is cut off at the latest. */
 export const FINISH_GRACE_SECONDS = 3;
 

@@ -115,6 +115,11 @@ export function createNarration({ hud, canvas, store, baseSpeed, buzz }) {
       announce(runners);
     },
 
+    /** The winner tore through the finish tape. */
+    tape() {
+      audio.tape();
+    },
+
     /** Head to head at the line. */
     photoFinish(clock) {
       commentary.photoFinish(clock);
