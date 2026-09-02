@@ -1,0 +1,650 @@
+/*
+ * Per-screen layout. Mobile first; the desktop rules only widen what is already there.
+ */
+
+/* --- Start --------------------------------------------------------------- */
+
+.start__brand {
+  margin-top: var(--space-6);
+  text-align: center;
+}
+
+.start__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  color: var(--ink);
+  text-shadow: 0 3px 0 color-mix(in srgb, var(--white) 55%, transparent);
+}
+
+.start__tagline {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-soft);
+  font-size: var(--text-md);
+}
+
+.card--roster {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.start__roster-label {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.start__roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.start__roster-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  font-size: var(--text-xs);
+}
+
+.start__roster-avatar {
+  font-size: var(--text-md);
+}
+
+.start__roster-name {
+  max-width: 10ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.start__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+/* --- Players ------------------------------------------------------------- */
+
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--cream);
+  box-shadow: var(--shadow-soft);
+}
+
+.player-row__avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-bounce);
+}
+
+.player-row__avatar:active {
+  transform: scale(0.92) rotate(-8deg);
+}
+
+.player-row__name {
+  flex: 1;
+  min-width: 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+.player-row__name:focus {
+  background: var(--white);
+  border-color: var(--accent);
+}
+
+/* --- Betting ------------------------------------------------------------- */
+
+.betting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.horse-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.horse-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  border: 3px solid transparent;
+  border-radius: var(--radius-lg);
+  background: var(--cream);
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform var(--dur-base) var(--ease-bounce),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+/* A stripe in the horse's colour, so the card is identifiable before reading it. */
+.horse-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 8px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--horse-color);
+}
+
+.horse-card--selected {
+  border-color: var(--horse-color);
+  transform: scale(1.03);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--horse-color) 22%, transparent),
+    var(--shadow-card);
+}
+
+.horse-card__name {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  line-height: 1.2;
+}
+
+.horse-card__character {
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+}
+
+.horse-card__backers {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: auto;
+  padding-top: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.card--stake {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  animation: rise var(--dur-slow) var(--ease-bounce);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+.stake__horse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.stake__horse-name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+}
+
+.stake__horse-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: var(--horse-color);
+}
+
+.bet-types {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bet-types__label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.bet-types__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.card--overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.overview__title {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.overview__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.overview__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.overview__row:last-child {
+  border-bottom: 0;
+}
+
+.overview__horse {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.overview__sips {
+  font-family: var(--font-display);
+}
+
+/* --- Race placeholder ---------------------------------------------------- */
+
+.card--race {
+  padding: var(--space-5) var(--space-4);
+}
+
+.race-placeholder__lineup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.race-placeholder__lane {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 'badge name' 'badge bar';
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.race-placeholder__lane > .horse-badge {
+  grid-area: badge;
+}
+
+.race-placeholder__name {
+  grid-area: name;
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.race-placeholder__bar {
+  grid-area: bar;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--horse-color) 30%, transparent);
+  overflow: hidden;
+}
+
+/* A drifting shimmer, so the placeholder reads as "waiting" rather than "broken". */
+.race-placeholder__bar::after {
+  content: '';
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--horse-color);
+  animation: drift 2.4s var(--ease-out) infinite;
+}
+
+@keyframes drift {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+/* --- Results ------------------------------------------------------------- */
+
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.podium__slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: color-mix(in srgb, var(--horse-color) 18%, var(--cream));
+  border-bottom: 6px solid var(--horse-color);
+  animation: pop-up var(--dur-slow) var(--ease-bounce) backwards;
+}
+
+/* Clearly stepped heights, so first place reads as first place at a glance. */
+.podium__slot--1 {
+  padding-top: var(--space-8);
+  animation-delay: 0ms;
+}
+.podium__slot--2 {
+  padding-top: var(--space-6);
+  animation-delay: 120ms;
+}
+.podium__slot--3 {
+  padding-top: var(--space-3);
+  animation-delay: 240ms;
+}
+
+/* The winner gets a touch more presence than the two beside it. */
+.podium__slot--1 .podium__place {
+  color: var(--ink);
+  font-size: var(--text-xl);
+}
+
+@keyframes pop-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+.podium__name {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.podium__place {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--ink-soft);
+}
+
+.payouts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.payout {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--cream);
+  box-shadow: var(--shadow-soft);
+  border-left: 6px solid var(--ink-soft);
+  animation: slide-in var(--dur-base) var(--ease-out) backwards;
+}
+
+.payout--deal {
+  border-left-color: var(--success);
+  background: color-mix(in srgb, var(--success) 10%, var(--cream));
+}
+
+.payout--drink {
+  border-left-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--cream));
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+.payout__icon {
+  font-size: var(--text-lg);
+}
+
+.payout__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.payout__text {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.payout__horse {
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.card--house {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.house__icon {
+  font-size: var(--text-2xl);
+}
+
+.house__text {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+}
+
+.results__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.results__secondary {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/* --- Overlays ------------------------------------------------------------ */
+
+.prose h3 {
+  margin-top: var(--space-5);
+}
+
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  counter-reset: rule;
+}
+
+.rules-list li {
+  display: flex;
+  gap: var(--space-3);
+  counter-increment: rule;
+}
+
+.rules-list li::before {
+  content: counter(rule);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+}
+
+.rules-care__title {
+  margin-top: var(--space-6);
+}
+
+.rules-care {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.setting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.setting__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.setting__label {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+}
+
+.setting__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stats__summary {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+
+.stats-table th,
+.stats-table td {
+  padding: var(--space-2);
+  text-align: right;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.stats-table th:first-child,
+.stats-table td:first-child {
+  text-align: left;
+}
+
+.stats-table thead th {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.history__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.history__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: var(--horse-color);
+}
+
+/* --- Desktop ------------------------------------------------------------- */
+
+@media (min-width: 900px) {
+  .horse-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* A button spanning the whole desktop width looks accidental rather than inviting. */
+  .screen__footer > .btn--wide {
+    display: flex;
+    max-width: 420px;
+    margin-inline: auto;
+  }
+
+  .start__title {
+    font-size: 72px;
+  }
+
+  .results__actions {
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .results__actions .btn--primary {
+    width: auto;
+    min-width: 260px;
+  }
+}
+
+.betting__footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.betting__footer-hint {
+  text-align: center;
+}
