@@ -75,9 +75,11 @@
   box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
+/* A disabled control is exempt from the contrast rule, but this one still carries the goal of
+   the whole screen ("Rennen starten"), so it stays readable: 4.6:1 instead of 4.2:1. */
 .btn:disabled {
-  background: color-mix(in srgb, var(--ink-soft) 25%, var(--cream));
-  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--ink-soft) 22%, var(--cream));
+  color: color-mix(in srgb, var(--ink) 72%, var(--ink-soft));
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -608,9 +610,14 @@
   min-width: 20px;
   min-height: 20px;
   border-radius: var(--radius-pill);
-  background: var(--horse-color);
+  /* Same reason as .horse-badge: white on the signature colours only reaches 2.2-4.2:1, and the
+     number is what tells you which horse this is (audit A4). */
+  background: var(--horse-dark, var(--horse-color));
   color: var(--white);
   font-family: var(--font-display);
   font-size: var(--text-xs);
-  box-shadow: 0 2px 0 var(--horse-dark);
+  /* A ring in the signature colour keeps the identity the dark background gives up. */
+  box-shadow:
+    0 0 0 2px var(--horse-color),
+    0 2px 0 var(--horse-dark);
 }

@@ -106,6 +106,34 @@ store.subscribe(() => {
   if (now) unlock();
 });
 
+/**
+ * The service worker.
+ *
+ * It is what makes the game work in flight mode, which is the whole point of a drinking game on
+ * a phone in a kitchen with bad reception. Registration is skipped under the dev server, where a
+ * cache-first worker would fight hot reloading for every file.
+ */
+if ('serviceWorker' in navigator && !import.meta.env?.DEV) {
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('./sw.js');
+      registration.addEventListener('updatefound', () => {
+        const incoming = registration.installing;
+        if (!incoming) return;
+        incoming.addEventListener('statechange', () => {
+          // A worker that reaches "installed" while another one controls the page is an update,
+          // not a first install. Nothing is swapped underneath the player mid-race; they decide.
+          if (incoming.state === 'installed' && navigator.serviceWorker.controller) {
+            toast('Neue Version – neu laden.', { icon: '✨', duration: 8000 });
+          }
+        });
+      });
+    } catch {
+      // No worker means no offline mode. The game itself is unaffected.
+    }
+  });
+}
+
 if (!isPersistenceAvailable()) {
   toast('Ohne Speicher: Namen und Einstellungen sind nach dem Neuladen weg.', {
     variant: 'warning',

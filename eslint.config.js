@@ -86,7 +86,13 @@ export default [
     },
   },
   {
-    files: ['tests/**/*.js', 'scripts/**/*.js'],
-    languageOptions: { globals: { ...globals.node } },
+    // The icon script drives a headless browser, so its page callbacks see browser globals too.
+    files: ['tests/**/*.js', 'scripts/**/*.{js,mjs}'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
+    // The service worker has its own globals and runs outside any module graph.
+    files: ['sw.js'],
+    languageOptions: { globals: { ...globals.serviceworker, ...globals.browser } },
   },
 ];

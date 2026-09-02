@@ -25,6 +25,13 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      # The service worker's precache list is generated. A stale one means a game that is only
+      # almost playable offline, which is worse than one that is obviously not.
+      - name: Service-worker precache list is current
+        run: |
+          npm run sw
+          git diff --exit-code sw.js
+
       # Mandatory gate: no merge unless fairness is proven. 100k main races plus four
       # comparison batches of 30k, spread across the runner's cores.
       - name: Fairness audit (220k races)

@@ -100,15 +100,24 @@ export function mount(container, store) {
   let attract = null;
   let dropped = false;
 
-  import('../../render/attract.js')
-    .then(({ startAttract }) => {
-      if (dropped) return;
-      attract = startAttract(stage, { calm: prefersCalm(state.settings) });
-      stage.classList.add('attract--ready');
-    })
-    .catch(() => {
-      // No attract mode is a missing flourish, not a broken screen.
-    });
+  /**
+   * Loaded and started only once the browser has nothing better to do. The horses are the last
+   * thing that matters on this screen; letting them compete with the first paint cost 1.8 s of
+   * blocked main thread on a throttled phone (audit A5).
+   */
+  const startIdling = () => {
+    import('../../render/attract.js')
+      .then(({ startAttract }) => {
+        if (dropped) return;
+        attract = startAttract(stage, { calm: prefersCalm(state.settings) });
+        stage.classList.add('attract--ready');
+      })
+      .catch(() => {
+        // No attract mode is a missing flourish, not a broken screen.
+      });
+  };
+  if ('requestIdleCallback' in window) requestIdleCallback(startIdling, { timeout: 2000 });
+  else setTimeout(startIdling, 300);
 
   container.append(
     stage,

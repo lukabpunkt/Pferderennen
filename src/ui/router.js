@@ -101,7 +101,11 @@ export function createRouter({ store, container, screens }) {
     currentName = name;
 
     const view = document.createElement('div');
-    view.className = 'screen screen--entering';
+    // The very first screen does not fade in. Partly because fading in the page you just opened
+    // looks like a stutter, and partly because Chrome does not count an element whose first
+    // paint is transparent as a Largest Contentful Paint candidate — the page would report no
+    // LCP at all, which is both a bad metric and a bad description of what the player sees.
+    view.className = previous ? 'screen screen--entering' : 'screen';
     view.dataset.screen = name;
 
     if (previous) {
@@ -113,9 +117,11 @@ export function createRouter({ store, container, screens }) {
     container.append(view);
     module.mount(view, store);
 
-    // Force a reflow so the entering class actually animates instead of being skipped.
-    void view.offsetWidth;
-    view.classList.remove('screen--entering');
+    if (previous) {
+      // Force a reflow so the entering class actually animates instead of being skipped.
+      void view.offsetWidth;
+      view.classList.remove('screen--entering');
+    }
     container.scrollTop = 0;
   }
 

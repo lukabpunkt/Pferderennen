@@ -49,7 +49,12 @@ export function mount(container, store) {
           '--horse-light': horse.colorLight,
           '--horse-dark': horse.colorDark,
         },
-        attrs: { type: 'button', 'aria-pressed': selected ? 'true' : 'false' },
+        attrs: {
+          type: 'button',
+          'aria-pressed': selected ? 'true' : 'false',
+          // The stable handle a redraw uses to give the keyboard its place back.
+          'data-horse': horse.id,
+        },
         on: {
           click: () => {
             draft = {
@@ -200,10 +205,18 @@ export function mount(container, store) {
     );
   }
 
-  /** Redraws everything for the current state. */
+  /**
+   * Redraws everything for the current state.
+   *
+   * Every redraw replaces the nodes, which throws the keyboard focus back to the document body —
+   * a player who picked a horse with Enter would have to tab through all six again to reach the
+   * stepper. So whatever was focused is looked up again afterwards by its stable handle (audit
+   * A4, "Fokus-Reihenfolge").
+   */
   function render() {
     const state = store.getState();
     const player = currentPlayer(state);
+    const focusedHorse = document.activeElement?.closest?.('.horse-card')?.dataset.horse ?? null;
 
     // A fresh player must see the horses, not wherever the previous one had scrolled to.
     if (state.bettingTurn !== lastTurn) {
@@ -235,6 +248,10 @@ export function mount(container, store) {
       );
     } else {
       body.replaceChildren(overview(state));
+    }
+
+    if (focusedHorse) {
+      body.querySelector(`.horse-card[data-horse="${focusedHorse}"]`)?.focus();
     }
 
     // The goal button stays visible the whole time; while it is disabled it says why.

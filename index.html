@@ -14,6 +14,15 @@
     />
     <title>Pferderennen</title>
 
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icons/icon-192.png" sizes="192x192" type="image/png" />
+    <!-- iOS ignores the manifest and looks for these three. -->
+    <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Pferderennen" />
+
     <link rel="stylesheet" href="./src/styles/tokens.css" />
     <link rel="stylesheet" href="./src/styles/base.css" />
     <link rel="stylesheet" href="./src/styles/components.css" />
@@ -21,13 +30,10 @@
     <link rel="stylesheet" href="./src/styles/race.css" />
   </head>
   <body>
-    <!-- Race track. Sits behind the UI and comes alive in M3. -->
-    <canvas id="race" role="img" aria-label="Rennbahn"></canvas>
-
     <!-- All screens, menus and the HUD live here as DOM. -->
     <main id="app"></main>
 
-    <!-- Announces lead changes, photo finish and result to screen readers (filled from M8). -->
+    <!-- Announces the start, lead changes, photo finish and result to screen readers. -->
     <div id="live-region" class="visually-hidden" role="status" aria-live="polite"></div>
 
     <script type="module" src="./src/main.js"></script>

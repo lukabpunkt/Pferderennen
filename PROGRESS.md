@@ -167,15 +167,15 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 
 ### M8 – PWA, Offline, Performance, Barrierefreiheit
 
-- [ ] 1. Manifest + Icons
-- [ ] 2. Service Worker + Update-Toast
-- [ ] 3. Performance-Pass
-- [ ] 4. Ladezeit < 300 KB
-- [ ] 5. A11y vollständig
-- [ ] 6. Randfälle getestet
-- [ ] 7. `chore: complete M8`
-- [ ] **Audit A4 bestanden** (vollständig)
-- [ ] **Audit A5 bestanden** (vollständig)
+- [x] 1. Manifest + Icons
+- [x] 2. Service Worker + Update-Toast
+- [x] 3. Performance-Pass
+- [x] 4. Ladezeit < 300 KB
+- [x] 5. A11y vollständig
+- [x] 6. Randfälle getestet
+- [x] 7. `chore: complete M8`
+- [x] **Audit A4 bestanden** (vollständig)
+- [x] **Audit A5 bestanden** (vollständig)
 
 ### M9 – Release v1.0.0
 
@@ -214,6 +214,8 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A2    | M7          | 2026-09-02 | **bestanden** | Re-Run: Zahlen identisch zu M6 – genau das war der Zweck |
 | A6    | M7          | 2026-09-02 | **bestanden** | 2 Befunde behoben; eine begründete Ausnahme (`race.js`, 438 Zeilen) |
 | A1    | M7          | 2026-09-02 | **bestanden** | Wettarten, Statistik, Alkoholfrei-Modus im Browser durchgespielt. CI grün: [Run 33676165873](https://github.com/lukabpunkt/Pferderennen/actions/runs/33676165873) |
+| A4    | M8          | 2026-09-02 | **bestanden** | vollständig; 3 echte Befunde behoben, Lighthouse A11y 100 |
+| A5    | M8          | 2026-09-02 | **bestanden** | vollständig; Lighthouse Mobile 92/100/100/100, TBT 1590 → 0 ms |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -371,6 +373,19 @@ irgendwann stört, ist `--sub` der Hebel.
 
 _(Datum – Entscheidung – Begründung)_
 
+- **2026-09-02 (M8) – Die PWA-Icons werden aus dem Spiel gerendert, nicht gezeichnet.**
+  `npm run icons` fährt einen Headless-Browser hoch und lässt `render/horsePortrait.js` – genau
+  den Code, der auch die Wett-Karten malt – in ein Canvas zeichnen. Ein von Hand gebautes Icon
+  wäre nach der ersten Palettenänderung falsch; dieses kann nicht falsch werden. Playwright war
+  für die E2E-Tests ohnehin schon als Dev-Abhängigkeit da.
+- **2026-09-02 (M8) – Die Precache-Liste des Service Workers ist generiert und CI-geprüft.**
+  Eine handgepflegte Liste veraltet, und eine veraltete Liste heißt: Das Spiel ist im Flugmodus
+  *fast* spielbar – der schlechteste denkbare Ausgang, weil es bis zur ersten Wette gut aussieht.
+  `npm run sw` schreibt sie, `git diff --exit-code sw.js` in der CI hält sie ehrlich.
+- **2026-09-02 (M8) – Der erste Screen blendet nicht ein.** Ein Element, dessen erster Paint
+  durchsichtig ist, zählt für Chrome nicht als LCP-Kandidat; die Seite meldete deshalb gar keinen.
+  Unabhängig von der Messung sieht das Einblenden der gerade geöffneten Seite ohnehin aus wie ein
+  Ruckler. Jeder Wechsel danach fadet weiter.
 - **2026-09-02 (M7) – Der Ton ist vollständig synthetisiert, keine einzige Audiodatei.** Das GDD
   erlaubt kurze OGG/MP3-Dateien als Alternative. Oszillatoren und ein einziger Rausch-Puffer
   kosten null Bytes Download, funktionieren offline ohne Zutun und lassen sich am Tempo des Feldes
@@ -894,12 +909,124 @@ besser. Dieselbe Begründung wie bei `screens.css` und `components.css` seit M1.
 4. **Die Rückschau listete dieselbe Regel mehrfach.** Drei Führungswechsel lesen sich als
    „3× Führungswechsel! Alle trinken 1 Schluck!" besser als dreimal derselbe Satz.
 
+### A4 / A5 – Audits zu M8 (2026-09-02)
+
+**Die Zahlen aus Lighthouse (Mobile-Preset, also 4× gedrosselte CPU und simuliertes 3G):**
+
+| Kategorie | Ziel | Gemessen |
+| --- | --- | --- |
+| Performance | ≥ 90 | **92** |
+| Accessibility | ≥ 95 | **100** |
+| Best Practices | ≥ 95 | **100** |
+| SEO | – | 100 |
+| Cumulative Layout Shift | ≈ 0 | **0** |
+| Total Blocking Time | – | **0 ms** (vorher 1590 ms) |
+
+**A5 (Performance): zwei Befunde, beide gemessen und behoben.**
+
+1. **Lighthouse meldete `NO_LCP` und damit Performance 0.** Kein „langsam", sondern *gar kein*
+   Largest Contentful Paint. Ursache: Jeder Screen betrat die Bühne über `.screen--entering` mit
+   `opacity: 0` und blendete ein – und Chrome zählt ein Element, dessen erster Paint durchsichtig
+   ist, nicht als LCP-Kandidat. Die Seite hatte also nie einen. Der **erste** Screen fadet jetzt
+   nicht mehr ein; jeder Wechsel danach schon. Das ist auch ohne Messwert die bessere Lösung –
+   die Seite, die man gerade geöffnet hat, einzublenden sieht aus wie ein Ruckler.
+2. **Der Attract-Mode blockierte den Main-Thread 1804 ms.** Sechs Pferde mit 60 fps zu animieren,
+   während die Seite noch startet, war auf einer gedrosselten CPU der teuerste Posten überhaupt
+   (`bootup-time` 2,1 s, davon 2032 ms `attract.js`). Zwei Änderungen: Die Schleife läuft mit
+   **20 fps** statt 60 und pausiert bei verstecktem Tab, und sie startet erst im
+   `requestIdleCallback`. Die Pferde sind das Letzte, was auf diesem Screen zählt.
+   **TBT 1590 ms → 0 ms, Performance 67 → 92.**
+
+**Frame-Zeiten über ein volles Rennen** (50,8 s, Desktop, 3047 Frames):
+
+| Abschnitt | Median | p99 | max |
+| --- | --- | --- | --- |
+| Ganzes Rennen inkl. Mount und Übergabe | 16,7 ms | 18,7 ms | 65,6 ms |
+| Mittlere Hälfte (reines Rennen) | 16,7 ms | 18,7 ms | **18,7 ms** |
+
+Genau zwei Ausreißer über 25 ms, und beide liegen dort, wo sie hingehören: 35 ms bei 3,0 s (der
+Renn-Screen wird nachgeladen und montiert) und 66 ms bei 48,7 s (Übergabe an den Ergebnis-Screen).
+**Während des Rennens fällt kein einziger Frame.** Die DoD-Formulierung „kein Frame > 16 ms" ist
+bei einem 60-Hz-Bildschirm nicht messbar – 16,7 ms *ist* ein sauberer Frame; das belastbare Maß
+ist der verworfene Frame, und davon gibt es null.
+
+**Ladezeit:**
+
+| Maß | Budget | Gemessen |
+| --- | --- | --- |
+| Initial Load bis `load` | < 300 KB | **176,8 KB** über 37 Dateien |
+| Alles inkl. nachgeladenem Renderer | – | 399,5 KB über 72 Dateien |
+| Schriften | – | **0 Bytes** – kein `@font-face`, „Fredoka" wird genutzt wenn vorhanden, sonst `system-ui` |
+
+**Nicht behoben, bewusst:** Lighthouse markiert die fünf Stylesheets als render-blocking (46 KB
+unkomprimiert, ~9 KB gzip). Die sauberen Gegenmittel wären ein Bundler (verbietet CLAUDE.md) oder
+generiertes Inline-CSS, das die Quelle dupliziert. Bei FCP 2,1 s auf gedrosseltem 3G und 0,5 s auf
+dem Desktop steht der Preis nicht dafür.
+
+**A4 (Barrierefreiheit, vollständig): drei echte Befunde.**
+
+1. **Nach der Pferdewahl verlor die Tastatur den Fokus an `<body>`.** Wer mit Enter ein Pferd
+   wählt, wurde an den Seitenanfang geworfen und musste sich durch alle sechs Karten zurück zum
+   Stepper tabben. Der Wett-Screen zeichnet sich bei jeder Änderung neu; er merkt sich jetzt, auf
+   welcher Karte der Fokus stand, und gibt ihn danach an dieselbe Karte zurück (`data-horse` als
+   stabiler Griff).
+2. **`.portrait__number` hatte den Kontrast-Fix aus M6 nicht mitbekommen.** Die Nummer auf den
+   Wett-Karten stand weiß auf der Signaturfarbe: 2,15:1 beim Amber, 2,28:1 beim Grün. `.horse-badge`
+   war in M6 repariert worden, diese zweite Klasse kam mit den Portraits dazu und wurde übersehen.
+   Jetzt dieselbe Behandlung: dunkler Grund, Ring in der Signaturfarbe.
+3. **Der deaktivierte „Rennen starten"-Button lag bei 4,15:1.** Deaktivierte Bedienelemente sind
+   von der Kontrastregel ausgenommen, aber dieser Button trägt das Ziel des ganzen Screens.
+   Jetzt 4,6:1 – kostet nichts und hilft allen.
+
+Der Sweep läuft über jeden sichtbaren Text auf Start, Spieler, Wetten und alle drei Modals und
+rechnet die tatsächliche Farbe durch den kompletten Alpha-Stapel:
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Textkontrast ≥ 4,5:1 (groß 3:1) | ✅ 0 Verstöße nach den Fixes |
+| Touch-Ziele ≥ 48 × 48 px | ✅ 0 Verstöße |
+| Alles per Tastatur erreichbar, Reihenfolge = Lesereihenfolge | ✅ kein positives `tabindex`, kein unbenanntes Element |
+| Pferd per Tastatur wählbar, `aria-pressed` korrekt | ✅ |
+| Modals: Fokus-Falle, `Esc`, Fokus kehrt zum Auslöser zurück | ✅ |
+| `aria-live` meldet Start, Führungswechsel (max. alle 3 s), Fotofinish, Sieger | ✅ seit M7 |
+| Canvas `role="img"` mit aktuellem Stand | ✅ |
+| `prefers-reduced-motion` inklusive manueller Überschreibung | ✅ `data-motion` am Wurzelelement, seit M7 |
+| Zoom 200 %: kein horizontales Scrollen | ✅ |
+| Lighthouse Accessibility ≥ 95 | ✅ **100** |
+
+Offen bleibt die Deuteranopie-Simulation im DevTools-Rendering-Tab – die kann nur ein Mensch am
+Bildschirm beurteilen. Konstruktiv ist der Fall abgedeckt: Jedes Pferd trägt seine Nummer auf
+Badge, Satteldecke und Startbox, dazu ein eigenes Accessoire und eine eigene Fellfarbe.
+
+**PWA und Offline:**
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Manifest vollständig | ✅ Name, `standalone`, `orientation: any`, Theme-Color, drei Icons (192, 512, maskable 512) |
+| Icons prozedural | ✅ aus `render/horsePortrait.js`, erzeugt von `npm run icons` – sie können nicht vom Spiel wegdriften |
+| Apple-Meta-Tags | ✅ `apple-touch-icon`, `apple-mobile-web-app-*` |
+| Service Worker cache-first mit Version | ✅ `pferderennen-v1`, **78 Dateien** vorgeladen |
+| Precache-Liste kann nicht veralten | ✅ generiert von `npm run sw`, in der CI mit `git diff --exit-code` abgesichert |
+| Update-Hinweis | ✅ Toast „Neue Version – neu laden", nur wenn schon ein Worker die Seite kontrolliert |
+| **Flugmodus: vollständig spielbar** | ✅ Server gestoppt, dann Spieler angelegt, gewettet und ein ganzes Rennen bis zum Ergebnis gespielt |
+
+Der Flugmodus-Test ist der eigentliche Beweis, und er umfasst auch den nachgeladenen
+Renn-Renderer: Der Service Worker hatte ihn beim ersten Besuch mitgenommen, sonst wäre genau der
+Moment kaputt gewesen, in dem es zählt.
+
+**Randfälle aus `02_ARCHITECTURE.md` §9:** Tab-Wechsel (Pause-Overlay), Rotation im Rennen,
+Reload im Rennen (zurück zu den Wetten mit Hinweis), Private Mode ohne `localStorage`, fehlendes
+WebAudio und `prefers-reduced-motion` – alle sechs abgedeckt, die letzten drei zusätzlich durch
+Unit-Tests, die genau diese Umgebungen nachstellen.
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 **Offen (nur der Nutzer kann das):**
 
+- **M8:** Auf dem Handy „Zum Home-Bildschirm" hinzufügen, Flugmodus an, spielen. Dazu die
+  Deuteranopie-Simulation im DevTools-Rendering-Tab.
 - **M7:** Ein Rennen mit Ton hören – stimmt die Mischung? Modus „Letzter" und die
   Führungswechsel-Regel zu zweit ausprobieren.
 - **M6:** Drei Personen, die das Spiel nicht kennen, spielen ohne Erklärung. Wo stocken sie? Wo

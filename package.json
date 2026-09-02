@@ -11,6 +11,8 @@
   },
   "scripts": {
     "dev": "vite --host --port 5173",
+    "icons": "node scripts/make-icons.mjs",
+    "sw": "node scripts/make-sw-manifest.mjs",
     "serve": "node scripts/serve.js",
     "test": "vitest run",
     "test:watch": "vitest",

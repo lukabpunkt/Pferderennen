@@ -15,6 +15,12 @@ import { createPose, updatePose } from './horseAnimations.js';
 import { RENDER } from '../config.js';
 
 /**
+ * Idle horses do not need 60 fps. Capping the loop keeps the start screen off the main thread —
+ * it measurably dominated the first seconds on a throttled phone — and off the battery.
+ */
+const FRAME_MS = 1000 / 20;
+
+/**
  * Where the ground sits, and how big the horses are, as shares of the canvas. The ground sits
  * high enough that the grass below it carries the primary button, so nothing overlaps a horse.
  */
@@ -59,6 +65,9 @@ export function startAttract(canvas, { calm = false } = {}) {
   function draw(now) {
     if (!running) return;
     frame = requestAnimationFrame(draw);
+    // Nothing here is worth drawing more than twenty times a second, and nothing at all while
+    // the tab is in the background.
+    if (now - last < FRAME_MS || document.hidden) return;
     const dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     if (width === 0) resize();

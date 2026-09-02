@@ -93,15 +93,6 @@ select {
   height: 100dvh;
 }
 
-#race {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
 /* All screens share one grid cell so a leaving and an entering screen can overlap. */
 .screen {
   grid-area: 1 / 1;
