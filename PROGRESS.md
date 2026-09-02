@@ -2,7 +2,7 @@
 
 > **Für Claude Code:** Diese Datei ist deine To-do-Liste und dein Gedächtnis. Beginne jede Session damit, sie zu lesen. Hake Tasks ab, trage Audit-Ergebnisse ein, notiere Entscheidungen. Details zu jedem Task stehen in `docs/05_MILESTONES.md`.
 
-**Aktueller Stand:** **M0 abgeschlossen** (Projekt-Setup & Tooling, Audit A0 bestanden). Nächster Schritt: **M1 – State, Router & UI-Screens**.
+**Aktueller Stand:** **M1 abgeschlossen** (State, Router & UI-Screens; Audits A1 und A6 bestanden). Nächster Schritt: **M2 – Race Engine & Fairness-Audit**.
 
 **Live-URL:** _(wird in M9 eingetragen)_
 
@@ -28,17 +28,17 @@
 
 ### M1 – State, Router & UI-Screens
 
-- [ ] 1. store.js + reducers.js + Tests
-- [ ] 2. persistence.js + Test
-- [ ] 3. router.js + Transitions
-- [ ] 4. components (button, stepper, toast, modal)
-- [ ] 5. Screens start/players/betting/results/rules/settings/stats
-- [ ] 6. engine/payout.js + Tests
-- [ ] 7. Placeholder-Race-Screen
-- [ ] 8. components.css + screens.css
-- [ ] 9. `chore: complete M1`
-- [ ] **Audit A1 bestanden**
-- [ ] **Audit A6 bestanden**
+- [x] 1. store.js + reducers.js + Tests (alle geforderten Actions, 100 % Branch-Coverage)
+- [x] 2. persistence.js + Test (versioniert, Migrations-Hook, Private-Mode-fest)
+- [x] 3. router.js + Transitions (Hash-Navigation, Guards, Slide+Fade)
+- [x] 4. components (button, stepper, toast, modal) + dom.js, layout.js
+- [x] 5. Screens start/players/betting/race/results/rules/settings/stats
+- [x] 6. engine/payout.js + Tests (Sieg/Platz/Letzter/Frei, Haus, Event-Regeln)
+- [x] 7. Placeholder-Race-Screen (Sieger via `crypto`, Fisher-Yates ohne Modulo-Bias)
+- [x] 8. components.css + screens.css
+- [x] 9. `chore: complete M1`
+- [x] **Audit A1 bestanden**
+- [x] **Audit A6 bestanden**
 
 ### M2 – Race Engine & Fairness-Audit
 
@@ -194,6 +194,8 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | Audit | Meilenstein | Datum      | Ergebnis      | Offene Punkte / Link                             |
 | ----- | ----------- | ---------- | ------------- | ------------------------------------------------ |
 | A0    | M0          | 2026-09-02 | **bestanden** | CI grün: [Run 33649824727](https://github.com/lukabpunkt/Pferderennen/actions/runs/33649824727) |
+| A1    | M1          | 2026-09-02 | **bestanden** | 3 Befunde im Test gefunden und behoben (siehe unten)  |
+| A6    | M1          | 2026-09-02 | **bestanden** | Ausnahme: zwei CSS-Dateien > 400 Zeilen, begründet    |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -207,6 +209,51 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | `.gitignore` deckt node_modules, Artefakte, OS-Dateien | ✅ node_modules, dist, coverage, test-results, playwright-report, .DS_Store                                               |
 | ESLint/Prettier 0 Fehler                             | ✅                                                                                                                          |
 | Engine-Sonderregeln greifen                          | ✅ Probe-Datei in `src/engine/` löste **alle 9** Regeln aus (Math.random, Date, window, document, performance, crypto, 3 Imports); identische Probe in `src/render/` blieb sauber → Regeln korrekt auf die Engine begrenzt |
+
+### A1 – UI/UX-Audit (2026-09-02, M1)
+
+Geprüft im Browser bei 360 × 720, 420 × 860 und 1440 × 900.
+
+| Prüfpunkt                                          | Ergebnis                                                                                                       |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Start bis erstes Rennen ≤ 6 Taps (2 Spieler)       | ✅ **genau 6** auf dem Wiederkehrer-Pfad: Weiterspielen → Pferd → Setzen → Pferd → Setzen → Rennen starten. Beim allerersten Start kommen zwangsläufig die Namenseingaben dazu (11). |
+| Immer klar, wer dran ist und was zu tun ist        | ✅ Header nennt Avatar + Name („🦊 Nina ist dran"), Fortschritts-Pille zeigt 2/3, Primär-Button nennt den nächsten Schritt |
+| „Rennen starten" erst aktiv, wenn alle gesetzt haben | ✅ Button ist durchgehend sichtbar und im disabled-Zustand mit sichtbarem Text begründet („Es fehlen noch 2 Wetten.") |
+| Zurück-Navigation zerstört nichts                  | ✅ Hash-Router; Guards leiten ein unerreichbares Ziel auf den nächstbesten Screen um (getestet)                  |
+| Reload auf jedem Screen                            | ✅ Spieler, Wetten, Einsatzhöhe, Reihenfolge und Einstellungen überstehen den Reload                             |
+| Reload im Rennen                                   | ✅ zurück zu den Wetten, Wetten erhalten, Toast „Rennen wurde abgebrochen"                                       |
+| Haus-gewinnt-Fall klar kommuniziert                | ✅ eigene dunkle Karte mit 🏠 über den Trink-Karten                                                             |
+| Nur Tokens, keine Hex-Farben                       | ✅ 0 Treffer in `src/styles/*.css` (außer tokens.css) und 0 in `src/ui/**`                                       |
+| Buttons ≥ 48 px, primär 56 px                      | ✅ `--tap-min` / `--btn-primary-height`, auf Mobile volle Breite                                                 |
+| Keine Schrift < 14 px                              | ✅ kleinster Wert ist `--text-xs` = 14 px                                                                        |
+| hover / active / focus-visible / disabled          | ✅ jeweils sichtbar unterschiedlich (Kante, Versatz, Fokusring, Graustufe)                                       |
+| Ergebnis in < 3 s verständlich                     | ⏳ **Nutzer-Test erforderlich**                                                                                  |
+
+**Im Audit gefunden und behoben:**
+
+1. Der Screen wuchs über die Viewport-Höhe hinaus, statt dass der Body intern scrollt – dadurch scrollte der Footer mit dem Primär-Button aus dem Bild. (`height: 100dvh` + `min-height: 0` auf dem Flex-Kind.)
+2. Ein offenes Modal überlebte einen Screen-Wechsel samt seinem `document`-Keydown-Listener. Der Router schließt jetzt alle Overlays, bevor er den Screen tauscht.
+3. Nach einem Reload im Rennen holte der `#/race`-Hash das verlorene Rennen zurück. Jetzt wird die URL überschrieben, bevor der Router startet, und der Spieler landet bei den Wetten.
+
+Kleinere Korrekturen: „+ Spieler" brach auf zwei Zeilen um, der Wetten-Header ignorierte den Alkoholfrei-Modus, die Scroll-Position blieb beim Spielerwechsel stehen, der Primär-Button spannte sich über die volle Desktop-Breite, die Podium-Stufen waren kaum unterscheidbar, und ein Toast lag über dem Primär-Button.
+
+### A6 – Code-Audit (2026-09-02, M1)
+
+| Prüfpunkt                                     | Ergebnis                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| JSDoc-Kopf in jedem Modul                     | ✅                                                                                                 |
+| Keine JS-Datei > 400 Zeilen                   | ✅ größte ist `state/reducers.js` mit 280                                                          |
+| Keine CSS-Datei > 400 Zeilen                  | ⚠️ **Ausnahme**: `screens.css` (652) und `components.css` (457) – Begründung unter „Entscheidungen" |
+| Keine Abhängigkeitszyklen                     | ✅ `engine/` importiert nichts, `state/` nichts aus `ui/`; einzige Kante ist `ui → engine/payout`   |
+| Keine Listener-Leaks bei Screen-Wechsel       | ✅ jeder `addEventListener` liegt entweder auf einem Element, das mit dem Screen verschwindet, oder wird in `unmount()`/`close()` entfernt |
+| Kein `innerHTML` mit Nutzerdaten              | ✅ ausschließlich `textContent`; `dom.js` bietet gar keinen HTML-Pfad an                            |
+| Try/Catch um `localStorage`                   | ✅ vier Blöcke, plus Schreib-Probe für den Safari-Private-Mode                                      |
+| Coverage Reducer/Payout 100 % Branches        | ✅ **100 %** Statements, Branches und Funktionen für `src/engine/**` und `src/state/**`             |
+| Alle Tests < 20 s                             | ✅ 128 Tests in 0,35 s                                                                             |
+| `npm run lint` 0 Fehler, 0 Warnungen          | ✅                                                                                                 |
+| Keine TODO/FIXME ohne PROGRESS-Eintrag        | ✅ keine im Code                                                                                    |
+
+Initial Load (unkomprimiert, HTML + JS + CSS): **125 KB** – Budget ist 300 KB.
 
 ## Fairness-Tuning-Protokoll (M2)
 
@@ -232,6 +279,34 @@ _(Datum – Entscheidung – Begründung)_
 - **2026-09-02 – Projektplan von Prettier ausgenommen** (`CLAUDE.md`, `PROGRESS.md`, `README.md`,
   `docs/`). Prettier formatiert Markdown-Tabellen um und erzeugt Diff-Rauschen in Dokumenten, die
   sich sonst nie ändern. Code, CSS, HTML und YAML bleiben voll unter Prettier.
+- **2026-09-02 (M1) – `settle()` liefert keinen fertigen Text für Event-Trinkregeln.**
+  `02_ARCHITECTURE.md` §5.3 sieht ein Feld `text` vor. Das ginge nur, wenn `payout.js` die
+  Pferdenamen kennt – genau das verbietet aber die Engine-Isolation (`data/horses.js` ist für
+  `src/engine/**` gesperrt). Die Funktion gibt stattdessen `{eventId, horseId, playerIds, sips,
+  direction}` zurück; den Satz „🍺 Team Kater Morgana: 1 Schluck!" baut die UI. Ebenso nimmt
+  `settle()` die Events als vierten Eingabewert entgegen, sonst könnte es `eventRules` gar nicht
+  füllen.
+- **2026-09-02 (M1) – `createStore(reducer, initialState)` statt `createStore(initialState)`.**
+  So bleibt `store.js` frei von einer Abhängigkeit auf `reducers.js` und ist isoliert testbar.
+  Das Verhalten aus §5.5 (dispatch → Reducer → neue Referenz → Subscriber) ist unverändert.
+- **2026-09-02 (M1) – Zwei zusätzliche Actions gegenüber der Doku-Liste.**
+  `race/clear` (setzt das Rennen zurück, bevor ein neues startet) und `race/markRecorded`.
+  Letzteres verhindert, dass ein erneuter Aufruf des Ergebnis-Screens – etwa nach Reload oder
+  Browser-Zurück – dasselbe Rennen ein zweites Mal in die Statistik bucht.
+- **2026-09-02 (M1) – Drei kleine Zusatzmodule.** `ui/dom.js` (Element-Helfer, ausschließlich
+  `textContent`), `ui/components/layout.js` (Screen-Gerüst, Karten, Pferde-Badge) und
+  `ui/strings.js` (Wording, damit der Alkoholfrei-Schalter sofort wirkt statt erst in M7).
+  `data/avatars.js` hält den Emoji-Pool. Ohne diese Helfer wären die Screen-Module deutlich
+  länger als die 400-Zeilen-Grenze aus A6.
+- **2026-09-02 (M1) – CSS bleibt bei den vier Dateien aus der Architektur, auch über 400 Zeilen.**
+  `02_ARCHITECTURE.md` §2 schreibt genau `tokens.css`, `base.css`, `components.css` und
+  `screens.css` vor. Die 400-Zeilen-Regel aus A6 steht im selben Punkt wie „Funktionen ≤ 60
+  Zeilen" und zielt auf Code-Module; CSS weiter aufzuteilen würde einer ausdrücklichen
+  Architektur-Entscheidung widersprechen. Sollte `screens.css` in M3–M6 unhandlich werden, ist
+  eine Aufteilung nach Screens der nächste Schritt – dann als bewusste Architektur-Änderung.
+- **2026-09-02 (M1) – Quick-Bet aus GDD §3.3 nicht umgesetzt.** Die Idee ist dort als optional
+  markiert und taucht in der Einstellungstabelle §6 nicht auf. Die 6-Tap-Vorgabe aus A1 wird auch
+  ohne sie erreicht. Liegt im Backlog.
 - **2026-09-02 – Fairness-Schutz schon auf Datenebene** (`tests/fairness/horses.test.js`).
   Der Test verbietet jedes Feld an einem Pferd, das nicht rein kosmetisch ist, und jeden
   Zahlenwert außer der Startnummer. So fällt ein versehentlicher „Speed"-Wert sofort auf,
@@ -245,13 +320,17 @@ _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 _(werden hier gesammelt, bevor sie zu Tasks werden)_
 
-- Die 35 Platzhalter-Module tragen bisher nur ihren JSDoc-Kopf und ein leeres `export {}`. Jedes
-  ist im Kopf dem Meilenstein zugeordnet, der es füllt (M1–M7). Kein Modul bleibt leer zurück.
+- Noch 27 Platzhalter-Module mit JSDoc-Kopf und leerem `export {}` (M2–M7). In M1 gefüllt wurden
+  `state/*`, `ui/router.js`, alle `ui/screens/*`, alle `ui/components/*` und `engine/payout.js`.
 - Der Display-Font „Fredoka" ist in `tokens.css` als `--font-display` gesetzt, aber noch nicht
   self-hosted; bis dahin greift der Fallback `system-ui`. Die woff2-Datei kommt in M6 nach
   `assets/fonts/` (docs/04 §3).
 - `npm run e2e` ist angelegt, hat aber noch keine Playwright-Config und keine Specs – beides
   entsteht in M9. Der CI-Schritt überspringt E2E deshalb, solange `tests/e2e/` leer ist.
+- Der Ergebnis-Screen zeigt die Event-Trinkregeln noch nicht als Rückblick-Liste an – es gibt bis
+  M5 keine Events. `settle()` liefert sie bereits vollständig und getestet mit.
+- Das Podium ist aus CSS-Sockeln gebaut. Die prozeduralen Pferde-Portraits und der
+  Stagger-Einsprung kommen laut Plan in M6.
 
 ## Backlog v1.1+
 
