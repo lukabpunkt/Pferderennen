@@ -28,20 +28,33 @@ export const RACE_DURATIONS = {
 
 /** Speed model: v_i(t) = v0 * clamp(1 + P + N + S + F + E, MIN, MAX). */
 export const SPEED_MODEL = {
-  /** Phase profile P: slow waves of form along the track. */
+  /**
+   * Phase profile P: waves of form along the track, with a variance ramp.
+   *
+   * The ramp is the single most important discovery of the M2 tuning loop. With a constant
+   * spread the leader at half distance wins about half of all races and the runner in last
+   * place at half distance essentially never wins — no matter how the other parameters are
+   * turned, because a lead is banked distance that later variance cannot undo. Letting the
+   * form differences open up as the race goes on fixes that, and it is also what real racing
+   * looks like: the field runs together early and separates late.
+   */
   phase: {
-    /** Control points at x = 0, 0.2, 0.4, 0.6, 0.8, 1.0. */
-    nodes: 6,
-    /** Standard deviation per control point. Larger means stronger swings in form. */
-    sigma: 0.11,
+    /** Control points, evenly spaced from the start to the finish line. */
+    nodes: 16,
+    /** Spread of the control point at the start — the field runs almost as one. */
+    sigmaStart: 0.002,
+    /** Spread of the control point at the finish line. */
+    sigmaEnd: 0.22,
+    /** Exponent of the ramp between the two. Above 1 keeps the field together for longer. */
+    ramp: 2.5,
   },
 
-  /** Fast noise N: Ornstein-Uhlenbeck process, creates micro lead changes. */
+  /** Fast noise N: Ornstein-Uhlenbeck process, creates the micro lead changes. */
   noise: {
     /** Mean reversion rate theta in 1/s. Larger pulls the noise back to zero faster. */
     theta: 1.8,
     /** Diffusion sigma. Larger means a more jittery pace. */
-    sigma: 0.18,
+    sigma: 0.05,
   },
 
   /** Sprints S: the visible "here we go" moments. */
@@ -50,11 +63,11 @@ export const SPEED_MODEL = {
     countMin: 1,
     countMax: 3,
     /** Window for the sprint start as a fraction of the target race duration. */
-    windowStart: 0.1,
+    windowStart: 0.35,
     windowEnd: 0.95,
     /** Sprint strength as a relative speed bonus. */
-    strengthMin: 0.15,
-    strengthMax: 0.35,
+    strengthMin: 0.06,
+    strengthMax: 0.15,
     /** Duration in seconds. */
     durationMin: 1.2,
     durationMax: 2.5,
@@ -62,9 +75,12 @@ export const SPEED_MODEL = {
     fade: 0.3,
   },
 
-  /** Finishing kick F: an individual bonus from 75 % of the track — keeps the finish open. */
+  /**
+   * Finishing kick F: a small individual bonus over the last quarter. The phase ramp above now
+   * does most of the work of keeping the finish open, so this is flavour rather than structure.
+   */
   finish: {
-    sigma: 0.1,
+    sigma: 0.02,
     /** Smoothstep window as a fraction of the track. */
     from: 0.75,
     to: 0.9,
