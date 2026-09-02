@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="theme-color" content="#FFB88C" />
+    <meta
+      name="description"
+      content="Pferderennen – ein faires Trinkspiel-Pferderennen für den Browser. Sechs Pferde, ein Gerät, viele Schlücke."
+    />
+    <title>Pferderennen</title>
+
+    <link rel="stylesheet" href="./src/styles/tokens.css" />
+    <link rel="stylesheet" href="./src/styles/base.css" />
+  </head>
+  <body>
+    <!-- Race track. Sits behind the UI and comes alive in M3. -->
+    <canvas id="race" role="img" aria-label="Rennbahn"></canvas>
+
+    <!-- All screens, menus and the HUD live here as DOM. -->
+    <main id="app"></main>
+
+    <!-- Announces lead changes, photo finish and result to screen readers (filled from M8). -->
+    <div id="live-region" class="visually-hidden" role="status" aria-live="polite"></div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
