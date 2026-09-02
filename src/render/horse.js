@@ -13,6 +13,7 @@
 
 import { legAngles, bodyLift } from './horseAnimations.js';
 import { capsule, OUTLINE, mix } from './shapes.js';
+import { quality } from './quality.js';
 import { drawTack, drawJockey, drawSaddleAccessory, drawHeadAccessory } from './horseTack.js';
 
 /** Where the legs hang from, and how long their two segments are. */
@@ -110,11 +111,17 @@ function drawBody(ctx, colours) {
   ctx.lineJoin = 'round';
   ctx.stroke();
 
-  const gradient = ctx.createLinearGradient(0, -1.02, 0, -0.5);
-  gradient.addColorStop(0, colours.coatLight);
-  gradient.addColorStop(0.5, colours.coat);
-  gradient.addColorStop(1, colours.coatDark);
-  ctx.fillStyle = gradient;
+  // A gradient per horse per frame is the single most expensive thing here, so it is the first
+  // thing to go when the quality drops.
+  if (quality.level === 'low') {
+    ctx.fillStyle = colours.coat;
+  } else {
+    const gradient = ctx.createLinearGradient(0, -1.02, 0, -0.5);
+    gradient.addColorStop(0, colours.coatLight);
+    gradient.addColorStop(0.5, colours.coat);
+    gradient.addColorStop(1, colours.coatDark);
+    ctx.fillStyle = gradient;
+  }
   ctx.fill();
 }
 
@@ -213,6 +220,7 @@ export function horseColours(horse) {
     ink: '#2B1D2E',
     skin: '#F2C9A0',
     silkStripe: mix(horse.colorLight, '#FFFFFF', 0.45),
+    white: '#FFFFFF',
   };
 }
 

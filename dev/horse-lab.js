@@ -8,6 +8,7 @@
 
 import { HORSES } from '../src/data/horses.js';
 import { drawHorse, horseColours } from '../src/render/horse.js';
+import { drawHorseRear } from '../src/render/horseRear.js';
 import {
   createPose,
   updatePose,
@@ -21,6 +22,7 @@ const ctx = canvas.getContext('2d');
 const speedInput = document.getElementById('speed');
 const sizeInput = document.getElementById('size');
 const animSelect = document.getElementById('anim');
+const viewSelect = document.getElementById('view');
 const skeletonInput = document.getElementById('skeleton');
 const singleInput = document.getElementById('single');
 const readout = document.getElementById('readout');
@@ -128,10 +130,12 @@ function frame(now) {
     const column = index % columns;
     const row = Math.floor(index / columns);
     const x = cellWidth * (column + 0.5);
-    const y = 40 + cellHeight * (row + 0.85);
+    // The rear view is much taller than it is wide, so it needs to sit lower in its cell.
+    const y = 40 + cellHeight * (row + (viewSelect.value === 'rear' ? 0.95 : 0.85));
 
-    drawHorse(ctx, { horse: HORSES[index], colours: palettes[index], pose, x, y, size });
-    if (skeletonInput.checked) drawSkeleton(pose, x, y, size);
+    const draw = viewSelect.value === 'rear' ? drawHorseRear : drawHorse;
+    draw(ctx, { horse: HORSES[index], colours: palettes[index], pose, x, y, size });
+    if (skeletonInput.checked && viewSelect.value === 'side') drawSkeleton(pose, x, y, size);
 
     ctx.fillStyle = '#2B1D2E';
     ctx.font = '13px system-ui, sans-serif';
