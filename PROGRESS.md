@@ -196,7 +196,7 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | A0    | M0          | 2026-09-02 | **bestanden** | CI grün: [Run 33649824727](https://github.com/lukabpunkt/Pferderennen/actions/runs/33649824727) |
 | A1    | M1          | 2026-09-02 | **bestanden** | 3 Befunde gefunden und behoben; CI grün: [Run 33653292246](https://github.com/lukabpunkt/Pferderennen/actions/runs/33653292246) |
 | A6    | M1          | 2026-09-02 | **bestanden** | Ausnahme: zwei CSS-Dateien > 400 Zeilen, begründet    |
-| A2    | M2          | 2026-09-02 | **bestanden** | 2 Spannungs-Kriterien nach Messung geändert (S3, S6)  |
+| A2    | M2          | 2026-09-02 | **bestanden** | 2 Spannungs-Kriterien nach Messung geändert (S3, S6); CI grün: [Run 33659923149](https://github.com/lukabpunkt/Pferderennen/actions/runs/33659923149) |
 | A6    | M2          | 2026-09-02 | **bestanden** | Engine-Coverage 98 % Zeilen, Isolation per Test belegt |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
@@ -345,6 +345,12 @@ in **51 s**.
 Ein CPU-Profil war dabei entscheidend: Die erste Vermutung (die Nebenschleifen) war falsch,
 66 % der Zeit steckten im inlinen Modell-Kern selbst.
 
+In der CI dauert das Audit **96 s** – die GitHub-Runner haben vier statt acht Kerne. Das liegt
+über dem Richtwert von 60 s aus `03_RACE_ENGINE.md` §7, der sich allerdings auf den reinen
+100k-Hauptlauf bezieht (der macht davon rund 44 s aus); die restliche Zeit geht in die vier
+Vergleichsläufe und den Partitions-Beweis. Der gesamte CI-Job braucht 2:01 min. Wenn das
+irgendwann stört, ist `--sub` der Hebel.
+
 ## Entscheidungen
 
 _(Datum – Entscheidung – Begründung)_
@@ -426,7 +432,7 @@ _(Datum – Entscheidung – Begründung)_
 
 | Prüfpunkt | Ergebnis |
 | --- | --- |
-| `npm run audit:fairness` (220k) Exit 0 | ✅ 51 s auf 8 Workern |
+| `npm run audit:fairness` (220k) Exit 0 | ✅ 51 s lokal (8 Worker), **96 s in CI** (GitHub-Runner haben 4 Kerne). Die Zahlen sind bitidentisch – S1 31,24 %, S3 27,13 %, S6 132 auf beiden Maschinen |
 | Einmalig 1 Mio.: alle Anteile in [0,1607; 0,1727], χ² p > 0,001 | ✅ Spanne 0,16625–0,16729, χ² p = 0,48 |
 | Sieganteile je Bahn uniform | ✅ χ² p = 0,69 |
 | Je Chaos-Level und Renndauer uniform | ✅ vier Vergleichsläufe à 200k |
