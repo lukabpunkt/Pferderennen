@@ -194,7 +194,7 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | Audit | Meilenstein | Datum      | Ergebnis      | Offene Punkte / Link                             |
 | ----- | ----------- | ---------- | ------------- | ------------------------------------------------ |
 | A0    | M0          | 2026-09-02 | **bestanden** | CI grün: [Run 33649824727](https://github.com/lukabpunkt/Pferderennen/actions/runs/33649824727) |
-| A1    | M1          | 2026-09-02 | **bestanden** | 3 Befunde im Test gefunden und behoben (siehe unten)  |
+| A1    | M1          | 2026-09-02 | **bestanden** | 3 Befunde gefunden und behoben; CI grün: [Run 33653292246](https://github.com/lukabpunkt/Pferderennen/actions/runs/33653292246) |
 | A6    | M1          | 2026-09-02 | **bestanden** | Ausnahme: zwei CSS-Dateien > 400 Zeilen, begründet    |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
