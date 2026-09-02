@@ -16,14 +16,21 @@ import { randomSeed } from '../../engine/rng.js';
 import { createLoop } from '../../render/loop.js';
 import { createCamera } from '../../render/camera.js';
 import { createTrack, orientationFor } from '../../render/track.js';
-import { horseColours } from '../../render/horse.js';
+import { horseColours } from '../../render/palette.js';
 import { createPose } from '../../render/horseAnimations.js';
 import { drawField } from '../../render/field.js';
-import { createParticles } from '../../render/particles.js';
+import { createParticles, CONFETTI } from '../../render/particles.js';
 import { createEventVisuals } from '../../render/eventVisuals.js';
 import { createHud } from '../../render/hud.js';
 import { createQualityMonitor, quality, resetQuality } from '../../render/quality.js';
-import { RACE_DURATIONS, RENDER, RUNNER_COUNT, TIMESTEP } from '../../config.js';
+import {
+  RACE_DURATIONS,
+  RENDER,
+  RUNNER_COUNT,
+  TIMESTEP,
+  TRACK_LENGTH,
+  PHOTO_FINISH,
+} from '../../config.js';
 import { createCountdown } from '../components/countdown.js';
 import { createCommentary } from '../raceCommentary.js';
 import { toResultPayload } from '../raceResult.js';
@@ -37,6 +44,9 @@ const CELEBRATION_MS = 2600;
 
 /** How long the starting gates take to swing open. */
 const GATE_OPEN_SECONDS = 0.5;
+
+/** Floor between two spoken lead changes, so a screen reader stays followable (audit A4). */
+const LEAD_ANNOUNCE_MIN_MS = 3000;
 
 /**
  * @param {HTMLElement} container
@@ -66,6 +76,20 @@ export function mount(container, store) {
    * Reduced motion drops the shakes and the flashes and thins the particles, but every prop
    * stays: a banana is information, not decoration (docs/04_DESIGN_SYSTEM.md §9).
    */
+  /**
+   * A short buzz on the phone. Purely confirmation — nothing in the game depends on it, and it
+   * is off when the player has switched vibration off (GDD §6).
+   * @param {number|number[]} pattern
+   */
+  function buzz(pattern) {
+    if (!settings.vibration) return;
+    try {
+      navigator.vibrate?.(pattern);
+    } catch {
+      // Not every browser has it, and none of them need it.
+    }
+  }
+
   const calm =
     settings.reducedMotion === 'on' ||
     (settings.reducedMotion === 'auto' &&
@@ -89,6 +113,15 @@ export function mount(container, store) {
   }
 
   const countdown = createCountdown();
+  /** The photo-finish overlay: vignette, flashes and the banner. */
+  const photoFinish = el('div', { className: 'photo-finish', attrs: { 'aria-hidden': 'true' } }, [
+    el('span', { className: 'photo-finish__banner', text: 'FOTOFINISH!' }),
+  ]);
+
+  /** Shown while the tab is in the background; the race waits rather than running on unseen. */
+  const paused = el('div', { className: 'race-paused', attrs: { role: 'status' } }, [
+    el('span', { className: 'race-paused__text', text: 'Pausiert – das Rennen wartet auf euch.' }),
+  ]);
   const debugPanel = el('pre', { className: 'race-debug' });
   /** The stage carries the orientation, because the HUD styles hang off it. */
   const stage = el('div', { className: 'race-stage' });
@@ -98,6 +131,8 @@ export function mount(container, store) {
   let phase = 'countdown';
   let gateOpen = 0;
   let handedOver = false;
+  /** True once the finish has turned into a photo finish; it never turns back. */
+  let dramatic = false;
   let timers = [];
   let width = 0;
   let height = 0;
@@ -112,6 +147,7 @@ export function mount(container, store) {
   let updateMs = 0;
   let renderMs = 0;
   let lastLeader = -1;
+  let lastAnnounce = 0;
 
   resetQuality();
   const monitor = createQualityMonitor((level) => {
@@ -156,6 +192,7 @@ export function mount(container, store) {
       const runners = race.runners;
       for (const runner of runners) current[runner.index] = runner.x;
       commentary.read(race);
+      checkPhotoFinish(race.runners);
       if (race.isFinished) finish();
     }
     updateMs = performance.now() - started;
@@ -263,12 +300,62 @@ export function mount(container, store) {
     let leader = runners[0];
     for (const runner of runners) if (runner.x > leader.x) leader = runner;
     if (leader.index === lastLeader) return;
+    // In a tight pack the lead can change several times a second. Announcing each one would
+    // leave a screen reader talking over itself, so lead changes get a floor of 3 s (audit A4);
+    // the milestones below — start, photo finish, winner — are never throttled.
+    const now = performance.now();
+    if (now - lastAnnounce < LEAD_ANNOUNCE_MIN_MS) return;
+    lastAnnounce = now;
     lastLeader = leader.index;
 
     const name = horseByIndex(leader.index).name;
     canvas.setAttribute('aria-label', `Rennbahn. ${name} führt.`);
+    speak(`${name} führt.`);
+  }
+
+  /** Puts one sentence into the page's polite live region. */
+  function speak(text) {
     const region = document.getElementById('live-region');
-    if (region) region.textContent = `${name} führt.`;
+    if (region) region.textContent = text;
+  }
+
+  /**
+   * Turns the last few metres into a photo finish when it deserves one: slow motion, a push in
+   * on the line, a vignette and the banner. The threshold is the same one the fairness audit
+   * measures, so what the audit calls a photo finish is exactly what the player sees.
+   * @param {{x: number}[]} runners
+   */
+  function checkPhotoFinish(runners) {
+    if (dramatic || phase !== 'running' || calm) return;
+
+    let first = -Infinity;
+    let second = -Infinity;
+    for (const runner of runners) {
+      if (runner.x > first) {
+        second = first;
+        first = runner.x;
+      } else if (runner.x > second) {
+        second = runner.x;
+      }
+    }
+    if (first < TRACK_LENGTH * PHOTO_FINISH.fromProgress) return;
+    if (first - second >= PHOTO_FINISH.maxGap) return;
+
+    dramatic = true;
+    loop.setTimeScale(PHOTO_FINISH.timeScale);
+    camera.setZoomBoost(1.4);
+    stage.classList.add('is-photo-finish');
+    hud.say('FOTOFINISH!');
+    speak('Fotofinish!');
+  }
+
+  /** Puts time back to normal once the drama is over. */
+  function endPhotoFinish() {
+    if (!dramatic) return;
+    dramatic = false;
+    loop.setTimeScale(1);
+    camera.setZoomBoost(1);
+    stage.classList.remove('is-photo-finish');
   }
 
   /** Which animation a runner should be playing right now. */
@@ -287,11 +374,26 @@ export function mount(container, store) {
     handedOver = true;
     phase = 'finished';
 
+    endPhotoFinish();
+    buzz([60, 60, 60]);
+
     const winner = horseByIndex(race.order[0]);
     hud.say(`${winner.name} gewinnt!`);
+
+    // Confetti in the winner's colour, from both sides of the picture.
+    if (!calm) {
+      for (const side of [0.12, 0.88]) {
+        particles.burst(CONFETTI, width * side, height * 0.72, {
+          amount: 26,
+          speed: 320,
+          radius: Math.max(5, height * 0.012),
+          seconds: 2.4,
+        });
+      }
+    }
+    track?.cheer();
     canvas.setAttribute('aria-label', `Rennen beendet. ${winner.name} gewinnt.`);
-    const region = document.getElementById('live-region');
-    if (region) region.textContent = `${winner.name} gewinnt!`;
+    speak(`${winner.name} gewinnt!`);
 
     const payload = toResultPayload(race, seed);
     timers.push(
@@ -308,6 +410,13 @@ export function mount(container, store) {
     countdown.start(() => {
       phase = 'running';
       hud.say('Und sie sind los!');
+      speak('Das Rennen läuft.');
+      // A single bright frame as the gates go, unless reduced motion says otherwise.
+      if (!calm) {
+        stage.classList.add('is-flashing');
+        setTimeout(() => stage.classList.remove('is-flashing'), 260);
+      }
+      buzz(30);
     });
   }
 
@@ -319,8 +428,10 @@ export function mount(container, store) {
     seed = nextSeed;
     handedOver = false;
     gateOpen = 0;
+    endPhotoFinish();
     race = createRace({ seed, duration, chaos: settings.chaos });
     lastLeader = -1;
+    lastAnnounce = 0;
     resetPoses();
     particles.clear();
     visuals.reset();
@@ -334,7 +445,12 @@ export function mount(container, store) {
     startCountdown();
   }
 
-  const loop = createLoop({ update, render });
+  const loop = createLoop({
+    update,
+    render,
+    onPause: () => stage.classList.add('is-paused'),
+    onResume: () => stage.classList.remove('is-paused'),
+  });
 
   /** Jumps to the end of the race, for the debug key and the skip button. */
   function fastForward() {
@@ -362,7 +478,7 @@ export function mount(container, store) {
     ],
   ]);
 
-  stage.append(canvas, hud.root, countdown.node);
+  stage.append(canvas, hud.root, photoFinish, paused, countdown.node);
   if (debug.enabled) stage.append(debugPanel);
   if (settings.debugSkip) {
     stage.append(

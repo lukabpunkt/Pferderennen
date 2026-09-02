@@ -12,7 +12,7 @@
  */
 
 import { legAngles, bodyLift } from './horseAnimations.js';
-import { capsule, OUTLINE, mix } from './shapes.js';
+import { capsule, OUTLINE } from './shapes.js';
 import { quality } from './quality.js';
 import { drawTack, drawJockey, drawSaddleAccessory, drawHeadAccessory } from './horseTack.js';
 
@@ -202,25 +202,6 @@ function drawHeadAndNeck(ctx, pose, colours, horse) {
     pollY,
     bitX: pollX + Math.cos(angle) * 0.2 - Math.sin(angle) * 0.09,
     bitY: pollY + Math.sin(angle) * 0.2 + Math.cos(angle) * 0.09,
-  };
-}
-
-/**
- * Derives the palette of one horse once, so the draw call does not build strings per frame.
- * @param {object} horse from data/horses.js
- * @returns {object}
- */
-export function horseColours(horse) {
-  return {
-    coat: horse.coat,
-    coatLight: mix(horse.coat, '#FFFFFF', 0.28),
-    coatDark: horse.coatDark,
-    coatDarker: mix(horse.coatDark, '#000000', 0.25),
-    mane: horse.mane,
-    ink: '#2B1D2E',
-    skin: '#F2C9A0',
-    silkStripe: mix(horse.colorLight, '#FFFFFF', 0.45),
-    white: '#FFFFFF',
   };
 }
 

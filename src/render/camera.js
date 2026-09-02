@@ -46,6 +46,9 @@ export function createCamera({ viewUnits = 340 } = {}) {
   let shakeAlong = 0;
   let shakeCross = 0;
   let axisPixels = 1;
+  /** Extra zoom on top of the automatic one, for the photo finish. Eased, never snapped. */
+  let boost = 1;
+  let boostTarget = 1;
 
   /** Deterministic-ish wobble; the camera is decoration, so Math.random is fine outside the engine. */
   function wobble() {
@@ -91,6 +94,7 @@ export function createCamera({ viewUnits = 340 } = {}) {
       const blend = 1 - Math.exp(-FOLLOW_RATE * dt);
       centre += (target - centre) * blend;
       zoom += (targetZoom - zoom) * blend;
+      boost += (boostTarget - boost) * (1 - Math.exp(-3 * dt));
 
       if (trauma > 0) {
         trauma = Math.max(0, trauma - TRAUMA_DECAY * dt);
@@ -110,11 +114,19 @@ export function createCamera({ viewUnits = 340 } = {}) {
 
     /** Pixels per track unit right now. */
     get pixelsPerUnit() {
-      return (axisPixels / viewUnits) * zoom;
+      return (axisPixels / viewUnits) * zoom * boost;
     },
 
     get zoom() {
-      return zoom;
+      return zoom * boost;
+    },
+
+    /**
+     * Pushes in beyond the automatic framing. 1 is normal; the photo finish asks for more.
+     * @param {number} value
+     */
+    setZoomBoost(value) {
+      boostTarget = value;
     },
 
     get centre() {
@@ -137,7 +149,7 @@ export function createCamera({ viewUnits = 340 } = {}) {
 
     /** How many track units are visible right now. */
     get visibleUnits() {
-      return viewUnits / zoom;
+      return viewUnits / (zoom * boost);
     },
 
     /** Places the camera at the start line without any easing, for the countdown. */
@@ -147,6 +159,8 @@ export function createCamera({ viewUnits = 340 } = {}) {
       trauma = 0;
       shakeAlong = 0;
       shakeCross = 0;
+      boost = 1;
+      boostTarget = 1;
     },
   };
 

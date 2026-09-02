@@ -7,7 +7,8 @@
  */
 
 import { HORSES } from '../src/data/horses.js';
-import { drawHorse, horseColours } from '../src/render/horse.js';
+import { drawHorse } from '../src/render/horse.js';
+import { horseColours } from '../src/render/palette.js';
 import { drawHorseRear } from '../src/render/horseRear.js';
 import {
   createPose,

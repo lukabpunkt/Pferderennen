@@ -51,18 +51,29 @@ export function createLoop({ update, render, onPause, onResume }) {
     render(accumulator / TIMESTEP);
   }
 
-  /** Pauses while the tab is hidden, without swallowing the elapsed time on return. */
+  /**
+   * Pauses while the tab is hidden.
+   *
+   * Deliberately *not* catching up on return: a race must not run to its finish in a single
+   * frame while nobody is watching. The elapsed time is simply dropped and the race carries on
+   * where it left off (docs/02_ARCHITECTURE.md §9).
+   */
   function onVisibilityChange() {
     if (document.hidden) {
       if (!running) return;
       running = false;
       cancelAnimationFrame(frame);
       onPause?.();
-    } else if (!running) {
+    } else if (!running && wasPausedByVisibility) {
+      wasPausedByVisibility = false;
       onResume?.();
       loop.start();
     }
+    if (document.hidden) wasPausedByVisibility = true;
   }
+
+  /** Distinguishes a pause we caused from one the caller asked for. */
+  let wasPausedByVisibility = false;
 
   const loop = {
     start() {

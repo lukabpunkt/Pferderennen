@@ -62,12 +62,13 @@
   white-space: nowrap;
 }
 
+/* Sits directly under the roster rather than being pushed to the bottom, where the attract
+   horses stand. */
 .start__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-2);
-  margin-top: auto;
 }
 
 /* --- Players ------------------------------------------------------------- */
@@ -647,4 +648,50 @@
 
 .betting__footer-hint {
   text-align: center;
+}
+
+/* --- Start screen: attract mode ------------------------------------------- */
+
+.attract {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  /* A canvas is a replaced element: with height:auto it falls back to its intrinsic size and
+     ignores the offsets, so the height has to be spelled out. */
+  height: 100%;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+
+.attract--ready {
+  opacity: 1;
+}
+
+/* The horses stand on their own strip of track, so the footer must not paint over it. */
+.screen[data-screen='start'] .screen__footer {
+  background: none;
+}
+
+/* The title sits over the horses, so it needs to stay legible against them. */
+.start__title {
+  position: relative;
+  animation: title-wobble 3.4s var(--ease-out) infinite;
+}
+
+@keyframes title-wobble {
+  0%,
+  100% {
+    transform: rotate(-1.2deg);
+  }
+  50% {
+    transform: rotate(1.2deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start__title {
+    animation: none;
+  }
 }

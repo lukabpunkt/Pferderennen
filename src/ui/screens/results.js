@@ -7,7 +7,7 @@
 
 import { el } from '../dom.js';
 import { button } from '../components/button.js';
-import { page, header, card, horseBadge, playerChip } from '../components/layout.js';
+import { page, header, card, horsePortrait, playerChip } from '../components/layout.js';
 import { HORSES_BY_ID } from '../../data/horses.js';
 import { settle } from '../../engine/payout.js';
 import { sips, ICON } from '../strings.js';
@@ -37,7 +37,7 @@ function podium(order) {
           vars: { '--horse-color': horse.color, '--horse-dark': horse.colorDark },
         },
         [
-          horseBadge(horse, 'lg'),
+          horsePortrait(horse, 76),
           el('span', { className: 'podium__name', text: horse.name }),
           el('span', { className: 'podium__place num', text: `${place + 1}.` }),
         ],

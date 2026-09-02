@@ -30,10 +30,13 @@
   width: 100%;
 }
 
+/* Ink rather than white on the accent: white reaches only 2.84:1 on #ff6b35 and the primary
+   action is the one label that must never be hard to read (audit A4). Ink gets 5.6:1 and keeps
+   the orange as loud as it was. */
 .btn--primary {
   min-height: var(--btn-primary-height);
   background: var(--accent);
-  color: var(--white);
+  color: var(--ink);
   box-shadow: var(--shadow-btn);
 }
 
@@ -133,22 +136,31 @@
   font-weight: 600;
 }
 
+/* The visible track is 32 px, but the button itself is a full 48 px tall so the thumb target
+   meets the minimum (audit A4). The track lives in ::before rather than on the button. */
 .switch {
   position: relative;
   flex: 0 0 auto;
   width: 56px;
-  height: 32px;
+  height: var(--tap-min);
   border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.switch::before {
+  content: '';
+  position: absolute;
+  inset: 8px 0;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--ink) 20%, transparent);
-  cursor: pointer;
   transition: background-color var(--dur-base) var(--ease-out);
 }
 
 .switch::after {
   content: '';
   position: absolute;
-  top: 4px;
+  top: 12px;
   left: 4px;
   width: 24px;
   height: 24px;
@@ -158,7 +170,7 @@
   transition: transform var(--dur-base) var(--ease-bounce);
 }
 
-.switch--on {
+.switch--on::before {
   background: var(--success);
 }
 
@@ -240,7 +252,7 @@
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--accent);
-  color: var(--white);
+  color: var(--ink);
   font-size: var(--text-xl);
   line-height: 1;
   cursor: pointer;
@@ -267,17 +279,93 @@
   font-size: var(--text-lg);
 }
 
+/* The value rolls in the direction it moved. Only the arriving digit stays in flow, so the box
+   still sizes itself to the text; the leaving one floats over it and is clipped away. */
+.stepper__roll {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.stepper__digit {
+  display: block;
+  white-space: nowrap;
+}
+
+.stepper__sizer {
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.stepper__digit--out-up,
+.stepper__digit--out-down {
+  position: absolute;
+  inset: 0;
+}
+
+.stepper__digit--in-up {
+  animation: digit-in-up var(--dur-fast) var(--ease-out);
+}
+
+.stepper__digit--out-up {
+  animation: digit-out-up var(--dur-fast) var(--ease-out) forwards;
+}
+
+.stepper__digit--in-down {
+  animation: digit-in-down var(--dur-fast) var(--ease-out);
+}
+
+.stepper__digit--out-down {
+  animation: digit-out-down var(--dur-fast) var(--ease-out) forwards;
+}
+
+@keyframes digit-in-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes digit-out-up {
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes digit-in-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes digit-out-down {
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
 /* --- Badges and chips of the game world ---------------------------------- */
 
+/* The deep tone, not the signature one: white on the signature colours reaches only 3.8-4.2:1,
+   and the lane number is the one thing on the badge that has to be readable (audit A4). The dark
+   shades stay just as distinguishable from each other, and the signature colour still rings it. */
 .horse-badge {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
   border-radius: var(--radius-pill);
-  background: var(--horse-color);
+  background: var(--horse-dark, var(--horse-color));
   color: var(--white);
   font-family: var(--font-display);
-  box-shadow: 0 3px 0 var(--horse-dark, transparent);
+  box-shadow:
+    0 0 0 2px var(--horse-color),
+    0 3px 0 var(--horse-dark, transparent);
 }
 
 .horse-badge--sm {
@@ -454,4 +542,40 @@
       transform: scale(0.96);
     }
   }
+}
+
+/* --- Horse portrait ------------------------------------------------------- */
+
+.portrait {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--horse-color) 12%, var(--cream));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--horse-color) 45%, transparent);
+  overflow: hidden;
+}
+
+.portrait canvas {
+  display: block;
+}
+
+/* The number stays, so a horse is identifiable without relying on the drawing. It sits at the
+   bottom left, where the neck is, rather than over the muzzle. */
+.portrait__number {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 40%;
+  height: 40%;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--horse-color);
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  box-shadow: 0 2px 0 var(--horse-dark);
 }

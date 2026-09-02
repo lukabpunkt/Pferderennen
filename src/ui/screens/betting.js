@@ -8,7 +8,7 @@
 import { el } from '../dom.js';
 import { button } from '../components/button.js';
 import { stepper } from '../components/stepper.js';
-import { page, header, card, horseBadge, playerChip } from '../components/layout.js';
+import { page, header, card, horseBadge, horsePortrait, playerChip } from '../components/layout.js';
 import { HORSES, HORSES_BY_ID } from '../../data/horses.js';
 import { BETTING } from '../../config.js';
 import { sips, sipWord, BET_TYPE_LABELS, betTypeHint, ICON } from '../strings.js';
@@ -62,7 +62,7 @@ export function mount(container, store) {
         },
       },
       [
-        horseBadge(horse, 'lg'),
+        horsePortrait(horse, 68),
         el('span', { className: 'horse-card__name', text: horse.name }),
         el('span', { className: 'horse-card__character', text: horse.character }),
         backers.length > 0

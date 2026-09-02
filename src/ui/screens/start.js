@@ -16,6 +16,17 @@ import { openStats } from './stats.js';
 let cleanup = null;
 
 /**
+ * True when the player has asked for less motion, either in the settings or in the system.
+ * @param {any} settings
+ * @returns {boolean}
+ */
+function prefersCalm(settings) {
+  if (settings.reducedMotion === 'on') return true;
+  if (settings.reducedMotion === 'off') return false;
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+}
+
+/**
  * @param {HTMLElement} container
  * @param {{getState: Function, dispatch: Function}} store
  */
@@ -80,14 +91,35 @@ export function mount(container, store) {
       : null,
   ]);
 
+  // The attract mode: the six horses idling on the track behind the title. It is loaded on
+  // demand for the same reason the race is — it *is* the race renderer, and pulling it in here
+  // eagerly would undo the small first paint. Loading it here also warms it up for the race.
+  const stage = el('canvas', { className: 'attract', attrs: { 'aria-hidden': 'true' } });
+  let attract = null;
+  let dropped = false;
+
+  import('../../render/attract.js')
+    .then(({ startAttract }) => {
+      if (dropped) return;
+      attract = startAttract(stage, { calm: prefersCalm(state.settings) });
+      stage.classList.add('attract--ready');
+    })
+    .catch(() => {
+      // No attract mode is a missing flourish, not a broken screen.
+    });
+
   container.append(
+    stage,
     page({
       body: [title, roster, secondary].filter(Boolean),
       footer: primary,
     }),
   );
 
-  cleanup = () => {};
+  cleanup = () => {
+    dropped = true;
+    attract?.stop();
+  };
 }
 
 export function unmount() {

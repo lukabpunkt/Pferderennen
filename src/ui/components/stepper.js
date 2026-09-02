@@ -2,7 +2,8 @@
  * Stake stepper: minus/plus, bounds, hold-to-repeat.
  *
  * Both buttons are at least 48 px so they stay comfortable with a thumb, and holding one down
- * repeats with an accelerating interval instead of forcing twelve separate taps.
+ * repeats with an accelerating interval instead of forcing twelve separate taps. The value rolls
+ * in the direction it moved, so a change reads as a change even from across the table.
  */
 
 import { el } from '../dom.js';
@@ -28,7 +29,42 @@ export function stepper({ value, min, max, label, onChange, format = String }) {
   let holdTimer = null;
   let holdInterval = null;
 
-  const output = el('output', { className: 'stepper__value num', text: format(current) });
+  const roll = el('span', { className: 'stepper__roll' }, [
+    el('span', { className: 'stepper__digit', text: format(current) }),
+  ]);
+  /* Reserves the width of the longest value the stepper can ever show, so the two buttons do not
+     jump sideways when the text grows (1 -> 10 Schlücke). Measured rather than guessed in `ch`,
+     which would depend on the display font. */
+  const widest = [format(min), format(max)].reduce((a, b) => (b.length > a.length ? b : a));
+  const output = el('output', { className: 'stepper__value num' }, [
+    roll,
+    el('span', {
+      className: 'stepper__sizer',
+      text: widest,
+      attrs: { 'aria-hidden': 'true' },
+    }),
+  ]);
+
+  /**
+   * Swaps the displayed value, rolling the old one out and the new one in. While a held button
+   * repeats faster than the animation lasts, the pending outgoing digit is dropped rather than
+   * stacked, so the strip never grows.
+   * @param {number} direction -1 down, +1 up, 0 no animation
+   */
+  const show = (direction) => {
+    const text = format(current);
+    const previous = roll.lastElementChild;
+    if (previous && previous.textContent === text) return;
+    if (direction === 0 || !previous) {
+      roll.replaceChildren(el('span', { className: 'stepper__digit', text }));
+      return;
+    }
+    while (roll.children.length > 1) roll.firstElementChild.remove();
+    const way = direction > 0 ? 'up' : 'down';
+    previous.className = `stepper__digit stepper__digit--out-${way}`;
+    previous.addEventListener('animationend', () => previous.remove(), { once: true });
+    roll.append(el('span', { className: `stepper__digit stepper__digit--in-${way}`, text }));
+  };
 
   const stopHold = () => {
     if (holdTimer !== null) clearTimeout(holdTimer);
@@ -44,8 +80,9 @@ export function stepper({ value, min, max, label, onChange, format = String }) {
       stopHold();
       return;
     }
+    const direction = next > current ? 1 : -1;
     current = next;
-    output.textContent = format(current);
+    show(direction);
     minus.disabled = current <= min;
     plus.disabled = current >= max;
     onChange(current);
@@ -97,7 +134,7 @@ export function stepper({ value, min, max, label, onChange, format = String }) {
     node,
     setValue(next) {
       current = Math.min(max, Math.max(min, next));
-      output.textContent = format(current);
+      show(0);
       minus.disabled = current <= min;
       plus.disabled = current >= max;
     },

@@ -135,19 +135,19 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 
 ### M6 – Design-Polish
 
-- [ ] 1. Countdown + Boxen-Öffnen
-- [ ] 2. Fotofinish
-- [ ] 3. Zieleinlauf-Sequenz + Konfetti + Vorhang
-- [ ] 4. Ergebnis-Podium
-- [ ] 5. Start-Screen Attract-Mode
-- [ ] 6. Wetten-Screen Portraits + Animationen
-- [ ] 7. Transitions/States/Fokus finalisiert
-- [ ] 8. Haptik
-- [ ] 9. Leer-/Fehlerzustände
-- [ ] 10. `chore: complete M6`
-- [ ] **Audit A1 bestanden** (Re-Run)
-- [ ] **Audit A3 bestanden** (Polish)
-- [ ] **Audit A4 bestanden**
+- [x] 1. Countdown + Boxen-Öffnen
+- [x] 2. Fotofinish
+- [x] 3. Zieleinlauf-Sequenz + Konfetti + Vorhang
+- [x] 4. Ergebnis-Podium
+- [x] 5. Start-Screen Attract-Mode
+- [x] 6. Wetten-Screen Portraits + Animationen
+- [x] 7. Transitions/States/Fokus finalisiert
+- [x] 8. Haptik
+- [x] 9. Leer-/Fehlerzustände
+- [x] 10. `chore: complete M6`
+- [x] **Audit A1 bestanden** (Re-Run)
+- [x] **Audit A3 bestanden** (Polish)
+- [x] **Audit A4 bestanden**
 
 ### M7 – Sound, Kommentator, Wettarten, Statistik
 
@@ -208,6 +208,9 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A3    | M5          | 2026-09-02 | **bestanden** | Event-Teil; alle 23 Events geprüft. CI grün: [Run 33668940879](https://github.com/lukabpunkt/Pferderennen/actions/runs/33668940879) |
 | A2    | M5          | 2026-09-02 | **bestanden** | Re-Run: Fairness von der Render-Schicht unberührt      |
 | A5    | M5          | 2026-09-02 | **bestanden** | Ladebudget gerissen und durch Lazy-Loading gelöst      |
+| A1    | M6          | 2026-09-02 | **bestanden** | Re-Run, Design-Teil; 1 Befund (Attract-Layout) behoben |
+| A3    | M6          | 2026-09-02 | **bestanden** | Polish-Teil; Screenshots in `docs/screenshots/` erneuert |
+| A4    | M6          | 2026-09-02 | **bestanden** | 4 echte Befunde gefunden und behoben, davon 3 Kontrast |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -365,6 +368,19 @@ irgendwann stört, ist `--sub` der Hebel.
 
 _(Datum – Entscheidung – Begründung)_
 
+- **2026-09-02 (M6) – Der Primär-Button trägt Tinte statt Weiß.** Weiß auf `--accent` erreicht
+  nur 2,84:1 und reißt damit die WCAG-Schwelle am wichtigsten Button des Spiels. Die Alternative
+  wäre gewesen, das Orange zu verdunkeln – aber das Orange *ist* die Marke. Tinte darauf ergibt
+  5,62:1 und der Button bleibt genauso laut.
+- **2026-09-02 (M6) – Die Pferde-Badges nutzen `colorDark` statt `color`.** Auf den
+  mittelhellen Signaturfarben erreicht weder Weiß (3,8–4,2:1) noch Tinte (3,8:1) die 4,5:1. Ein
+  Badge, dessen Nummer man nicht lesen kann, ist kaputt. Ein 2-px-Ring in der Signaturfarbe hält
+  die Zuordnung, die sechs dunklen Töne bleiben untereinander unterscheidbar.
+- **2026-09-02 (M6) – Für den Stepper-Digit-Roll gibt es keinen Unit-Test.** Alle Tests laufen
+  laut `vitest.config.js` in der schnellen Node-Umgebung; ein DOM-Test bräuchte jsdom als weitere
+  Dev-Abhängigkeit, nur für diese eine Animation. Stattdessen im Browser gemessen: nie mehr als
+  zwei Ziffern gleichzeitig im Strip, danach genau eine, und 119 px Breite über den gesamten
+  Wertebereich. Wenn M8 ohnehin Playwright bringt, gehört die Prüfung dorthin.
 - **2026-09-02 – `clampMin` des Geschwindigkeitsmodells auf −0,6 statt 0.**
   `03_RACE_ENGINE.md` §5 nennt `clamp(…, 0, 2.2)`, §6.2 definiert das Event `confused` aber mit
   `mod: -1.6` und ausdrücklich „netto rückwärts". Beides zusammen geht nicht. Da das
@@ -693,9 +709,103 @@ braucht, bevor eine Wette steht. Der Router akzeptiert jetzt auch Lade-Funktione
 Module, und `main.js` wärmt den Renderer im Hintergrund vor, während die Spieler noch ihre Namen
 tippen. **Ergebnis: 307 KB → 127 KB**, ohne spürbare Wartezeit (im Browser durchgespielt).
 
+### A1 / A3 / A4 – Audits zu M6 (2026-09-02)
+
+**A1 (UI/UX, Re-Run):** Der Flow-Teil war seit M1 unverändert und bleibt grün: vom Start bis
+zum ersten Rennen sind es bei zwei Spielern genau **6 Taps** (Weiterspielen → Pferd → Setzen →
+Pferd → Setzen → Rennen starten), „Rennen starten" bleibt deaktiviert und erklärt im Untertitel,
+wie viele Wetten noch fehlen, und die Hash-Guards leiten `#/results` ohne Ergebnis sauber auf
+`#/betting` um. Der Haus-gewinnt-Fall wird als eigene dunkle Karte über den Spielerkarten
+kommuniziert.
+
+Der Design-Teil wurde vollständig neu geprüft, weil M6 fast nur aus Design besteht:
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Nur Tokens, keine Hex-Werte außerhalb `tokens.css` | ✅ 0 Treffer in `src/styles/*.css` und `src/ui/**` |
+| Buttons ≥ 48 px, Primär 56 px, mobil volle Breite | ✅ alle Screens, gemessen im Browser |
+| Keine Schrift < 14 px | ✅ kleinster Token `--text-xs: 14px` |
+| hover / active / focus-visible / disabled sichtbar unterschiedlich | ✅ |
+| Keine Layout-Sprünge | ✅ eine Ausnahme gefunden und behoben (Stepper, siehe unten) |
+| 375 × 700 und 1440 × 900 geprüft | ✅ Screenshots in `docs/screenshots/` |
+
+**Im A1-Re-Run gefunden und behoben: der Attract-Mode lag über den Buttons.** Die sechs
+Idle-Pferde standen am unteren Rand – genau dort, wo auch der Primär-Button und die
+Sekundär-Chips sitzen. Der Button schnitt Pferd 3 und 4 am Hals ab. Drei Ursachen, alle
+behoben:
+
+1. `.screen` war `position: static`, das absolut positionierte Canvas hat sich deshalb an einem
+   Vorfahren außerhalb des Screens ausgerichtet und war 720 px hoch statt 533.
+2. Ein `<canvas>` ist ein *replaced element*: bei `height: auto` fällt es auf seine intrinsische
+   Größe zurück und ignoriert den `bottom`-Offset. Die Höhe muss ausgeschrieben werden.
+3. Die Bodenlinie lag bei 94 % der Canvas-Höhe. Jetzt bei 84 % – der Grasstreifen darunter trägt
+   den Button, und kein Pferd wird mehr überdeckt.
+
+**A3 (Polish-Teil):**
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Countdown, Boxen-Öffnen, Fotofinish, Podium, Konfetti mit Easing | ✅ `grep linear` in `src/styles/` und `src/`: **0 Treffer** außerhalb von `linear-gradient` |
+| Fotofinish nur bei echtem Kopf-an-Kopf | ✅ gleiche Schwelle wie im Fairness-Audit (letzte 3 %, Abstand < 1 %) |
+| Fotofinish löst sich sauber auf (`timeScale` zurück auf 1) | ✅ `endPhotoFinish()` setzt Zeit, Zoom und Klasse zurück |
+| Fotofinish-Häufigkeit 25–45 % | ✅ **39,6 %** (gemessen im Fairness-Audit) |
+| Screenshots Landscape + Portrait aktualisiert | ✅ vier neue Bilder in `docs/screenshots/` |
+
+**A4 (Barrierefreiheit): vier echte Befunde, alle behoben.** Geprüft wurde mit einem im Browser
+ausgeführten Skript, das für jedes sichtbare Textelement die tatsächliche Vorder- und
+Hintergrundfarbe durch den kompletten Alpha-Stapel rechnet und gegen die WCAG-Schwelle stellt
+(4,5:1, bei großem Text 3:1) – über Start, Spieler, Wetten, Ergebnis und alle drei Modals.
+
+1. **Weiß auf dem Accent-Orange erreicht nur 2,84:1.** Das betraf den wichtigsten Button des
+   Spiels. Statt das Orange zu verdunkeln – es ist die Marke – trägt der Primär-Button jetzt die
+   Tinte als Schriftfarbe: **5,62:1**, und er ist genauso laut wie vorher. Dasselbe gilt für die
+   ± des Steppers.
+2. **Die Pferde-Badges: weiß auf der Signaturfarbe.** Lila 4,23:1, Rot 3,76:1 – beides unter der
+   Schwelle, und die Nummer ist genau das, was auf einem Badge lesbar sein muss. Weder Weiß noch
+   Tinte erreicht auf diesen mittelhellen Farben 4,5:1, das Badge musste also dunkler werden: Es
+   nutzt jetzt den `colorDark`-Ton mit einem 2-px-Ring in der Signaturfarbe. Die sechs dunklen
+   Töne bleiben untereinander klar unterscheidbar, und die Nummer sitzt jetzt bei ≥ 5:1.
+3. **`--danger` erreichte weder mit Weiß (3,76:1) noch mit Tinte (4,23:1) die Schwelle.** Das Rot
+   ist von `#ef4444` auf `#d92d20` gewandert: Weiß darauf ergibt 4,83:1.
+4. **Die Switches waren 56 × 32 px** und rissen damit das 48-px-Ziel. Der Button ist jetzt
+   56 × 48 px; die sichtbare Schiene liegt in `::before` und sieht unverändert aus.
+
+Nebenbei zog `--accent-dark` von `#c94c1c` auf `#b33f14` nach, weil Creme darauf (der
+Warn-Toast) bei 4,39:1 lag – jetzt 5,47:1.
+
+| Weiterer Prüfpunkt | Ergebnis |
+| --- | --- |
+| Alles per Tastatur erreichbar, Reihenfolge logisch | ✅ |
+| `:focus-visible` überall sichtbar, Kontrast ≥ 3:1 | ✅ 3 px `--ink`, auf Creme 13:1, auf Accent 5,6:1 |
+| Modals: Fokus-Trap, `Esc` schließt, Fokus kehrt zurück | ✅ im Browser durchgespielt: Fokus landet wieder auf dem auslösenden Button |
+| `aria-live`-Region meldet Start, Führungswechsel, Fotofinish, Sieger | ✅ **Führungswechsel jetzt auf max. alle 3 s gedrosselt** – im dichten Feld wechselt die Führung mehrmals pro Sekunde, ein Screenreader käme sonst nicht hinterher |
+| Canvas hat `role="img"` + `aria-label` mit aktuellem Stand | ✅ Label wird bei jedem Führungswechsel und am Ziel aktualisiert |
+| Formularfelder haben Labels, Fehler per `aria-describedby` | ✅ |
+| `prefers-reduced-motion` respektiert | ✅ globaler Block + `calm`-Pfad in der Render-Schicht |
+| Pferde ohne Farbe unterscheidbar | ✅ Nummer auf Badge, Satteldecke und Startbox; dazu sechs verschiedene Accessoires |
+| Touch-Ziele ≥ 48 × 48 px mit ≥ 8 px Abstand | ✅ nach dem Switch-Fix keine Ausnahme mehr |
+| Zoom 200 %: kein horizontales Scrollen | ✅ `scrollWidth == clientWidth` auf allen Screens |
+
+Offen bis M8: Lighthouse-Accessibility ≥ 95 und die Deuteranopie-Simulation im DevTools-
+Rendering-Tab – beide laut `06_QA_AUDITS.md` ohnehin erst dort fällig.
+
+**Beim Stepper-Digit-Roll gefunden und behoben:** Die einrollende Ziffer war zuerst absolut
+positioniert – damit trug sie nichts zur Breite bei, und „3 Schlücke" wurde auf die 7ch
+Mindestbreite beschnitten. Jetzt bleibt nur die *ausgehende* Ziffer absolut. Danach sprang die
+Zeile bei 9 → 10 um 14 px, weil der Text länger wird; ein unsichtbarer Sizer mit dem längsten
+möglichen Wert reserviert die Breite. Gemessen: **119 px über den kompletten Bereich, in beide
+Richtungen** – CLS an dieser Stelle exakt 0.
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
+
+**Offen (nur der Nutzer kann das):**
+
+- **M6:** Drei Personen, die das Spiel nicht kennen, spielen ohne Erklärung. Wo stocken sie? Wo
+  lachen sie?
+- **M4/M5:** FPS auf einem echten Mittelklasse-Handy mit `?debug=1` messen.
+- **M5:** Fünf Rennen auf Chaos „Vollgas" – welche Events sind witzig, welche unklar?
 
 ## Bekannte Probleme / offene TODOs
 

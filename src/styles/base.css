@@ -105,6 +105,8 @@ select {
 /* All screens share one grid cell so a leaving and an entering screen can overlap. */
 .screen {
   grid-area: 1 / 1;
+  /* Anchors absolutely positioned decoration (the attract canvas) to the screen, not the page. */
+  position: relative;
   display: flex;
   flex-direction: column;
   /* A fixed height rather than a minimum: only then does __body scroll internally and the

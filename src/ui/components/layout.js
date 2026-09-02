@@ -7,6 +7,8 @@
  */
 
 import { el } from '../dom.js';
+import { createPortrait } from '../../render/horsePortrait.js';
+import { RENDER } from '../../config.js';
 
 /**
  * Assembles a screen.
@@ -53,8 +55,8 @@ export function card(children, className = '') {
 }
 
 /**
- * The coloured circle carrying a horse's starting number. Stands in for the procedural
- * portrait until M6 draws the real thing.
+ * The coloured disc carrying a horse's starting number. Used wherever the horse only needs to be
+ * identified, not looked at: the leaderboard, the overview table, the podium plinth.
  * @param {{color: string, number: number, name: string}} horse
  * @param {string} [size] 'sm' | 'md' | 'lg'
  * @returns {HTMLElement}
@@ -66,6 +68,32 @@ export function horseBadge(horse, size = 'md') {
     vars: { '--horse-color': horse.color, '--horse-dark': horse.colorDark },
     attrs: { 'aria-hidden': 'true' },
   });
+}
+
+/**
+ * A drawn portrait of the horse, with its starting number on a badge in the corner.
+ *
+ * The betting cards and the podium show this rather than a coloured circle: a horse you are
+ * about to bet drinks on should have a face (docs/05_MILESTONES.md, M6 task 6).
+ *
+ * @param {object} horse entry from data/horses.js
+ * @param {number} size in CSS pixels
+ * @returns {HTMLElement}
+ */
+export function horsePortrait(horse, size = 64) {
+  const ratio = Math.min(window.devicePixelRatio || 1, RENDER.maxPixelRatio);
+  return el(
+    'span',
+    {
+      className: 'portrait',
+      vars: { '--horse-color': horse.color, '--horse-dark': horse.colorDark },
+      attrs: { style: `width:${size}px;height:${size}px` },
+    },
+    [
+      createPortrait(horse, size, ratio),
+      el('span', { className: 'portrait__number num', text: String(horse.number) }),
+    ],
+  );
 }
 
 /**
