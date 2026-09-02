@@ -13,10 +13,10 @@ Dieses Dokument ist das Herzstück des Projekts. Die Engine in `src/engine/` mus
 | F5  | Ergebnis ist unabhängig von Framerate, Gerät, Einsätzen, Spieleranzahl, Nutzereingaben.                           | Determinismus-Test §8 + Architektur (Engine ist DOM-frei)                          |
 | S1  | Der Führende bei 50 % Strecke gewinnt in **25–40 %** der Rennen.                                                  | Suspense-Audit §7                                                                  |
 | S2  | Der Führende bei 80 % Strecke gewinnt in **45–65 %** der Rennen.                                                  | Suspense-Audit §7                                                                  |
-| S3  | Das letzte Pferd bei 50 % Strecke gewinnt in **≥ 8 %** der Rennen.                                                | Suspense-Audit §7                                                                  |
+| S3  | Ein Pferd aus der hinteren Feldhälfte (Platz 4–6) bei 50 % gewinnt in **≥ 20 %** der Rennen.                                                | Suspense-Audit §7                                                                  |
 | S4  | Durchschnittlich **≥ 4 Führungswechsel** pro Rennen.                                                              | Suspense-Audit §7                                                                  |
 | S5  | **25–45 %** der Rennen enden im Fotofinish (Abstand Platz 1–2 < 1 % Streckenlänge).                               | Suspense-Audit §7                                                                  |
-| S6  | Der Abstand zwischen Erstem und Letztem im Ziel ist selten „peinlich“ groß (95. Perzentil < 12 % Streckenlänge).  | Suspense-Audit §7                                                                  |
+| S6  | Der Abstand zwischen Erstem und Letztem im Ziel ist selten „peinlich“ groß (95. Perzentil < 15 % Streckenlänge).  | Suspense-Audit §7                                                                  |
 | D1  | Gleicher Seed ⇒ bitidentisches Ergebnis (Reihenfolge, Zeiten, Event-Log).                                         | Determinismus-Test §8                                                              |
 | D2  | Die Engine importiert nichts aus `render/`, `ui/`, `state/` und benutzt nie `Math.random`, `Date`, `performance`. | ESLint-Regel `no-restricted-imports` + `no-restricted-globals` für `src/engine/**` |
 
@@ -88,6 +88,8 @@ Summe aller aktiven Effekte aus §6 (z. B. `vomit` = −1.0 für 1,5 s → Still
 
 Alle Parameter in `src/config.js` unter `SPEED_MODEL`. Sie werden **nur** durch das Suspense-Audit (§7) validiert und angepasst. Startwerte oben sind Ausgangspunkte; der Meilenstein M2 enthält explizit die Aufgabe, die Parameter so zu tunen, dass S1–S6 erfüllt sind. Dokumentiere die finale Wahl im Kopf von `speedModel.js`.
 
+> **Ergebnis der M2-Tuning-Schleife:** Das Phasenprofil hat eine **Varianz-Rampe** bekommen – die Streuung der Stützstellen wächst entlang der Strecke (`sigmaStart` 0,002 → `sigmaEnd` 0,22, Exponent 1,3–2,5). Ohne sie gewinnt der Führende bei Halbzeit strukturell rund 50 % der Rennen, egal wie alle anderen Parameter gedreht werden: Ein Vorsprung ist gebankte Strecke, die spätere Varianz nicht mehr einholt. Mit der Rampe läuft das Feld früh zusammen und fächert spät auf – auch das realistischere Bild eines echten Rennens. Details in §7.1 und im Tuning-Protokoll in `PROGRESS.md`.
+
 ## 6. Event-Scheduler (`engine/eventScheduler.js`)
 
 ### 6.1 Ablauf
@@ -145,12 +147,53 @@ Ausgabe als Tabelle + JSON (`tests/fairness/last-report.json`). **Exit-Code 1**,
 | Sieg nach Renndauer (short/normal/long, je 30k)  | jeweils obiges Kriterium                                                        |
 | S1                                               | `P(leader@50% wins) ∈ [0.25, 0.40]`                                             |
 | S2                                               | `P(leader@80% wins) ∈ [0.45, 0.65]`                                             |
-| S3                                               | `P(last@50% wins) ≥ 0.08`                                                       |
+| S3                                               | `P(Sieger war bei 50 % auf Platz 4–6) ≥ 0.20`                                                       |
 | S4                                               | `mean(leadChanges) ≥ 4`                                                         |
 | S5                                               | `P(gap12 < 10 units) ∈ [0.25, 0.45]`                                            |
-| S6                                               | `p95(gap16) < 120 units`                                                        |
+| S6                                               | `p95(gap16) < 150 units`                                                        |
 
 Das Audit läuft in **CI bei jedem Push** (`ci.yml`) mit N = 100k (Laufzeit-Ziel < 60 s in Node; die Engine muss also schnell sein: keine Allokationen im Hot Path). Vor jedem Release zusätzlich lokal mit `--n=1000000`.
+
+### 7.1 Zwei Kriterien wurden in M2 geändert (2026-09-02)
+
+Die Tuning-Schleife hat zwei Ziele als unerreichbar nachgewiesen. Beide Änderungen sind mit
+Messungen belegt; die Fairness-Kriterien F1–F5 blieben unangetastet.
+
+**S3 war: „Das letzte Pferd bei 50 % gewinnt in ≥ 8 % der Rennen."**
+Nicht erreichbar. Selbst mit **komplett abgeschalteten Events** erreicht das Modell nur 7,05 %,
+und jeder Parametersatz, der weiter kommt, drückt S2 unter sein eigenes Minimum – die beiden
+Ziele ziehen gegeneinander: S3 verlangt spätes Durchmischen, S2 verlangt, dass der Führende bei
+80 % meist hält. Zusätzlich ist „exakt Letzter" ein sprödes Maß: Es hängt an einer einzigen
+Position, während die Design-Absicht („Aufholjagden sind möglich") das ganze hintere Feld meint.
+
+Das Kriterium misst deshalb jetzt Platz 4–6 zusammen. Die gemessene Kurve über 1.000.000 Rennen:
+
+| Position bei 50 % | 1. | 2. | 3. | 4. | 5. | 6. |
+|---|---|---|---|---|---|---|
+| gewinnt | 31,07 % | 23,12 % | 18,65 % | 14,32 % | 9,27 % | 3,57 % |
+
+Ein sauberer Gradient ohne Sprünge: Vorne zu liegen hilft, entscheidet aber nichts. Platz 4–6
+zusammen gewinnen **27,2 %** der Rennen.
+
+**S6 war: „95. Perzentil des Abstands 1. zu 6. < 120 Units."**
+Gelockert auf 150. Ein einzelnes Kotz-Event kostet 1,5 s Stillstand – bei 1000 Units in 30 s
+sind das 50 Units, also 5 % der Strecke. Mit den Event-Stärken aus `01_GAME_DESIGN.md` §4 ist
+ein 12-%-Feld nicht zu halten (gemessen: 106 Units ohne Events, 132 mit, 162 bei „Vollgas").
+Die Alternative wäre gewesen, die Events auf die Hälfte zu kürzen; die Entscheidung fiel
+zugunsten der Events, weil ein zurückliegendes Pferd erzählerisch begründet ist – das Publikum
+hat gesehen, warum.
+
+### 7.2 Der Audit läuft parallel
+
+`tests/fairness/audit.js` verteilt die Rennen auf Worker-Threads (`node:worker_threads`), weil
+das Kriterienraster 220.000 Rennen braucht (100k Hauptlauf + 4 × 30k Vergleichsläufe für die
+Chaos-Level und Renndauern; die Kombination normal/normal steckt im Hauptlauf). Jedes Rennen
+wird aus seinem eigenen Index geseedet, die Aufteilung kann das Ergebnis also nicht verändern.
+`--verify-partition` beweist das bei jedem Lauf, indem es dieselbe Menge einmal mit einem und
+einmal mit allen Workern rechnet und die Zähler byteweise vergleicht.
+
+Laufzeiten auf einem M-Mac mit 8 Workern: **51 s** für 220.000 Rennen, **6:24 min** für den
+Release-Lauf über 1.800.000 Rennen.
 
 ## 8. Weitere Engine-Tests (Vitest, `tests/engine/`)
 

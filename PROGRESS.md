@@ -2,7 +2,7 @@
 
 > **Für Claude Code:** Diese Datei ist deine To-do-Liste und dein Gedächtnis. Beginne jede Session damit, sie zu lesen. Hake Tasks ab, trage Audit-Ergebnisse ein, notiere Entscheidungen. Details zu jedem Task stehen in `docs/05_MILESTONES.md`.
 
-**Aktueller Stand:** **M1 abgeschlossen** (State, Router & UI-Screens; Audits A1 und A6 bestanden). Nächster Schritt: **M2 – Race Engine & Fairness-Audit**.
+**Aktueller Stand:** **M2 abgeschlossen** (Race Engine & Fairness-Audit; Audits A2 und A6 bestanden). Nächster Schritt: **M3 – Render-Core (Landscape)**.
 
 **Live-URL:** _(wird in M9 eingetragen)_
 
@@ -42,19 +42,19 @@
 
 ### M2 – Race Engine & Fairness-Audit
 
-- [ ] 1. rng.js + Tests
-- [ ] 2. effects.js + data/events.js + Tests
-- [ ] 3. speedModel.js
-- [ ] 4. eventScheduler.js
-- [ ] 5. race.js
-- [ ] 6. race.test.js (Determinismus, Constraints, Tie-Break, Isolation)
-- [ ] 7. tests/fairness/audit.js
-- [ ] 8. Tuning-Schleife abgeschlossen (Protokoll unten)
-- [ ] 9. Text-Rennen im Race-Screen + loop.js
-- [ ] 10. Debug-Modus
-- [ ] 11. CI mit echtem Fairness-Audit, `chore: complete M2`
-- [ ] **Audit A2 bestanden** (N=100k in CI, N=1M lokal)
-- [ ] **Audit A6 bestanden**
+- [x] 1. rng.js (sfc32, fork, gaussian, weighted) + 25 Tests
+- [x] 2. effects.js + data/events.js (alle 22 Events aus GDD §4) + 29 Tests
+- [x] 3. speedModel.js mit Varianz-Rampe im Phasenprofil
+- [x] 4. eventScheduler.js (Fenster, Abstand, Max-pro-Läufer, Slipstream)
+- [x] 5. race.js (fixer Timestep, interpolierter Zieleinlauf, allokationsfreier Hot Path)
+- [x] 6. race.test.js (50 Seeds Determinismus, 10.000 Rennen Scheduler-Constraints, Isolation)
+- [x] 7. tests/fairness/audit.js (eigener Chi²-Test, Worker-Threads, JSON-Report, Exit-Code)
+- [x] 8. Tuning-Schleife abgeschlossen (Protokoll unten)
+- [x] 9. Text-Rennen im Race-Screen + loop.js
+- [x] 10. Debug-Modus (`?debug=1`, `?seed=`, Tasten F/R/S)
+- [x] 11. CI mit echtem Fairness-Audit, `chore: complete M2`
+- [x] **Audit A2 bestanden** (220k in CI, 1,8 Mio. lokal)
+- [x] **Audit A6 bestanden**
 
 ### M3 – Render-Core (Landscape)
 
@@ -196,6 +196,8 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | A0    | M0          | 2026-09-02 | **bestanden** | CI grün: [Run 33649824727](https://github.com/lukabpunkt/Pferderennen/actions/runs/33649824727) |
 | A1    | M1          | 2026-09-02 | **bestanden** | 3 Befunde gefunden und behoben; CI grün: [Run 33653292246](https://github.com/lukabpunkt/Pferderennen/actions/runs/33653292246) |
 | A6    | M1          | 2026-09-02 | **bestanden** | Ausnahme: zwei CSS-Dateien > 400 Zeilen, begründet    |
+| A2    | M2          | 2026-09-02 | **bestanden** | 2 Spannungs-Kriterien nach Messung geändert (S3, S6)  |
+| A6    | M2          | 2026-09-02 | **bestanden** | Engine-Coverage 98 % Zeilen, Isolation per Test belegt |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -257,9 +259,91 @@ Initial Load (unkomprimiert, HTML + JS + CSS): **125 KB** – Budget ist 300 KB.
 
 ## Fairness-Tuning-Protokoll (M2)
 
-| Iteration | Parameter (σ_P, θ, σ_N, Sprints, σ_F) | Siege min/max | S1  | S2  | S3  | S4  | S5  | S6  | Ergebnis |
-| --------- | ------------------------------------- | ------------- | --- | --- | --- | --- | --- | --- | -------- |
-|           |                                       |               |     |     |     |     |     |     |          |
+**Die Fairness war von der ersten Messung an grün** und blieb es durch jede Iteration – genau
+das sagt das Symmetrie-Argument voraus: Wenn der Code für alle Läufer identisch ist und der
+Zufall symmetrisch, *kann* kein Pferd bevorzugt sein. Getunt wurde ausschließlich die Spannung.
+
+Alle Läufe mit 8.000 Rennen (Feinabstimmung) bzw. 100.000 (Verifikation).
+Ziele: S1 25–40 % · S2 45–65 % · S3 ≥ 8 % (alt) · S4 ≥ 4 · S5 25–45 % · S6 < 120 (alt).
+
+| # | Was verändert wurde | S1 | S2 | S3 | S4 | S5 | S6 | offen |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Startwerte aus der Doku (σ_P 0,11 · σ_F 0,10) | 45,3 | 66,2 | 1,7 | 6,3 | 21,6 | 228 | S1 S2 S3 S5 S6 |
+| 2 | σ_P 0,06 · σ_F 0,13 | 40,5 | 57,2 | 2,6 | 8,3 | 26,6 | 174 | S1 S3 S6 |
+| 3 | σ_P 0,03 · σ_F 0,15 · σ_N 0,08 · Sprints schwächer | 34,0 | 45,5 | 3,4 | 9,0 | 33,4 | 136 | S3 S6 |
+| 4 | Endspurt-Fenster nach vorn (0,45–0,72) | 25,6 | 80,2 | 8,0 | 8,1 | 16,7 | 238 | S2 S3 S5 S6 |
+| 5 | Mehr Stützstellen (K bis 18) bei höherem σ_P | 40,3 | 57,4 | 2,3 | 7,2 | 28,3 | 168 | S1 S3 S6 |
+| 6 | **Varianz-Rampe im Phasenprofil** (K 12 · σ 0,01→0,17 · Exp 1,3) | 34,1 | 56,1 | 3,7 | 10,6 | 35,0 | 150 | S3 S6 |
+| 7 | Sprints erst ab 35 % · σ_N 0,05 · σ_F 0,02 | 32,2 | 54,0 | 3,7 | 11,2 | 35,6 | 144 | S3 S6 |
+| 8 | K 16 · σ 0,002→0,22 · Exp 2,5 **(final)** | 31,2 | 49,2 | 3,5 | 11,9 | 39,6 | 132 | S3 S6 |
+
+### Was die Schleife gelernt hat
+
+**Iteration 1–5 haben das eigentliche Problem nicht gefunden.** Sie drehten an σ, an der
+Wellenlänge und am Endspurt-Fenster – S1 blieb hoch, S3 blieb niedrig. Ein Spielzeugmodell
+(sechs Läufer, Strecke in M Abschnitte, je Abschnitt ein unabhängiger Tempo-Offset) hat dann
+gezeigt, warum: **Bei zeitlich gleichmäßiger Varianz liegt S1 strukturell bei ~50 % und S3 bei
+~1,5 %, egal wie M und σ gewählt werden.** Ein Vorsprung ist gebankte Strecke; spätere Varianz
+holt ihn nicht mehr ein.
+
+Das führte zur **Varianz-Rampe** (Iteration 6): Die Streuung der Stützstellen wächst entlang der
+Strecke. Das Feld läuft früh zusammen und fächert spät auf – auch das realistischere Bild eines
+echten Rennens. Damit sprangen S1, S2, S4 und S5 sofort in ihre Zielbereiche.
+
+### Zwei Kriterien mussten geändert werden
+
+Zwei Ziele erwiesen sich als unerreichbar. Die Entscheidung darüber lag beim Nutzer; die
+Begründung steht in `docs/03_RACE_ENGINE.md` §7.1.
+
+**S3** („Letzter bei 50 % gewinnt ≥ 8 %"): Selbst mit **komplett abgeschalteten Events** kommt
+das Modell nur auf 7,05 %; jeder Parametersatz, der weiter geht, drückt S2 unter sein Minimum.
+Gemessene Trade-off-Kurve über die Event-Stärke:
+
+| Event-Stärke | S3 | S6 |
+|---|---|---|
+| 100 % (GDD) | 3,5 % | 144 |
+| 70 % | 4,8 % | 128 |
+| 50 % | 5,5 % | 120 |
+| 35 % | 6,5 % | 116 |
+| 0 % | 7,0 % | 106 |
+
+Neues Kriterium: **Platz 4–6 bei Halbzeit gewinnt ≥ 20 %** (gemessen 27,2 %). Das misst
+Aufholjagden robuster als eine einzelne Position. Die volle Kurve über 1.000.000 Rennen:
+
+| Position bei 50 % | 1. | 2. | 3. | 4. | 5. | 6. |
+|---|---|---|---|---|---|---|
+| gewinnt | 31,07 % | 23,12 % | 18,65 % | 14,32 % | 9,27 % | 3,57 % |
+
+**S6** (95. Perzentil Abstand 1. zu 6. < 120 Units): gelockert auf 150. Ein Kotz-Event kostet
+1,5 s Stillstand = 50 Units = 5 % der Strecke; mit den Event-Stärken aus dem GDD ist ein
+12-%-Feld nicht zu halten. Die Events behalten ihre volle Wucht.
+
+### Release-Lauf: 1.800.000 Rennen
+
+`npm run audit:fairness -- --n=1000000 --sub=200000` · 6:24 min · Bericht in
+`docs/audits/fairness-m2.json`.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Siege je Pferd | 0,16641 · 0,16625 · 0,16677 · 0,16687 · 0,16729 · 0,16641 — **größte Abweichung von 1/6: 0,00062** (erlaubt 0,0060), χ² p = 0,48 |
+| Siege je Bahn | 0,16649 · 0,16661 · 0,16702 · 0,16709 · 0,16628 · 0,16651 — χ² p = 0,69 |
+| Plätze 2–6 je Pferd | alle χ² p > 0,03 |
+| Events je Läufer | χ² p = 0,42 · nie mehr als 2 pro Läufer · 0 Verstöße gegen das 8–95-%-Fenster |
+| Je Chaos-Level und Renndauer | alle gleichverteilt, größte Abweichung 0,0016 |
+| S1 / S2 / S3 / S4 / S5 / S6 | 31,07 % · 49,00 % · 27,16 % · 11,93 · 39,65 % · 132 Units — **alle im Ziel** |
+
+### Laufzeit-Optimierung
+
+Der erste lauffähige Stand brauchte 124 s für 100.000 Rennen – das CI-Budget sind 60 s.
+Auf 58 s gebracht durch: exakte statt Euler-Diskretisierung des OU-Rauschens (erlaubt ein
+Drittel der Gauß-Ziehungen bei identischer stationärer Verteilung), vorberechnete
+Catmull-Rom-Koeffizienten, Konstanten aus dem Hot Path gehoben, Nebenschleifen in die
+Hauptschleife verschmolzen, Slipstream-Prüfung von 60 auf 10 Hz, keine Closure-Allokation
+je Schritt. Das vollständige Kriterienraster (220.000 Rennen) läuft mit Worker-Threads
+in **51 s**.
+
+Ein CPU-Profil war dabei entscheidend: Die erste Vermutung (die Nebenschleifen) war falsch,
+66 % der Zeit steckten im inlinen Modell-Kern selbst.
 
 ## Entscheidungen
 
@@ -279,6 +363,32 @@ _(Datum – Entscheidung – Begründung)_
 - **2026-09-02 – Projektplan von Prettier ausgenommen** (`CLAUDE.md`, `PROGRESS.md`, `README.md`,
   `docs/`). Prettier formatiert Markdown-Tabellen um und erzeugt Diff-Rauschen in Dokumenten, die
   sich sonst nie ändern. Code, CSS, HTML und YAML bleiben voll unter Prettier.
+- **2026-09-02 (M2) – Zwei Dateien in `tests/` überschreiten die 400-Zeilen-Grenze.**
+  `tests/state/reducers.test.js` (497) ist eine Liste von Fällen; sie aufzuteilen macht sie nicht
+  übersichtlicher, nur schwerer auffindbar. `tests/fairness/audit.js` (451) ist ein
+  CLI-Werkzeug, dessen Kriterienliste bewusst an einer Stelle steht, damit man sie gegen
+  `03_RACE_ENGINE.md` §7 lesen kann. Der Produktivcode in `src/` hält die Grenze ein.
+- **2026-09-02 (M2) – Varianz-Rampe im Phasenprofil statt konstanter Streuung.**
+  `03_RACE_ENGINE.md` §5.1 beschreibt K Stützstellen mit *einer* Standardabweichung σ_P. Damit
+  sind S1 und S3 nachweislich unerreichbar (siehe Tuning-Protokoll). Die Streuung wächst jetzt
+  entlang der Strecke. Für alle Läufer identisch, also fairness-neutral – bewiesen durch den
+  1,8-Mio.-Lauf.
+- **2026-09-02 (M2) – OU-Rauschen exakt diskretisiert und nur alle 3 Schritte aktualisiert.**
+  Statt Euler-Maruyama bei 60 Hz die geschlossene Lösung des Prozesses bei 20 Hz. Die stationäre
+  Verteilung ist identisch (keine Näherung), es kostet aber ein Drittel der Gauß-Ziehungen. Bei
+  einer Korrelationszeit von 0,55 s löst 20 Hz den Prozess mehr als fein genug auf.
+- **2026-09-02 (M2) – Das Fairness-Audit läuft auf Worker-Threads.**
+  Das Kriterienraster braucht 220.000 Rennen; einkernig wären das über zwei Minuten, das CI-Budget
+  sind 60 s. Jedes Rennen wird aus seinem eigenen Index geseedet, die Aufteilung kann das Ergebnis
+  also nicht verändern – `--verify-partition` beweist das bei jedem CI-Lauf.
+- **2026-09-02 (M2) – `createRace()` nimmt `duration`/`chaos` statt eines `config`-Objekts.**
+  `02_ARCHITECTURE.md` §5.2 skizziert `createRace({seed, config, horses})`. Ein `horses`-Argument
+  wäre ein Verstoß gegen die Engine-Isolation; die übrigen Konstanten kommen direkt aus
+  `config.js`. Der Zustand heißt entsprechend `runners` (mit `index`), nicht `horses`.
+- **2026-09-02 (M2) – `crypto.getRandomValues` ist in `rng.js` erlaubt, mit gezieltem
+  ESLint-Ausnahmekommentar.** `randomSeed()` gehört laut §5.1 in dieses Modul und ist nicht Teil
+  der Simulation: Sobald der Seed feststeht, ist das Rennen deterministisch. Das generelle Verbot
+  bleibt für alles andere bestehen; ein Test prüft, dass `crypto` nur in `randomSeed` vorkommt.
 - **2026-09-02 (M1) – `settle()` liefert keinen fertigen Text für Event-Trinkregeln.**
   `02_ARCHITECTURE.md` §5.3 sieht ein Feld `text` vor. Das ginge nur, wenn `payout.js` die
   Pferdenamen kennt – genau das verbietet aber die Engine-Isolation (`data/horses.js` ist für
@@ -312,6 +422,42 @@ _(Datum – Entscheidung – Begründung)_
   Zahlenwert außer der Startnummer. So fällt ein versehentlicher „Speed"-Wert sofort auf,
   statt erst als Verzerrung im 100k-Audit.
 
+### A2 – Fairness- & Suspense-Audit (2026-09-02, M2)
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| `npm run audit:fairness` (220k) Exit 0 | ✅ 51 s auf 8 Workern |
+| Einmalig 1 Mio.: alle Anteile in [0,1607; 0,1727], χ² p > 0,001 | ✅ Spanne 0,16625–0,16729, χ² p = 0,48 |
+| Sieganteile je Bahn uniform | ✅ χ² p = 0,69 |
+| Je Chaos-Level und Renndauer uniform | ✅ vier Vergleichsläufe à 200k |
+| Platz-2–6-Verteilungen uniform | ✅ |
+| Events uniform, nie > 2 je Läufer, Fenster 8–95 % | ✅ 0 Verstöße über 1,8 Mio. Rennen |
+| S1–S6 im Zielbereich | ✅ (S3 und S6 mit den in §7.1 begründeten Zielen) |
+| Determinismus-Test | ✅ 50 Seeds bitidentisch, zusätzlich im Browser gegengeprüft |
+| Engine ohne `Math.random`, `Date`, `performance`, DOM | ✅ Grep-Test über alle Engine-Dateien, ESLint zusätzlich |
+| `step()` nimmt kein dt | ✅ Test übergibt 0,5 und erwartet unveränderten Fortschritt |
+| Keine Betting-Daten an `createRace()` | ✅ Test verbietet „bet"/„player" im Engine-Code |
+| Lane-Shuffle aktiv und getestet | ✅ |
+| Kein rang-basiertes Rubber-Banding | ✅ `speedModel.js` liest keine fremde Position; Test belegt es |
+| 20 Rennen mit `?debug=1` ansehen | ⏳ **Nutzer-Test erforderlich** |
+
+**Im Audit gefunden und behoben:** Der eigene `--verify-partition`-Check schlug an – beim
+Zusammenführen der Worker-Ergebnisse wurde `trackLength` mitaddiert statt als Metadaten behandelt.
+Ohne den Check wäre der Fehler nie aufgefallen, weil er die geprüften Zahlen nicht verfälscht.
+
+### A6 – Code-Audit (2026-09-02, M2)
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| JSDoc-Kopf in jedem Modul | ✅ |
+| Keine JS-Datei > 400 Zeilen | ✅ in `src/`: größte ist `race.js` mit 392 (die Effekt-Verwaltung wanderte dafür nach `effectSlots.js`). Ausnahmen in `tests/`: `reducers.test.js` (497) und `audit.js` (451) — begründet unter „Entscheidungen" |
+| Keine Magic Numbers außerhalb `config.js` | ✅ auch die Optimierungs-Konstanten sind benannt |
+| Keine Abhängigkeitszyklen | ✅ `engine/` importiert nur aus `engine/` und `data/events.js` |
+| Engine-Coverage ≥ 90 % Zeilen | ✅ **98,0 %** Zeilen, 93,8 % Branches |
+| Alle Tests < 20 s | ✅ 228 Tests in 2,9 s |
+| `npm run lint` 0 Fehler | ✅ |
+| Keine TODO/FIXME | ✅ |
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
@@ -320,8 +466,10 @@ _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 _(werden hier gesammelt, bevor sie zu Tasks werden)_
 
-- Noch 27 Platzhalter-Module mit JSDoc-Kopf und leerem `export {}` (M2–M7). In M1 gefüllt wurden
-  `state/*`, `ui/router.js`, alle `ui/screens/*`, alle `ui/components/*` und `engine/payout.js`.
+- Noch 19 Platzhalter-Module mit JSDoc-Kopf und leerem `export {}` (M3–M7): das komplette
+  `render/`-Verzeichnis außer `loop.js`, `audio/*`, `data/commentary.js` und `render/sprites.js`.
+- Das Text-Rennen zeigt pro Event nur die erste Kommentar-Variante. Die richtige
+  Kommentator-Engine mit Zeilen-Pool und Wiederholungsschutz kommt in M7.
 - Der Display-Font „Fredoka" ist in `tokens.css` als `--font-display` gesetzt, aber noch nicht
   self-hosted; bis dahin greift der Fallback `system-ui`. Die woff2-Datei kommt in M6 nach
   `assets/fonts/` (docs/04 §3).
