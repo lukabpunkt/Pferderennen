@@ -2,7 +2,7 @@
 
 > **Für Claude Code:** Diese Datei ist deine To-do-Liste und dein Gedächtnis. Beginne jede Session damit, sie zu lesen. Hake Tasks ab, trage Audit-Ergebnisse ein, notiere Entscheidungen. Details zu jedem Task stehen in `docs/05_MILESTONES.md`.
 
-**Aktueller Stand:** **M3 abgeschlossen** (Render-Core Landscape; Audits A3 und A5 bestanden). Nächster Schritt: **M4 – Portrait-Modus & Responsive**.
+**Aktueller Stand:** **M4 abgeschlossen** (Portrait-Modus & Responsive; Audits A3, A4 und A5 bestanden – Mobile-Messung offen als Nutzer-Test). Nächster Schritt: **M5 – Events**.
 
 **Live-URL:** _(wird in M9 eingetragen)_
 
@@ -74,18 +74,18 @@
 
 ### M4 – Portrait-Modus & Responsive
 
-- [ ] 1. track.js Portrait
-- [ ] 2. horse.js Rückansicht
-- [ ] 3. Kamera vertikal
-- [ ] 4. HUD Portrait + Safe-Areas
-- [ ] 5. Live-Rotation
-- [ ] 6. Touch-Ergonomie
-- [ ] 7. Desktop/TV-Breakpoints
-- [ ] 8. Mobile-Performance + quality:auto
-- [ ] 9. `chore: complete M4`
-- [ ] **Audit A3 bestanden** (Portrait)
-- [ ] **Audit A5 bestanden** (Mobile)
-- [ ] **Audit A4 bestanden** (Basis)
+- [x] 1. `trackPortrait.js`: sechs vertikale Bahnen, Boxen unten, Ziel oben, Tribünen seitlich
+- [x] 2. `horseRear.js`: Rückansicht mit großer Farbfläche; Umschalter im horse-lab
+- [x] 3. Kamera achsen-agnostisch (dieselbe Kamera bedient beide Orientierungen)
+- [x] 4. HUD Portrait: Punktreihe oben, Kommentar unten mit Safe-Area
+- [x] 5. Live-Rotation ohne Neustart des Rennens
+- [x] 6. Touch-Ergonomie geprüft (alle Ziele ≥ 48 px, `touch-action`, kein Hover-only)
+- [x] 7. Desktop- und TV-Breakpoints (≥ 900 px, ≥ 1400 px)
+- [x] 8. `quality: 'auto'` senkt bei < 50 FPS über 2 s die Qualität
+- [x] 9. `chore: complete M4`
+- [x] **Audit A3 bestanden** (Portrait)
+- [x] **Audit A5 bestanden** (Desktop-Messung; Gerätemessung als Nutzer-Test offen)
+- [x] **Audit A4 bestanden** (Basis)
 
 ### M5 – Events
 
@@ -200,6 +200,9 @@ Event-Checkliste (im horse-lab **und** im echten Rennen gesehen):
 | A6    | M2          | 2026-09-02 | **bestanden** | Engine-Coverage 98 % Zeilen, Isolation per Test belegt |
 | A3    | M3          | 2026-09-02 | **bestanden** | 2 Befunde gefunden und behoben; Portrait-Teil folgt in M4. CI grün: [Run 33663483553](https://github.com/lukabpunkt/Pferderennen/actions/runs/33663483553) |
 | A5    | M3          | 2026-09-02 | **bestanden** | Desktop-Teil; Mobile folgt in M4                       |
+| A3    | M4          | 2026-09-02 | **bestanden** | Portrait-Teil; 2 Befunde gefunden und behoben          |
+| A4    | M4          | 2026-09-02 | **bestanden** | Basis; vollständig in M8                               |
+| A5    | M4          | 2026-09-02 | **bestanden** | mit einer offenen Messung auf echtem Gerät             |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
 
@@ -376,6 +379,25 @@ _(Datum – Entscheidung – Begründung)_
   übersichtlicher, nur schwerer auffindbar. `tests/fairness/audit.js` (451) ist ein
   CLI-Werkzeug, dessen Kriterienliste bewusst an einer Stelle steht, damit man sie gegen
   `03_RACE_ENGINE.md` §7 lesen kann. Der Produktivcode in `src/` hält die Grenze ein.
+- **2026-09-02 (M4) – Die Kamera kennt nur eine Achse.**
+  Statt zweier Kameras rechnet sie in Streckeneinheiten und liefert einen Pixel-Versatz *entlang*
+  der Bahn; ob das ein Bildschirm-x (Landscape) oder ein -y (Portrait, invertiert) ist, entscheidet
+  die Bahn. Deshalb bedient dieselbe Kamera beide Orientierungen ohne eine einzige Verzweigung.
+- **2026-09-02 (M4) – `track.js` ist nur noch eine Fabrik.**
+  `02_ARCHITECTURE.md` §7 sagt „nur `track.js` und die Pferde-Perspektive unterscheiden sich".
+  Beide Layouts in einer Datei wären deutlich über der 400-Zeilen-Grenze gelandet, also gibt es
+  `trackLandscape.js`, `trackPortrait.js`, das geteilte `trackTheme.js` und eine schlanke Fabrik.
+  Beide Bahnen bieten dieselbe Schnittstelle – ein Test prüft das –, sodass der Rennen-Screen
+  nirgends nach der Orientierung fragt.
+- **2026-09-02 (M4) – Die Rückansicht ist ein eigenes Modul, kein Modus in `horse.js`.**
+  Die beiden Ansichten teilen sich die Pose und die Zeichen-Primitiven, aber keine Geometrie: von
+  hinten gibt es keine Beinwinkel-Kinematik, sondern ein seitliches Ausschwingen. Ein gemeinsames
+  Modul wäre eine Datei mit zwei disjunkten Hälften geworden.
+- **2026-09-02 (M4) – `quality.level` ist Modulzustand, kein Parameter.**
+  Die Qualitätsstufe ist eine Eigenschaft des Renderers als Ganzes. Sie durch jede Zeichenfunktion
+  zu reichen hätte Funktionen, die sonst nur Geometrie nehmen, einen Fremdkörper verpasst. Sie
+  geht bewusst **nie wieder hoch**: Sonst flackert das Bild bei jeder Schwankung um die Schwelle
+  zwischen zwei Aussehen.
 - **2026-09-02 (M3) – Die Bahn wird mit leichter Perspektive gezeichnet.**
   `04_DESIGN_SYSTEM.md` §6 beschreibt sechs Bahnen; sechs exakt gleich hohe Streifen sehen aber
   aus wie ein Balkendiagramm. Die hinteren Bahnen sind deshalb schmaler und ihre Pferde kleiner
@@ -537,6 +559,69 @@ er kostet selbst etwas Zeit, und genau so etwas darf nicht im Hot Path landen.
 
 Mobile-Teil und `quality: 'auto'` folgen in M4.
 
+### A3 – Visual- & Animations-Audit (2026-09-02, M4, Portrait-Teil)
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Sechs vertikale Bahnen, Rennen von unten nach oben | ✅ Startboxen unten, Ziel oben, Tribünen an beiden Seiten |
+| Rückansicht des Pferdes | ✅ Satteldecke und Trikot zeigen frontal zum Betrachter – die größtmögliche Fläche der Signaturfarbe, mit der Startnummer mittendrin |
+| Rückansicht im horse-lab geprüft | ✅ eigener Umschalter Seite/Hinten |
+| Kamera vertikal, Feld zentriert | ✅ dieselbe Kamera wie im Landscape; sie kennt nur eine Achse |
+| Live-Umschaltung bei Rotation ohne Neustart | ✅ **im Browser geprüft**: Rennen bei t = 4,0 s in Portrait gestartet, Fenster gedreht, bei t = 4,8 s in Landscape weitergelaufen – gleiche Simulation, andere Bahn und Perspektive |
+| Eigenes Pferd innerhalb 1 s identifizierbar | ⏳ **Nutzer-Test erforderlich** (mit drei Personen) |
+| Startboxen in der Signaturfarbe | ✅ sie klappen nach unten weg statt zur Seite |
+| Zieleinlauf erkennbar | ✅ **nach einer Korrektur**, siehe unten |
+| Screenshot in `docs/screenshots/` | ✅ `m4-race-portrait.jpg` |
+
+**Im Audit gefunden und behoben:**
+
+1. **Das ZIEL-Banner verschwand hinter den Pferden.** Es wurde vor ihnen gezeichnet, und im Ziel
+   verdecken sechs Pferde alles über der Linie. Ein Banner hängt aber über der Bahn – die Pferde
+   laufen darunter durch. `drawFinish()` zeichnet jetzt nur noch die Ziellinie am Boden, das neue
+   `drawOverhead()` das Banner nach den Pferden. In beiden Orientierungen.
+2. **Die Tiefensortierung war im Portrait falsch.** Sie sortierte nach Bahn, aber im Portrait
+   liegen die Bahnen nebeneinander in gleicher Entfernung – was den Überlapp entscheidet, ist die
+   Streckenposition. Die Bahn liefert jetzt einen `depthKey(units, lane)`, den jede Orientierung
+   selbst definiert.
+
+Kleinere Korrekturen: Das Orientierungs-Attribut saß am Screen-Container statt an der Rennbühne,
+weshalb das Portrait-HUD-CSS gar nicht griff; der Pferdekopf verschwand hinter dem Jockey-Helm
+(der Hals ist jetzt sichtbar dazwischen); der Schweif steckte hinter der Satteldecke; und die
+Hinterbeine spreizten wie bei einer Spinne.
+
+### A4 – Barrierefreiheit-Audit (2026-09-02, M4, Basis)
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Alle interaktiven Elemente ≥ 48 × 48 px | ✅ automatisch über alle Screens geprüft: 0 Treffer unter 48 px |
+| `:focus-visible` überall sichtbar | ✅ 3 px Ring auf `--ink`, Kontrast > 3:1 |
+| `aria-live`-Region meldet Führungswechsel und Sieger | ✅ **im Browser geprüft**: „Sir Trabsalot führt." bzw. „… gewinnt!"; gedrosselt auf tatsächliche Wechsel, sonst redet der Screenreader ununterbrochen |
+| Canvas hat `role="img"` und ein aktuelles `aria-label` | ✅ „Rennbahn. Sir Trabsalot führt." |
+| Pferde ohne Farbe unterscheidbar | ✅ Startnummer auf Satteldecke, Startbox und Leaderboard-Punkt; dazu Fellfarbe und Accessoire |
+| `touch-action: manipulation`, kein Doppeltipp-Zoom | ✅ |
+| Keine Hover-only-Zustände | ✅ Hover-Effekte stehen in `@media (hover: hover)` |
+| Tastatur-Reihenfolge logisch | ✅ Tab-Durchlauf geprüft |
+| Kontrast ≥ 4,5:1, Zoom 200 %, Deuteranopie, Lighthouse | ⏳ vollständig in M8 |
+
+### A5 – Performance-Audit (2026-09-02, M4, Mobile-Teil)
+
+| Prüfpunkt | Budget | Gemessen |
+| --- | --- | --- |
+| FPS Portrait (400 × 860, Desktop-Browser) | 60 | **60** |
+| Render-Zeit Portrait | ≤ 10 ms | **1,0–1,3 ms** |
+| Pfad-Operationen Portrait | ≤ ~600 | **310–340** (weniger als Landscape, weil Perspektive und Vordergrund entfallen) |
+| Initial Load | < 300 KB | **266 KB** |
+| `quality: 'auto'` greift unter 50 FPS | – | ✅ mit Tests belegt: senkt nach 2 s, meldet genau einmal, geht nie wieder hoch |
+
+**Offen und ehrlich benannt:** Die Vorgabe lautet **≥ 55 FPS auf einem drei Jahre alten
+Mittelklasse-Handy**. Ich kann hier nur im Desktop-Browser messen; eine Zahl von echter Hardware
+habe ich nicht. Die gemessene Render-Zeit von 1,0–1,3 ms lässt viel Luft – selbst ein Gerät, das
+achtmal langsamer ist, bliebe bei rund 10 ms und damit unter dem 16,7-ms-Budget. Das ist eine
+Hochrechnung, keine Messung. Der Sicherheitsgurt dafür ist `quality: 'auto'`: Fällt die Bildrate
+zwei Sekunden lang unter 50, verschwinden Verläufe und ein Teil des Staubs – die Simulation
+bleibt unverändert. **Nutzer-Test:** ein Rennen auf dem Handy mit `?debug=1` ansehen und die
+FPS-Zahl notieren.
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
@@ -547,8 +632,11 @@ _(werden hier gesammelt, bevor sie zu Tasks werden)_
 
 - Noch 5 Platzhalter-Module mit JSDoc-Kopf und leerem `export {}`: `render/eventVisuals.js` (M5),
   `render/sprites.js` (Backlog), `audio/audio.js` und `audio/sfx.js` (M7), `data/commentary.js` (M7).
-- Das Pferd gibt es bisher nur in der Seitenansicht. Die Rückansicht für den Portrait-Modus
-  kommt in M4, die Event-Animationen (stolpern, kotzen, schlafen …) in M5.
+- Die Event-Animationen (stolpern, kotzen, schlafen …) kommen in M5 – aktuell galoppieren die
+  Pferde auch während eines Events unbeirrt weiter, nur ihr Tempo ändert sich.
+- Die Rückansicht kennt bislang keine Accessoires. Auf dem Handy sind sie bei rund 50 px Breite
+  ohnehin nicht lesbar; Farbe und Nummer tragen die Unterscheidung. Falls sie in M5 gebraucht
+  werden, ist `horseTack.js` die Stelle.
 - Das Publikum steht still. Die La-Ola-Welle bei Events und im Finish gehört zu M5.
 - Das Text-Rennen zeigt pro Event nur die erste Kommentar-Variante. Die richtige
   Kommentator-Engine mit Zeilen-Pool und Wiederholungsschutz kommt in M7.

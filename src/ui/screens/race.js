@@ -16,51 +16,25 @@ import { createRace } from '../../engine/race.js';
 import { randomSeed } from '../../engine/rng.js';
 import { createLoop } from '../../render/loop.js';
 import { createCamera } from '../../render/camera.js';
-import { createTrack } from '../../render/track.js';
+import { createTrack, orientationFor } from '../../render/track.js';
 import { drawHorse, horseColours } from '../../render/horse.js';
+import { drawHorseRear } from '../../render/horseRear.js';
 import { createPose, updatePose } from '../../render/horseAnimations.js';
 import { createParticles } from '../../render/particles.js';
 import { createHud } from '../../render/hud.js';
+import { createQualityMonitor, quality, resetQuality } from '../../render/quality.js';
 import { RACE_DURATIONS, RENDER, TRACK_LENGTH, RUNNER_COUNT, TIMESTEP } from '../../config.js';
+import { createCountdown } from '../components/countdown.js';
 import { debugOptions } from '../debug.js';
+import { countingContext, debugReadout } from '../raceDebug.js';
 
 let cleanup = null;
 
-/** Countdown steps and how long the winner is celebrated before the result screen. */
-const COUNTDOWN = ['3', '2', '1', 'LOS!'];
-const COUNTDOWN_STEP_MS = 750;
+/** How long the winner is celebrated before the game moves to the result screen. */
 const CELEBRATION_MS = 2600;
 
 /** How long the starting gates take to swing open. */
 const GATE_OPEN_SECONDS = 0.5;
-
-/** Canvas calls that count towards the per-frame path budget (docs/02_ARCHITECTURE.md §8). */
-const COUNTED_CALLS = ['fill', 'stroke', 'fillRect', 'drawImage', 'fillText', 'clearRect'];
-
-/**
- * Wraps a 2D context so it tallies its drawing calls. Only used with ?debug=1 — the proxy costs
- * a little per call, which is exactly the sort of thing that must not ship in the hot path.
- * @param {CanvasRenderingContext2D} target
- * @param {{ops: number}} counter
- * @returns {CanvasRenderingContext2D}
- */
-function countingContext(target, counter) {
-  return new Proxy(target, {
-    get(object, property) {
-      const value = object[property];
-      if (typeof value !== 'function') return value;
-      if (!COUNTED_CALLS.includes(property)) return value.bind(object);
-      return (...args) => {
-        counter.ops += 1;
-        return value.apply(object, args);
-      };
-    },
-    set(object, property, value) {
-      object[property] = value;
-      return true;
-    },
-  });
-}
 
 /**
  * @param {HTMLElement} container
@@ -81,19 +55,22 @@ export function mount(container, store) {
   const ctx = debug.enabled ? countingContext(rawCtx, counter) : rawCtx;
 
   const camera = createCamera({});
-  const track = createTrack({ camera, horses: HORSES });
+  /** Rebuilt when the device rotates; the race itself keeps running (audit A3). */
+  let orientation = null;
+  let track = null;
   const particles = createParticles();
   const hud = createHud(HORSES);
   const palettes = HORSES.map(horseColours);
   const poses = HORSES.map((_, index) => createPose(index / RUNNER_COUNT));
 
-  const countdown = el('div', { className: 'countdown', attrs: { 'aria-hidden': 'true' } });
+  const countdown = createCountdown();
   const debugPanel = el('pre', { className: 'race-debug' });
+  /** The stage carries the orientation, because the HUD styles hang off it. */
+  const stage = el('div', { className: 'race-stage' });
 
   let race = null;
   let seed = debug.seed ?? randomSeed();
   let phase = 'countdown';
-  let countdownStep = 0;
   let gateOpen = 0;
   let handedOver = false;
   let timers = [];
@@ -106,22 +83,40 @@ export function mount(container, store) {
   const current = new Float64Array(RUNNER_COUNT);
   const drawn = new Float64Array(RUNNER_COUNT);
 
-  /** Frame timing, shown with ?debug=1. */
-  let fps = 0;
-  let frames = 0;
-  let fpsWindow = 0;
+  /** Frame timing, shown with ?debug=1. The frame rate itself comes from the quality monitor. */
+  let debugWindow = 0;
   let updateMs = 0;
   let renderMs = 0;
+  let lastLeader = -1;
 
-  /** Sizes the canvas for the device pixel ratio, capped so retina screens stay fast. */
+  resetQuality();
+  const monitor = createQualityMonitor((level) => {
+    console.info(`Grafikqualität auf "${level}" gesenkt, um die Bildrate zu halten.`);
+  });
+
+  /**
+   * Sizes the canvas and picks the layout for the current viewport.
+   *
+   * Rotating the device swaps the whole track and the horse view, but not the simulation: the
+   * engine works in track units and has never heard of the screen, so a race survives a rotation
+   * untouched (docs/02_ARCHITECTURE.md §9).
+   */
   function resize() {
     const ratio = Math.min(window.devicePixelRatio || 1, RENDER.maxPixelRatio);
     width = canvas.clientWidth;
     height = canvas.clientHeight;
     if (width === 0 || height === 0) return;
+
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     rawCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    const wanted = orientationFor(width, height);
+    if (wanted !== orientation) {
+      orientation = wanted;
+      track = createTrack({ camera, horses: HORSES, orientation });
+      stage.dataset.orientation = orientation;
+    }
     track.resize(width, height);
   }
 
@@ -172,8 +167,7 @@ export function mount(container, store) {
 
     ctx.clearRect(0, 0, width, height);
     track.drawBackdrop(ctx);
-    track.drawLanes(ctx);
-    track.drawMarkers(ctx);
+    track.drawTrack(ctx);
 
     const runners = race.runners;
     const laneOfRunner = race.metrics.lanes;
@@ -181,8 +175,14 @@ export function mount(container, store) {
     track.drawFinish(ctx);
     particles.draw(ctx);
 
-    // Back lanes first, so a horse in front overlaps the one behind it.
-    const order = [...runners].sort((a, b) => laneOfRunner[a.index] - laneOfRunner[b.index]);
+    const drawOne = track.view === 'rear' ? drawHorseRear : drawHorse;
+    // Furthest away first, so a horse in front overlaps the one behind it.
+    const order = [...runners].sort(
+      (a, b) =>
+        track.depthKey(drawn[a.index], laneOfRunner[a.index]) -
+        track.depthKey(drawn[b.index], laneOfRunner[b.index]),
+    );
+
     for (const runner of order) {
       const lane = laneOfRunner[runner.index];
       const pose = poses[runner.index];
@@ -190,11 +190,11 @@ export function mount(container, store) {
 
       updatePose(pose, dt, { anim: animationFor(runner), speed: Math.max(0.15, speed) });
 
-      const x = camera.toScreenX(drawn[runner.index]);
-      const y = track.laneY(lane) + camera.shakeOffsetY;
+      const { x, y } = track.positionOf(drawn[runner.index], lane);
       const size = track.horseSize(lane);
-      if (x > -size * 2 && x < width + size * 2) {
-        const hoof = drawHorse(ctx, {
+      const margin = size * 2.5;
+      if (x > -margin && x < width + margin && y > -margin && y < height + margin) {
+        const hoof = drawOne(ctx, {
           horse: HORSES[runner.index],
           colours: palettes[runner.index],
           pose,
@@ -209,23 +209,51 @@ export function mount(container, store) {
     }
 
     particles.update(dt);
+    track.drawOverhead(ctx);
     track.drawForeground(ctx);
     hud.update(runners, race.isFinished ? race.order : null);
 
     counter.perFrame = counter.ops;
-    frames += 1;
-    fpsWindow += dt;
+    debugWindow += dt;
+    monitor.sample(dt);
+    announce(runners);
     renderMs = performance.now() - started;
-    if (fpsWindow >= 0.5) {
-      fps = Math.round(frames / fpsWindow);
-      frames = 0;
-      fpsWindow = 0;
+    if (debugWindow >= 0.5) {
+      debugWindow = 0;
       if (debug.enabled) {
-        debugPanel.textContent =
-          `Seed ${seed}\n${fps} fps   Update ${updateMs.toFixed(2)} ms   Render ${renderMs.toFixed(2)} ms\n` +
-          `Partikel ${particles.count}   Pfad-Ops ${counter.perFrame}   Zoom ${camera.zoom.toFixed(2)}   t ${race.state.t.toFixed(1)} s`;
+        debugPanel.textContent = debugReadout({
+          seed,
+          fps: monitor.fps(),
+          updateMs,
+          renderMs,
+          particles: particles.count,
+          pathOps: counter.perFrame,
+          orientation,
+          zoom: camera.zoom,
+          quality: quality.level,
+          time: race.state.t,
+        });
       }
     }
+  }
+
+  /**
+   * Keeps the canvas label and the live region current, so someone who cannot see the race can
+   * still follow it. Only speaks when the lead actually changes, otherwise a screen reader would
+   * never stop talking (audit A4).
+   * @param {{index: number, x: number}[]} runners
+   */
+  function announce(runners) {
+    if (phase !== 'running') return;
+    let leader = runners[0];
+    for (const runner of runners) if (runner.x > leader.x) leader = runner;
+    if (leader.index === lastLeader) return;
+    lastLeader = leader.index;
+
+    const name = horseByIndex(leader.index).name;
+    canvas.setAttribute('aria-label', `Rennbahn. ${name} führt.`);
+    const region = document.getElementById('live-region');
+    if (region) region.textContent = `${name} führt.`;
   }
 
   /** Which animation a runner should be playing right now. */
@@ -245,6 +273,9 @@ export function mount(container, store) {
 
     const winner = horseByIndex(race.order[0]);
     hud.say(`${winner.name} gewinnt!`);
+    canvas.setAttribute('aria-label', `Rennen beendet. ${winner.name} gewinnt.`);
+    const region = document.getElementById('live-region');
+    if (region) region.textContent = `${winner.name} gewinnt!`;
 
     const order = race.order.map((index) => horseByIndex(index).id);
     const events = race.eventLog.map((entry) => ({
@@ -264,36 +295,24 @@ export function mount(container, store) {
 
   /** Runs the 3-2-1 overlay, then releases the gates. */
   function startCountdown() {
-    countdownStep = 0;
     phase = 'countdown';
-    const tick = () => {
-      if (countdownStep >= COUNTDOWN.length) {
-        countdown.textContent = '';
-        countdown.classList.remove('countdown--visible');
-        phase = 'running';
-        hud.say('Und sie sind los!');
-        return;
-      }
-      countdown.textContent = COUNTDOWN[countdownStep];
-      countdown.classList.remove('countdown--visible');
-      // Restart the animation by forcing a reflow between the two class changes.
-      void countdown.offsetWidth;
-      countdown.classList.add('countdown--visible');
-      countdownStep += 1;
-      timers.push(setTimeout(tick, COUNTDOWN_STEP_MS));
-    };
-    tick();
+    countdown.start(() => {
+      phase = 'running';
+      hud.say('Und sie sind los!');
+    });
   }
 
   /** Builds a fresh race and restarts everything that belongs to it. */
   function startRace(nextSeed) {
     for (const timer of timers) clearTimeout(timer);
     timers = [];
+    countdown.stop();
     seed = nextSeed;
     handedOver = false;
     loggedEvents = 0;
     gateOpen = 0;
     race = createRace({ seed, duration, chaos: settings.chaos });
+    lastLeader = -1;
     particles.clear();
     camera.reset();
     previous.fill(0);
@@ -308,6 +327,8 @@ export function mount(container, store) {
   // Debug keys from docs/03_RACE_ENGINE.md §9.
   const unlisten = listen([
     [window, 'resize', resize],
+    // Some phones fire orientationchange before the viewport has actually resized.
+    [window, 'orientationchange', () => requestAnimationFrame(resize)],
     [
       window,
       'keydown',
@@ -328,29 +349,26 @@ export function mount(container, store) {
     ],
   ]);
 
-  container.append(
-    el('div', { className: 'race-stage' }, [
-      canvas,
-      hud.root,
-      countdown,
-      debug.enabled ? debugPanel : null,
-      settings.debugSkip
-        ? el('button', {
-            className: 'race-skip',
-            text: 'Überspringen',
-            attrs: { type: 'button' },
-            on: {
-              click: () => {
-                while (!race.isFinished) race.step();
-                for (const runner of race.runners) current[runner.index] = runner.x;
-                previous.set(current);
-                finish();
-              },
-            },
-          })
-        : null,
-    ]),
-  );
+  stage.append(canvas, hud.root, countdown.node);
+  if (debug.enabled) stage.append(debugPanel);
+  if (settings.debugSkip) {
+    stage.append(
+      el('button', {
+        className: 'race-skip',
+        text: 'Überspringen',
+        attrs: { type: 'button' },
+        on: {
+          click: () => {
+            while (!race.isFinished) race.step();
+            for (const runner of race.runners) current[runner.index] = runner.x;
+            previous.set(current);
+            finish();
+          },
+        },
+      }),
+    );
+  }
+  container.append(stage);
 
   startRace(seed);
   // The canvas has no size until it is in the document, so measure on the next frame.
@@ -362,6 +380,7 @@ export function mount(container, store) {
   cleanup = () => {
     unlisten();
     loop.stop();
+    countdown.stop();
     for (const timer of timers) clearTimeout(timer);
     timers = [];
     delete window.__race;

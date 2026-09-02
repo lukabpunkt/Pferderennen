@@ -210,3 +210,78 @@
   color: var(--ink);
   cursor: pointer;
 }
+
+/* --- Portrait: the phone layout ------------------------------------------ */
+
+/*
+ * In portrait the track runs up the screen, so the HUD moves out of the way rather than sitting
+ * beside it: the standings become a row of dots along the top, and the commentary sits at the
+ * bottom above the home indicator.
+ */
+
+.race-stage[data-orientation='portrait'] .hud__top {
+  align-items: stretch;
+}
+
+.race-stage[data-orientation='portrait'] .board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-1);
+}
+
+.race-stage[data-orientation='portrait'] .board__row {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 2px;
+}
+
+/* The name would not fit six times across a phone; the number on the dot carries it. */
+.race-stage[data-orientation='portrait'] .board__name {
+  display: none;
+}
+
+.race-stage[data-orientation='portrait'] .board__place {
+  text-align: center;
+  font-size: var(--text-xs);
+}
+
+/* The progress line is redundant next to a track you can already see end to end. */
+.race-stage[data-orientation='portrait'] .progress {
+  display: none;
+}
+
+.race-stage[data-orientation='portrait'] .commentary {
+  width: 100%;
+  font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-4);
+}
+
+.race-stage[data-orientation='portrait'] .race-debug {
+  right: var(--space-4);
+  max-width: 100%;
+  white-space: pre-wrap;
+}
+
+/* --- Large screens and TV ------------------------------------------------- */
+
+@media (min-width: 1400px) {
+  .board__row {
+    grid-template-columns: 26px minmax(0, 11rem) 1.8rem;
+    font-size: var(--text-sm);
+  }
+
+  .board__dot {
+    width: 26px;
+    height: 26px;
+  }
+
+  .commentary {
+    max-width: 52rem;
+    font-size: var(--text-lg);
+  }
+
+  .countdown {
+    font-size: 160px;
+  }
+}
