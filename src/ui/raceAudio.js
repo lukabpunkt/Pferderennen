@@ -31,12 +31,12 @@ export function createRaceAudio({ enabled, baseSpeed }) {
   }
 
   return {
-    /** The gates open: bell, then the beds come up. */
+    /** The pistol goes off and the beds come up behind it. */
     start() {
       if (!enabled) return;
       unlock();
       if (!ready()) return;
-      sfx.bell();
+      sfx.shot();
       hooves = sfx.hoofbeats();
       crowd = sfx.crowd();
       live = true;

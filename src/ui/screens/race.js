@@ -19,15 +19,23 @@ import { createTrack, orientationFor } from '../../render/track.js';
 import { horseColours } from '../../render/palette.js';
 import { createPose } from '../../render/horseAnimations.js';
 import { drawField } from '../../render/field.js';
-import { createParticles, CONFETTI } from '../../render/particles.js';
+import { createParticles, CONFETTI, DUST } from '../../render/particles.js';
 import { createEventVisuals } from '../../render/eventVisuals.js';
 import { createHud } from '../../render/hud.js';
 import { createQualityMonitor, quality, resetQuality } from '../../render/quality.js';
-import { RACE_DURATIONS, RENDER, RUNNER_COUNT, TIMESTEP, TRACK_LENGTH } from '../../config.js';
+import {
+  RACE_DURATIONS,
+  RENDER,
+  RUNNER_COUNT,
+  STARTER,
+  TIMESTEP,
+  TRACK_LENGTH,
+} from '../../config.js';
 import { createCountdown } from '../components/countdown.js';
 import { createNarration } from '../raceNarration.js';
 import { createPhotoFinish } from '../racePhotoFinish.js';
 import { createFinishTape } from '../../render/finishTape.js';
+import { drawStarter } from '../../render/starter.js';
 import { toResultPayload } from '../raceResult.js';
 import { debugOptions } from '../debug.js';
 import { countingContext, createReadout } from '../raceDebug.js';
@@ -36,6 +44,21 @@ let cleanup = null;
 
 /** How long the winner is celebrated before the game moves to the result screen. */
 const CELEBRATION_MS = 2600;
+
+/**
+ * The same overshoot curve as the `--ease-bounce` token, for things drawn on canvas where a CSS
+ * easing function cannot reach.
+ * @param {number} t 0..1
+ * @returns {number}
+ */
+function bounceOut(t) {
+  if (t >= 1) return 1;
+  const overshoot = 1.9;
+  return 1 + (overshoot + 1) * (t - 1) ** 3 + overshoot * (t - 1) ** 2;
+}
+
+/** How long the bright frame at the start lasts; matches the CSS animation in race.css. */
+const FLASH_MS = 260;
 
 /** Time scale of the debug slow motion, on the P key with ?debug=1. */
 const DEBUG_SLOW_MOTION = 0.08;
@@ -114,7 +137,14 @@ export function mount(container, store) {
   }
 
   const tape = createFinishTape();
-  const countdown = createCountdown();
+  // The starter's arm follows the countdown rather than a clock of its own, so the shot lands on
+  // exactly the frame "LOS!" appears.
+  const countdown = createCountdown({
+    onStep: (index, total) => {
+      countdownStep = index;
+      if (index === total - 1) fireStartingPistol();
+    },
+  });
   /** The photo-finish overlay: vignette, flashes and the banner. */
   const photoFinish = el('div', { className: 'photo-finish', attrs: { 'aria-hidden': 'true' } }, [
     el('span', { className: 'photo-finish__banner', text: 'FOTOFINISH!' }),
@@ -136,6 +166,9 @@ export function mount(container, store) {
   let handedOver = false;
   let timers = [];
   let slowMotion = false;
+  /** Which countdown step is on screen, and how long ago the pistol went off. */
+  let countdownStep = -1;
+  let sinceShot = -1;
   let width = 0;
   let height = 0;
 
@@ -213,6 +246,8 @@ export function mount(container, store) {
       drawn[i] = previous[i] + (current[i] - previous[i]) * alpha;
     }
 
+    if (sinceShot >= 0) sinceShot += dt;
+
     if (phase !== 'countdown') {
       camera.update(drawn, RUNNER_COUNT, dt);
       gateOpen = Math.min(1, gateOpen + dt / GATE_OPEN_SECONDS);
@@ -225,7 +260,10 @@ export function mount(container, store) {
 
     const runners = race.runners;
     const laneOfRunner = race.metrics.lanes;
-    track.drawGates(ctx, gateOpen, laneOfRunner);
+    // Eased, not linear: docs/04_DESIGN_SYSTEM.md §5.3 asks the gates to swing open with a
+    // bounce, and a door that stops dead at the end reads as a door that got stuck.
+    track.drawGates(ctx, bounceOut(gateOpen), laneOfRunner);
+    drawStartingPistol(ctx);
     track.drawFinish(ctx);
 
     // Where a runner is on screen right now, for the props that hang off a horse.
@@ -294,6 +332,26 @@ export function mount(container, store) {
   }
 
   /**
+   * The starter fires. Everything that follows is decoration — the gates are released by the
+   * countdown's own callback, not by this.
+   */
+  function fireStartingPistol() {
+    sinceShot = 0;
+    const anchor = track?.starterAnchor();
+    if (!anchor || calm) return;
+    // Smoke off the muzzle, which sits at the top of the raised arm.
+    const muzzleY = anchor.y - anchor.size * 1.05;
+    for (let i = 0; i < STARTER.smokePuffs; i += 1) {
+      particles.spawn(DUST, anchor.x + anchor.size * 0.12, muzzleY, {
+        speedX: (Math.random() - 0.5) * 26,
+        speedY: -18 - Math.random() * 26,
+        radius: anchor.size * 0.07,
+        seconds: STARTER.smokeSeconds,
+      });
+    }
+  }
+
+  /**
    * Tears the tape as soon as somebody is drawn past the line.
    *
    * It reads the interpolated drawing positions rather than the engine's, so the tape gives way
@@ -308,6 +366,19 @@ export function mount(container, store) {
       if (tape.tear(race.metrics.lanes[i])) narration.tape();
       return;
     }
+  }
+
+  /**
+   * The starter, while he is still anywhere near the picture.
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  function drawStartingPistol(ctx) {
+    if (sinceShot > STARTER.linger) return;
+    const anchor = track.starterAnchor();
+    if (anchor.x < -anchor.size * 2 || anchor.x > width + anchor.size * 2) return;
+    // The arm comes up over the three counted steps and is at the top when "LOS!" shows.
+    const raise = countdownStep < 0 ? 0 : Math.min(1, (countdownStep + 1) / 3);
+    drawStarter(ctx, { ...anchor, raise, since: sinceShot, calm });
   }
 
   /** Which animation a runner should be playing right now. */
@@ -364,7 +435,8 @@ export function mount(container, store) {
       // A single bright frame as the gates go, unless reduced motion says otherwise.
       if (!calm) {
         stage.classList.add('is-flashing');
-        setTimeout(() => stage.classList.remove('is-flashing'), 260);
+        // Tracked, so leaving the screen mid-flash does not leave a timer behind.
+        timers.push(setTimeout(() => stage.classList.remove('is-flashing'), FLASH_MS));
       }
       buzz(30);
     });
@@ -378,6 +450,8 @@ export function mount(container, store) {
     seed = nextSeed;
     handedOver = false;
     gateOpen = 0;
+    countdownStep = -1;
+    sinceShot = -1;
     drama.end();
     tape.reset();
     race = createRace({ seed, duration, chaos: settings.chaos });

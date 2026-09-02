@@ -28,6 +28,20 @@ export function bell() {
   tone({ freq: 2640, at, attack: 0.002, decay: 0.35, gain: 0.06 });
 }
 
+/**
+ * The starting pistol: a hard crack with a body underneath it and a short tail.
+ *
+ * Three layers, because a single burst sounds like a click rather than a shot — the broadband
+ * snap is what the ear hears first, the low sweep gives it weight, and the tail is the room.
+ */
+export function shot() {
+  if (!ready()) return;
+  const at = now();
+  burst({ at, duration: 0.03, gain: 0.42, freq: 2600, filter: 'lowpass', q: 0.7 });
+  tone({ type: 'square', freq: 190, toFreq: 42, at, attack: 0.001, decay: 0.18, gain: 0.26 });
+  burst({ at: at + 0.02, duration: 0.34, gain: 0.1, freq: 900, filter: 'lowpass', q: 0.5 });
+}
+
 /** Slide whistle downwards — someone just met a banana skin. */
 export function slip() {
   if (!ready()) return;

@@ -57,6 +57,7 @@ const PRECACHE = [
   './src/render/quality.js',
   './src/render/shapes.js',
   './src/render/sprites.js',
+  './src/render/starter.js',
   './src/render/track.js',
   './src/render/trackLandscape.js',
   './src/render/trackPortrait.js',

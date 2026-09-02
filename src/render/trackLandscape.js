@@ -11,7 +11,7 @@
  * and horses are sized to match, which is what stops six parallel stripes looking like a chart.
  */
 
-import { TRACK_LENGTH, RUNNER_COUNT } from '../config.js';
+import { TRACK_LENGTH, RUNNER_COUNT, STARTER } from '../config.js';
 import { TRACK_COLOURS as COLOURS, MARKER_SPACING, drawGrandstandStrip } from './trackTheme.js';
 
 /** Vertical layout, as shares of the canvas height. */
@@ -257,6 +257,23 @@ export function createLandscapeTrack({ camera, horses }) {
     },
 
     /** The chequered bar across the lanes, on the ground. */
+    /**
+     * Where the starter stands: at the near rail, behind the start line, so the camera carries him
+     * out of shot as soon as the field sets off.
+     *
+     * The near side rather than the far side on purpose — in front of the grandstand a dark
+     * figure disappears into the crowd, and against the sand it reads immediately.
+     * @returns {{x: number, y: number, size: number}}
+     */
+    starterAnchor() {
+      const near = track.laneHeight(RUNNER_COUNT - 1);
+      return {
+        x: camera.toAlong(0) - near * 1.5,
+        y: laneEdge(RUNNER_COUNT),
+        size: track.horseSize(RUNNER_COUNT - 1) * STARTER.scale,
+      };
+    },
+
     drawFinish(ctx) {
       const x = camera.toAlong(TRACK_LENGTH);
       if (x < -80 || x > width + 200) return;

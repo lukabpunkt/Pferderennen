@@ -130,6 +130,26 @@ export const PHOTO_FINISH = {
   duration: 1.5,
 };
 
+/** The starter beside the gates who fires the race off. Purely cosmetic. */
+export const STARTER = {
+  /**
+   * Height of the figure relative to a horse. Tied to the horse rather than to the lane, because
+   * the two orientations size their lanes completely differently — landscape has perspective,
+   * portrait does not.
+   */
+  scale: 1.55,
+  /** Seconds the muzzle flash lasts, and how many spikes it has. */
+  flashSeconds: 0.14,
+  flashSpikes: 7,
+  /** Seconds the recoil takes to run out. */
+  recoilSeconds: 0.22,
+  /** Puffs of smoke after the shot, and how long they drift. */
+  smokePuffs: 7,
+  smokeSeconds: 1.1,
+  /** Seconds after the shot the starter is still drawn; by then the camera has left him. */
+  linger: 3,
+};
+
 /** The tape across the finish line that the winner runs through. Purely cosmetic. */
 export const FINISH_TAPE = {
   /** Thickness of the band in pixels, and how far it bows towards the runners. */

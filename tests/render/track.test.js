@@ -153,6 +153,7 @@ describe('both orientations', () => {
       'drawBackdrop',
       'drawTrack',
       'drawGates',
+      'starterAnchor',
       'drawFinish',
       'drawOverhead',
       'drawForeground',

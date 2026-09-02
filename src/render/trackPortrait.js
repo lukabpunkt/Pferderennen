@@ -10,7 +10,7 @@
  * small screen at a glance.
  */
 
-import { TRACK_LENGTH, RUNNER_COUNT } from '../config.js';
+import { TRACK_LENGTH, RUNNER_COUNT, STARTER } from '../config.js';
 import { TRACK_COLOURS as COLOURS, MARKER_SPACING, drawGrandstandStrip } from './trackTheme.js';
 
 /** Share of the width taken by the grandstand down each side. */
@@ -242,6 +242,18 @@ export function createPortraitTrack({ camera, horses }) {
     },
 
     /** The chequered line on the ground, drawn before the horses run over it. */
+    /**
+     * Where the starter stands: in the grass margin beside the start line.
+     * @returns {{x: number, y: number, size: number}}
+     */
+    starterAnchor() {
+      return {
+        x: trackLeft() * 0.55,
+        y: height - camera.toAlong(0) + track.laneHeight() * 0.5,
+        size: track.horseSize() * STARTER.scale,
+      };
+    },
+
     drawFinish(ctx) {
       const y = height - camera.toAlong(TRACK_LENGTH);
       if (y < -40 || y > height + 60) return;
