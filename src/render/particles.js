@@ -10,6 +10,7 @@
  */
 
 import { RENDER } from '../config.js';
+import { quality } from './quality.js';
 
 /** Particle kinds, as small integers so they fit in a typed array. */
 export const DUST = 0;
@@ -68,6 +69,16 @@ export function createParticles(capacity = RENDER.particlePoolSize) {
      * @param {number} intensity 1 at a normal gallop, more when sprinting
      */
     hoofDust(atX, atY, scale, intensity = 1) {
+      if (quality.level === 'low') {
+        // One speck instead of two or three; the effect survives, the cost does not.
+        this.spawn(DUST, atX, atY, {
+          speedX: -26 * intensity * (scale / 60),
+          speedY: -10 * (scale / 60),
+          radius: scale * 0.07,
+          seconds: 0.4,
+        });
+        return;
+      }
       const puffs = intensity > 1.2 ? 3 : 2;
       for (let i = 0; i < puffs; i += 1) {
         this.spawn(DUST, atX + (Math.random() - 0.5) * scale * 0.2, atY, {
