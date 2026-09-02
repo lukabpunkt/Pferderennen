@@ -14,7 +14,7 @@
  * The released version. A new value means a new cache and a fresh copy of every file; the page
  * notices the new worker and offers a reload rather than swapping anything mid-race.
  */
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.1.0';
 const CACHE = `pferderennen-${VERSION}`;
 
 /* --- precache:start --- */

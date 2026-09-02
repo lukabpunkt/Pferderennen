@@ -93,10 +93,14 @@ Dark Mode ist **nicht** vorgesehen (das Spiel hat seine eigene Stimmung), aber d
 - Kommentar-Zeile unten in Sprechblasen-Panel; Textwechsel mit Slide-Up.
 - Event-Toasts (Trinkregel) als Pill über der Kommentar-Zeile, 3 s, mit 🍺.
 - Countdown-Overlay: „3“ „2“ „1“ skaliert von 3× auf 1× mit Bounce, „LOS!“ mit Screen-Flash.
+- **Startpistole:** Ein Starter steht an der vorderen Bande hinter der Startlinie – nicht vor der Tribüne, wo eine dunkle Figur im bunten Publikum untergeht. Er hebt den Arm über die drei gezählten Schritte, und zwar nach *hinten* herum: der kurze Weg würde die Pistole waagerecht über die Bahn auf die Pferde richten. Bei „LOS!“ Mündungsblitz, Rauch vom Lauf und der Knall. Die Kamera trägt ihn beim Anfahren von selbst aus dem Bild.
+- **Zielband:** Auf Brusthöhe über die Ziellinie gespannt, leicht zu den Pferden hin durchhängend, mit dunkler Kante gegen das Schachbrett dahinter. Der Sieger reißt es an *seiner* Bahn; die beiden Hälften bleiben an ihren Pfosten, werden vom Pferd nach vorn mitgerissen und fallen dann flatternd. Rein visuell – ausgelöst von der gezeichneten, nicht der simulierten Position.
+- **Renn-Effekte:** Dreckfetzen unter den Hufen (nur ab Tempo und nur gelegentlich), Speedlines hinter einem Pferd oberhalb der Schwelle, ab der die Engine auf `gallop_fast` schaltet, Blitzlichtgewitter in der Tribüne, das zum Ziel hin zunimmt, und ein sanfter Kamera-Push über das Schlussdrittel. Alles hängt an der Qualitätsstufe.
 
 ### 4.5 Ergebnis
 
-- Podium (3 Sockel in Pferdefarben, Höhe 3/2/1), Pferde springen nacheinander drauf (Stagger 250 ms), Konfetti-Kanone in Siegerfarbe.
+- **Siegerehrung** als Canvas-Szene: 3 Sockel in Pferdefarben, Höhe 3/2/1. Die drei Erstplatzierten traben nacheinander ein (Stagger 250 ms, Dritter zuerst) und halten *hinter* ihrem Sockel, sodass der Sockel die Beine verdeckt. Die Jockeys steigen ab – dasselbe `riderless`-Flag wie im Rennen, damit niemand doppelt gezeichnet wird – und stellen sich aufs Treppchen, der Sieger mit beiden Armen hoch. Konfetti-Kanonen in Siegerfarbe. Die Szene hält sich selbst an, sobald alles steht.
+- Unter der Szene stehen die drei Namen als echter Text. Sie sind das, was ein Screenreader vorliest; die Szene ist die Feier, nicht die Information.
 - Karten: „🥇 **Luka** verteilt **3 Schlücke**“ (grün) / „🍺 **Nina** trinkt **2 Schlücke**“ (rot). Bei Haus-Sieg: Sonderkarte mit 🏠.
 - Event-Trinkregeln aus dem Rennen als Rückblick-Liste (falls aktiv).
 - Buttons: „Nächstes Rennen“ (primär), „Spieler ändern“, „Statistik“.
@@ -172,7 +176,7 @@ Object-Pool mit 400 Partikeln, Typen: `dust` (braun, fade), `confetti` (Rechteck
 | Cue                                                                                                                        | Charakter                                                                                                     |
 | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Hufgetrappel                                                                                                               | Loop aus gefilterten Noise-Bursts, Rate gekoppelt an mittlere Feldgeschwindigkeit, Stereo-Panning nach Kamera |
-| Startglocke                                                                                                                | Sinus + Obertöne, kurzer Decay                                                                                |
+| Startpistole                                                                                                               | Knall aus drei Schichten: breitbandiger Rausch-Burst, tiefer Square-Sweep als Körper, kurzer Nachhall         |
 | Menge                                                                                                                      | Brown-Noise-Pad, Lautstärke steigt zum Finish, „Ooooh“ bei Events (gefilterter Sawtooth-Sweep)                |
 | Banane                                                                                                                     | Slide-Whistle abwärts                                                                                         |
 | Kotzen                                                                                                                     | Blubbern (LFO auf Lowpass)                                                                                    |

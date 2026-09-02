@@ -177,6 +177,18 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 - [x] **Audit A4 bestanden** (vollständig)
 - [x] **Audit A5 bestanden** (vollständig)
 
+### M10 – Die Show
+
+- [x] 1. Zielband
+- [x] 2. Startpistole
+- [x] 3. Renn-Effekte
+- [x] 4. Siegerehrung
+- [x] 5. Doku + `chore: complete M10`
+- [x] **Audit A3 bestanden**
+- [x] **Audit A5 bestanden**
+- [x] **Audit A4 bestanden**
+- [x] **Audit A2 bestanden** (Re-Run als Beweis)
+
 ### M9 – Release v1.0.0
 
 - [x] 1. E2E-Tests
@@ -216,6 +228,10 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A1    | M7          | 2026-09-02 | **bestanden** | Wettarten, Statistik, Alkoholfrei-Modus im Browser durchgespielt. CI grün: [Run 33676165873](https://github.com/lukabpunkt/Pferderennen/actions/runs/33676165873) |
 | A4    | M8          | 2026-09-02 | **bestanden** | vollständig; 3 echte Befunde behoben, Lighthouse A11y 100 |
 | A5    | M8          | 2026-09-02 | **bestanden** | vollständig; Lighthouse Mobile 92/100/100/100, TBT 1590 → 0 ms. CI grün: [Run 33679400617](https://github.com/lukabpunkt/Pferderennen/actions/runs/33679400617) |
+| A2    | M10         | 2026-09-03 | **bestanden** | Re-Run: Zahlen Ziffer für Ziffer identisch – der Beweis, dass M10 kosmetisch ist |
+| A3    | M10         | 2026-09-03 | **bestanden** | Startpistole, Zielband, Ehrung in beiden Orientierungen geprüft |
+| A4    | M10         | 2026-09-03 | **bestanden** | Ehrung ersetzt echten Text: Namen bleiben DOM, Canvas mit `role="img"` |
+| A5    | M10         | 2026-09-03 | **bestanden** | Lighthouse 91/100/100, CLS 0, Initial Load 184 KB; 2 Altlasten gefunden |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
@@ -374,6 +390,21 @@ irgendwann stört, ist `--sub` der Hebel.
 
 _(Datum – Entscheidung – Begründung)_
 
+- **2026-09-03 (M10) – Das Zielband liest die gezeichnete Position, nicht die simulierte.**
+  Damit reißt es in demselben Bild, in dem die Nase auf der Linie ist, statt einen Schritt später
+  – und vor allem kann es konstruktiv nicht auf das Rennen zurückwirken: Es sieht nur, was längst
+  entschieden und gezeichnet ist.
+- **2026-09-03 (M10) – Der Arm des Starters geht den langen Weg nach hinten hoch.** Der kurze Weg
+  nach vorn führt durch die Waagerechte, und dort zeigt die Pistole quer über die Bahn auf die
+  Pferde. Eine halbe Sekunde, aber die falsche halbe Sekunde.
+- **2026-09-03 (M10) – Für die Siegerehrung gibt es eine zweite Jockey-Figur.** Der vorhandene
+  `drawJockey` ist eine Reitpose und nichts anderes: geduckt, ein Bein angezogen, ein Arm nach
+  vorn unten. Nichts davon funktioniert auf einem Sockel. Die neue Figur ist aus denselben Teilen
+  in denselben Einheiten gebaut und trägt dieselben Farben und dasselbe Accessoire, damit beide
+  als derselbe Mensch lesbar bleiben.
+- **2026-09-03 (M10) – Die Ehrung hält sich selbst an.** Sie läuft auf einem Screen, auf dem man
+  sitzen bleibt und liest. Sobald alles steht, wird die Schleife beendet und das letzte Bild
+  bleibt stehen – kein dauerhafter Animation-Frame für ein Standbild.
 - **2026-09-02 (M9) – Der Deploy hängt per `workflow_run` an der CI, nicht an einem eigenen
   Trigger.** Zwei Workflows können sich nicht per `needs` verketten. Ein Deploy, der parallel zur
   CI läuft, könnte eine Version live stellen, deren Fairness-Audit gerade rot wird – und genau das
@@ -1063,12 +1094,89 @@ hintereinander in derselben Sitzung, wo beim zweiten Mal die Wetten noch standen
 zwei getrennte Kontexte, was auch besser ausdrückt, was er behauptet: Der Seed entscheidet das
 Rennen, sonst nichts.
 
+### A2 / A3 / A4 / A5 – Audits zu M10 (2026-09-03)
+
+**A2 ist hier der eigentliche Punkt.** M10 besteht aus Startpistole, Zielband, vier Renn-Effekten
+und einer Siegerehrung – alles Dinge, die auf der Bahn passieren. Wenn davon auch nur eines in die
+Simulation durchgeschlagen wäre, müsste der Audit es zeigen. Er zeigt **Ziffer für Ziffer
+dieselben Zahlen** wie vor M10: Siegquoten 0,1627–0,1693 je Chaos-Level, S1 31,24 %, S5 39,59 %,
+S6 132 Units, D1 grün.
+
+Das Zielband ist der Fall, bei dem das am leichtesten hätte schiefgehen können. Es reißt, wenn ein
+Pferd über die Linie kommt – und liest dafür bewusst die **gezeichnete** Position, nicht die
+simulierte. Es kann damit nur auf etwas reagieren, das längst entschieden ist.
+
+**A5 (Performance): zwei Altlasten gefunden, beide älter als M10.**
+
+1. **Die automatische Qualitätsabsenkung war tot.** `render()` reichte dem Monitor den festen
+   Simulations-Timestep weiter statt der echten Framezeit. Der Monitor rechnet `frames / elapsed`
+   – mit `elapsed = frames × 1/60` kommt dabei **immer exakt 60** heraus. Der Mechanismus, auf dem
+   die ganze A5-Zusage „lieber Dekoration wegwerfen als Frames" beruht, konnte seit M4 nie
+   auslösen, und die „60 fps" im Debug-Panel waren keine Messung, sondern eine Tautologie. Die
+   Schleife reicht jetzt die reale Frame-Dauer durch. Nebenwirkung: Der Wert im Debug-Panel
+   schwankt seitdem sichtbar – das ist der Unterschied zwischen Messen und Behaupten.
+2. **Zeitlupe verlangsamte nur die Simulation.** Alles Gezeichnete lief mit Wanduhr-Tempo weiter:
+   Im Fotofinish galoppierten die Beine mit vollem Tempo, während das Pferd kroch. Die
+   Animations-Zeit folgt jetzt der Simulationsuhr.
+
+Messung über ein volles Rennen (statischer Server, ohne den Debug-Proxy, gleiche Methode wie M8):
+
+| | M8 | M10 |
+| --- | --- | --- |
+| Median | 16,7 ms | 16,7 ms |
+| p99 | 17,6 ms | 17,6 ms |
+| Frames > 33 ms | 2 in 50,8 s | 3 in 52,9 s (zwei davon **nach** dem Rennen, bei der Übergabe) |
+| Lighthouse Mobile | 92 / 100 / 100 | **91 / 100 / 100** |
+| CLS · TBT | 0 · 0 ms | **0 · 0 ms** |
+| Initial Load | 176,8 KB | **184,1 KB** (Budget 300) |
+
+Die 7 KB sind Starter, Zielband, Blitzlichter und die Effekt-Konstanten. Die Siegerehrung ist
+**nicht** dabei: sie wird erst nach dem `load`-Ereignis geholt, gemessen mit 0 Bytes davor. Das
+war nötig, weil `results.js` eager importiert wird – ein direkter Import hätte die ganze
+Zeichenschicht in den ersten Paint gezogen, also genau das Budget gerissen, das M5 zurückerobern
+musste.
+
+**A3 (Visual): in beiden Orientierungen geprüft, drei Sachen unterwegs korrigiert.**
+
+| Prüfpunkt | Ergebnis |
+| --- | --- |
+| Startsequenz: Arm hoch über 3-2-1, Schuss auf „LOS!" | ✅ Frame für Frame nachgesehen, quer und hoch |
+| Zielband intakt, Riss, Wegfliegen | ✅ beide Orientierungen, Zustände einzeln gerendert |
+| Siegerehrung: Einmarsch 3-2-1, Jockeys aufs Treppchen | ✅ |
+| Kein lineares Tweening | ✅ auch die Boxen bekommen jetzt ihren Bounce |
+| Reduced-Motion-Pfad für jeden neuen Effekt | ✅ kein Blitz, kein Rauch, keine Speedlines, kein Kamera-Push; Ehrung steht sofort fertig da |
+
+1. **Der Starter stand zuerst vor der Tribüne** und ging als dunkle Figur im bunten Publikum
+   komplett unter. Er steht jetzt an der vorderen Bande, wo er sich gegen den Sand absetzt.
+2. **Sein Arm schwenkte den kurzen Weg nach vorn** – und richtete die Pistole dabei waagerecht
+   über die Bahn auf die Pferde. Er geht jetzt nach hinten herum hoch.
+3. **Die gerissenen Bandhälften fielen ins Nichts.** In der Seitenansicht ist „nach unten"
+   dieselbe Richtung, in der das Band ohnehin verläuft – die Hälften kollabierten auf die
+   Ziellinie und verschwanden im Schachbrett. Sie werden jetzt vom Pferd nach vorn mitgerissen,
+   bevor sie fallen.
+
+Dazu zwei kleinere: In der Ehrung wurde der Jockey doppelt gezeichnet – einmal im Sattel, einmal
+auf dem Treppchen (jetzt über dasselbe `riderless`-Flag, das auch das Rennen benutzt), und die
+Pferde standen vor statt hinter ihren Sockeln.
+
+**A4:** Die Ehrung ersetzt echten Text durch ein Canvas, deshalb vollständig nachgeprüft. Die drei
+Namen stehen als DOM-Text unter der Szene, das Canvas trägt `role="img"` mit einem Label, das die
+ersten drei aufzählt. Kontrast- und Tap-Target-Sweep über den Ergebnis-Screen: 0 Verstöße, kein
+horizontales Scrollen. Die feste Seitenverhältnis-Box hält CLS bei 0, obwohl die Szene nachgeladen
+wird.
+
+**Beim Bauen gefunden und behoben:** Hatte sich die Ehrung selbst angehalten, blieb nach einer
+Drehung eine leere Fläche zurück – `canvas.width` zu setzen löscht sie, und es zeichnete ja nichts
+mehr. Ein Resize weckt die Szene jetzt für ein Bild.
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 **Offen (nur der Nutzer kann das):**
 
+- **M10:** Ein Rennen mit Ton von vorn bis hinten ansehen. Fühlt sich der Start wie ein Start an,
+  und ist die Siegerehrung die richtige Länge – oder will man schneller zur Abrechnung?
 - **M9 – einmalig, blockiert den Live-Gang:** In den Repo-Settings → Pages → Source auf
   **„GitHub Actions"** stellen. Danach `deploy.yml` einmal von Hand starten (Actions → Deploy to
   GitHub Pages → Run workflow); ab dann läuft es bei jedem grünen CI-Lauf auf `main` von selbst.

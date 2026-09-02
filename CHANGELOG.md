@@ -4,6 +4,32 @@ Alle nennenswerten Änderungen an diesem Projekt. Format nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [Unreleased] – wird 1.1.0
+
+Das Rennen bekommt Anfang, Höhepunkt und Schluss. Nichts davon berührt die Simulation: Der
+Fairness-Audit liefert danach **Ziffer für Ziffer dieselben Zahlen** wie vorher.
+
+### Neu
+
+- **Startpistole.** Ein Starter steht an der Bande, hebt den Arm über die drei gezählten Schritte
+  und feuert bei „LOS!" in den Himmel – Mündungsblitz, Rauch und ein Knall, der die Glocke ersetzt.
+- **Zielband.** Auf Brusthöhe über die Ziellinie gespannt. Der Sieger reißt es an seiner Bahn; die
+  Hälften bleiben an den Pfosten, werden nach vorn mitgerissen und fallen flatternd.
+- **Echte Siegerehrung** statt drei Karten: Sockel in den Pferdefarben, die drei Erstplatzierten
+  traben nacheinander ein, die Jockeys steigen ab und stellen sich aufs Treppchen, Konfetti in
+  Siegerfarbe.
+- **Mehr Leben im Rennen:** Dreckfetzen unter den Hufen, Speedlines bei Sprints, Blitzlichtgewitter
+  in der Tribüne, das zum Ziel hin zunimmt, und ein sanfter Kamera-Push im Schlussdrittel.
+
+### Behoben
+
+- Die automatische Qualitätsabsenkung konnte nie auslösen: Der Monitor bekam den festen
+  Simulations-Timestep statt der echten Framezeit, `frames / elapsed` ergab damit immer exakt 60.
+- Alles, was animiert, lief unabhängig von der Zeitlupe in Echtzeit – die Beine galoppierten mit
+  vollem Tempo, während das Pferd durchs Fotofinish kroch.
+- Die Startboxen klappten linear auf, obwohl das Design-System einen Bounce verlangt.
+- Der Timer des Start-Blitzes wurde beim Verlassen des Screens nicht abgeräumt.
+
 ## [1.0.0] – 2026-09-02
 
 Die erste vollständige Version. Sechs Pferde, ein Gerät, und der Beweis, dass es fair ist.

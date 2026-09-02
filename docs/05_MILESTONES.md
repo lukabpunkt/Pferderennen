@@ -293,6 +293,30 @@ Geschätzter Umfang pro Meilenstein: 1 Claude-Code-Session (ggf. 2 bei M3/M5/M6)
 
 ---
 
+## M10 – Die Show: Startpistole, Zielband, Renn-Effekte, Siegerehrung
+
+**Ziel:** Das Rennen bekommt Anfang, Höhepunkt und Schluss. Nichts davon berührt die Simulation.
+
+**Tasks**
+
+1. Zielband über der Ziellinie, das der Sieger an seiner Bahn zerreißt; die Hälften bleiben an den Pfosten, werden nach vorn mitgerissen und fallen flatternd. Zustand außerhalb des Tracks, weil ein Orientierungswechsel den Track neu baut.
+2. Startpistole: Starter an der vorderen Bande, Arm über die drei gezählten Schritte nach hinten hoch, bei „LOS!“ Blitz, Rauch und Knall. Der Countdown meldet jeden Schritt, statt nur sein Ende.
+3. Renn-Effekte: Dreckfetzen, Speedlines, Blitzlichtgewitter in der Tribüne, Kamera-Push im Schlussdrittel – alles an der Qualitätsstufe.
+4. Siegerehrung als Canvas-Szene auf dem Ergebnis-Screen (§4.5 des Design-Systems einlösen): Sockel 3/2/1, Einmarsch mit 250 ms Stagger, Jockeys steigen ab und stellen sich aufs Treppchen, Konfetti. Auf Abruf geladen; die Namen bleiben echter Text darunter.
+5. `docs/04_DESIGN_SYSTEM.md` nachziehen, `PROGRESS.md`, Commit `chore: complete M10`.
+
+**DoD**
+
+- Fairness-Audit liefert **identische** Zahlen wie vorher – der Beweis, dass alles rein kosmetisch ist.
+- Kein verworfener Frame im Rennen; Lighthouse Mobile weiter ≥ 90 / ≥ 95 / ≥ 95, CLS 0, Initial Load < 300 KB.
+- Jeder neue Effekt hat einen Reduced-Motion-Pfad und funktioniert in beiden Orientierungen.
+
+**Audit:** A3 (vollständig) + A5 + A4 (die Ehrung ersetzt echten Text) + A2 (Re-Run als Beweis)
+
+**Nutzer-Test:** Ein Rennen mit Ton von vorn bis hinten ansehen. Fühlt sich der Start wie ein Start an?
+
+---
+
 ## Nach v1.0 – Backlog (v1.1+)
 
 Siehe GDD §5 Priorität B: Jackpot-Runde, Pechvogel-Bonus, Sudden Death, Wetter-/Strecken-Varianten, Share-Card, Zuschauer-Emojis, Sprite-Sheet-Option. Jedes Feature bekommt einen eigenen Mini-Meilenstein mit denselben Regeln (DoD + Audit + Fairness-Re-Run).
