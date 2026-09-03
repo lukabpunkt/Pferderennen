@@ -303,7 +303,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A3    | M14         | 2026-09-04 | **bestanden** | Attract-Track blendet in den Himmel ein; Podest und Canvas-Szene widersprechen sich nicht mehr |
 | A4    | M14         | 2026-09-04 | **bestanden** | Sweep über **alle 9 Ansichten** inkl. Renn-Screen gegen echte Canvas-Pixel: 0 Verstöße; 1 Altlast behoben |
 | A5    | M14         | 2026-09-04 | **bestanden** | CLS **0**, TBT **0 ms**, A11y **100**, Performance 88–89 – unverändert zu M13 |
-| A2    | M14         | 2026-09-04 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch |
+| A2    | M14         | 2026-09-04 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch. CI grün: [Run 33814664625](https://github.com/lukabpunkt/Pferderennen/actions/runs/33814664625) |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
