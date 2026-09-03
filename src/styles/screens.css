@@ -267,6 +267,56 @@
   border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
+/* A line you can tap to change that player's bet. It carries the pencil, so the grid gains a
+   fourth column, and it has to clear the 48 px tap target the old text line did not need. */
+.overview__row--action {
+  grid-template-columns: 1fr auto auto auto;
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-2);
+  margin-inline: calc(var(--space-2) * -1);
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .overview__row--action:hover {
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+  }
+}
+
+.overview__row--action:active {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* Nobody has bet for this player yet — the line is an invitation rather than a summary. */
+.overview__row--open .overview__horse--open {
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+
+.overview__edit {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+}
+
+/* The card that offers the last race's bets back. */
+.card--carry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 .overview__row:last-child {
   border-bottom: 0;
 }

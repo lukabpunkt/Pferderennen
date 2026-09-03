@@ -178,6 +178,32 @@ describe('damaged or foreign data', () => {
     expect(loadState().state.bets.map((b) => b.playerId)).toEqual(['p1']);
   });
 
+  it('keeps the last race\'s bets, so "run it back" survives a reload', () => {
+    seed({
+      version: STORAGE_VERSION,
+      players: [{ id: 'p1', name: 'Luka', avatar: '🦄' }],
+      lastBets: [{ playerId: 'p1', horseId: 'hopfen', sips: 3, type: 'win' }],
+    });
+    expect(loadState().state.lastBets).toHaveLength(1);
+  });
+
+  it('drops remembered bets of players who have left', () => {
+    seed({
+      version: STORAGE_VERSION,
+      players: [{ id: 'p1', name: 'Luka', avatar: '🦄' }],
+      lastBets: [
+        { playerId: 'p1', horseId: 'hopfen', sips: 3, type: 'win' },
+        { playerId: 'p9', horseId: 'wodka', sips: 3, type: 'win' },
+      ],
+    });
+    expect(loadState().state.lastBets.map((b) => b.playerId)).toEqual(['p1']);
+  });
+
+  it('falls back to an empty memory when the saved one is not a list', () => {
+    seed({ version: STORAGE_VERSION, players: [], lastBets: 'gestern' });
+    expect(loadState().state.lastBets).toEqual([]);
+  });
+
   it('caps the betting turn at the number of players', () => {
     seed({
       version: STORAGE_VERSION,

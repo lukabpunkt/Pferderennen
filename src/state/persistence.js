@@ -54,6 +54,7 @@ function reconcile(saved) {
   const base = createInitialState();
   const players = Array.isArray(saved.players) ? saved.players : base.players;
   const bets = Array.isArray(saved.bets) ? saved.bets : base.bets;
+  const lastBets = Array.isArray(saved.lastBets) ? saved.lastBets : base.lastBets;
   const session = saved.session ?? base.session;
 
   return {
@@ -62,6 +63,8 @@ function reconcile(saved) {
     players,
     // Bets of players that no longer exist would leave the betting screen unfinishable.
     bets: bets.filter((bet) => players.some((player) => player.id === bet.playerId)),
+    // Same filter, so "run it back" still works after a reload — and after somebody left.
+    lastBets: lastBets.filter((bet) => players.some((player) => player.id === bet.playerId)),
     bettingTurn: Math.min(Number(saved.bettingTurn) || 0, players.length),
     session: {
       racesPlayed: Number(session.racesPlayed) || 0,

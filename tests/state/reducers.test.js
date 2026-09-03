@@ -302,6 +302,80 @@ describe('bets/reset and betting/next', () => {
   });
 });
 
+describe('bets/repeat', () => {
+  /** Two players who have bet and then raced, so there is something to run back. */
+  function afterARace() {
+    return run(
+      withPlayers(2),
+      { type: 'bets/place', payload: { playerId: 'p1', horseId: 'hopfen', sips: 4 } },
+      { type: 'bets/place', payload: { playerId: 'p2', horseId: 'wodka', sips: 2, type: 'last' } },
+      { type: 'betting/next' },
+      { type: 'betting/next' },
+      { type: 'race/setResult', payload: { seed: 1, order: ['hopfen', 'wodka'] } },
+      { type: 'bets/reset' },
+    );
+  }
+
+  it('remembers the bets a race was run with', () => {
+    const state = afterARace();
+    expect(state.bets).toEqual([]);
+    expect(state.lastBets).toHaveLength(2);
+    expect(state.lastBets[0]).toMatchObject({ playerId: 'p1', horseId: 'hopfen', sips: 4 });
+  });
+
+  it('puts them back, stakes and bet types included', () => {
+    const state = rootReducer(afterARace(), { type: 'bets/repeat' });
+    expect(state.bets).toHaveLength(2);
+    expect(state.bets[0]).toMatchObject({ playerId: 'p1', horseId: 'hopfen', sips: 4 });
+    expect(state.bets[1]).toMatchObject({
+      playerId: 'p2',
+      horseId: 'wodka',
+      sips: 2,
+      type: 'last',
+    });
+  });
+
+  it('jumps the turn to the end, so the summary shows rather than the round starting again', () => {
+    const state = rootReducer(afterARace(), { type: 'bets/repeat' });
+    expect(state.bettingTurn).toBe(state.players.length);
+  });
+
+  it('drops the bets of players who have left', () => {
+    const gone = run(afterARace(), { type: 'players/remove', payload: { id: 'p2' } });
+    const state = rootReducer(gone, { type: 'bets/repeat' });
+    expect(state.bets).toHaveLength(1);
+    expect(state.bets[0].playerId).toBe('p1');
+    expect(state.bettingTurn).toBe(1);
+  });
+
+  it('leaves a player who joined afterwards without a bet', () => {
+    const bigger = run(afterARace(), { type: 'players/add', payload: { name: 'Ben' } });
+    const state = rootReducer(bigger, { type: 'bets/repeat' });
+    // Two of three: the race cannot start until the newcomer has placed one.
+    expect(state.bets).toHaveLength(2);
+    expect(state.players).toHaveLength(3);
+  });
+
+  it('does nothing when no race has been run yet', () => {
+    const state = withPlayers(2);
+    expect(rootReducer(state, { type: 'bets/repeat' })).toBe(state);
+  });
+
+  it('does nothing when everybody who bet has left', () => {
+    const empty = run(
+      afterARace(),
+      { type: 'players/remove', payload: { id: 'p1' } },
+      { type: 'players/remove', payload: { id: 'p2' } },
+    );
+    expect(rootReducer(empty, { type: 'bets/repeat' })).toBe(empty);
+  });
+
+  it('survives being reset in between — that is the whole point', () => {
+    const state = run(afterARace(), { type: 'bets/reset' }, { type: 'bets/repeat' });
+    expect(state.bets).toHaveLength(2);
+  });
+});
+
 describe('settings/update', () => {
   it('changes known settings', () => {
     const state = run(createInitialState(), {

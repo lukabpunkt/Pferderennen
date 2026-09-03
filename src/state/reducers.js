@@ -25,6 +25,8 @@ export function createInitialState() {
     settings: { ...DEFAULT_SETTINGS },
     players: [],
     bets: [],
+    /** The bets the last finished race was run with, so a table can simply run it back. */
+    lastBets: [],
     bettingTurn: 0,
     race: { seed: null, phase: 'countdown', result: null, recorded: false },
     session: { racesPlayed: 0, perPlayer: {}, history: [] },
@@ -159,6 +161,21 @@ function betsReducer(state, action) {
         ? state
         : { ...state, bets: [], bettingTurn: 0 };
 
+    /**
+     * Puts the last race's bets back, so nobody has to say "the same as before" six times.
+     *
+     * The turn jumps straight to the end: everyone who had a bet has one again, so the screen
+     * should show the summary rather than start asking round the table. Anyone who joined since
+     * simply has no bet, and the summary is where they place it.
+     */
+    case 'bets/repeat': {
+      const bets = state.lastBets.filter((bet) =>
+        state.players.some((player) => player.id === bet.playerId),
+      );
+      if (bets.length === 0) return state;
+      return { ...state, bets, bettingTurn: state.players.length };
+    }
+
     case 'betting/next': {
       const turn = Math.min(state.bettingTurn + 1, state.players.length);
       return turn === state.bettingTurn ? state : { ...state, bettingTurn: turn };
@@ -244,6 +261,10 @@ export function rootReducer(state, action) {
       if (!Array.isArray(order) || order.length === 0) return state;
       return {
         ...state,
+        // The bets this race was actually run with. Remembered here rather than on the way back
+        // into the betting screen, because this is the moment they mean something: "the same as
+        // last time" means the same as the last race, not the last thing anybody typed.
+        lastBets: state.bets,
         race: {
           seed: seed ?? null,
           phase: 'finished',

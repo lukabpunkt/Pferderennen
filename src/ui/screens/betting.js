@@ -8,8 +8,9 @@
 import { el } from '../dom.js';
 import { button } from '../components/button.js';
 import { stepper } from '../components/stepper.js';
-import { page, header, card, horseBadge, horsePortrait, playerChip } from '../components/layout.js';
+import { page, header, card, horsePortrait } from '../components/layout.js';
 import { HORSES, HORSES_BY_ID } from '../../data/horses.js';
+import { betSummary, carrySummary, restorableBets } from '../bettingSummary.js';
 import { BETTING } from '../../config.js';
 import { sips, sipWord, BET_TYPE_LABELS, betTypeHint, ICON } from '../strings.js';
 
@@ -23,8 +24,19 @@ export function mount(container, store) {
   /** Draft of the bet the current player is composing. */
   let draft = null;
   let activeStepper = null;
-  /** Whose turn we last rendered, so a new player starts at the top of the list. */
-  let lastTurn = -1;
+  /** Where we last rendered, so a new player starts at the top of the list. */
+  let lastTurn = '';
+  /**
+   * The player whose bet is being changed out of order, or null. Deliberately local: it is a
+   * detour within one visit to this screen, not something the rest of the game needs to know.
+   */
+  let editing = null;
+  /**
+   * Whether the "run it back" card has been answered this visit. Without it the card would come
+   * straight back after "Alle neu setzen" — that answer leaves exactly the state the card asks
+   * about — and there would be no way out of the loop.
+   */
+  let carryDismissed = false;
 
   const body = el('div', { className: 'betting' });
   const footer = el('div', { className: 'betting__footer' });
@@ -32,6 +44,15 @@ export function mount(container, store) {
 
   /** The player whose turn it is, or null when everyone has bet. */
   const currentPlayer = (state) => state.players[state.bettingTurn] ?? null;
+
+  /** Whoever is placing a bet right now: the one who asked to change, else whose turn it is. */
+  const bettingPlayer = (state) =>
+    editing
+      ? (state.players.find((player) => player.id === editing) ?? null)
+      : currentPlayer(state);
+
+  /** The bet a player currently holds, if any. */
+  const betOf = (state, playerId) => state.bets.find((bet) => bet.playerId === playerId) ?? null;
 
   /** Builds one horse card. */
   function horseCard(horse, state, selected) {
@@ -144,19 +165,22 @@ export function mount(container, store) {
           label: 'Setzen ✓',
           wide: true,
           onClick: () => {
-            const player = currentPlayer(store.getState());
+            const player = bettingPlayer(store.getState());
             if (!player) return;
-            store.dispatch({
-              type: 'bets/place',
-              payload: {
-                playerId: player.id,
-                horseId: draft.horseId,
-                sips: draft.sips,
-                type: draft.type,
-              },
-            });
+            const wasEditing = editing !== null;
+            const bet = {
+              playerId: player.id,
+              horseId: draft.horseId,
+              sips: draft.sips,
+              type: draft.type,
+            };
+            // Both flags are cleared *before* dispatching: each dispatch re-renders, and a stale
+            // draft would build the panel one more time for nothing.
             draft = null;
-            store.dispatch({ type: 'betting/next' });
+            editing = null;
+            store.dispatch({ type: 'bets/place', payload: bet });
+            // Somebody changing their mind is not the next player's turn.
+            if (!wasEditing) store.dispatch({ type: 'betting/next' });
           },
         }),
       ],
@@ -164,45 +188,87 @@ export function mount(container, store) {
     );
   }
 
-  /** The summary table shown once everyone has placed a bet. */
-  function overview(state) {
-    return card(
-      [
-        el('h2', { className: 'overview__title', text: 'Alle haben gesetzt' }),
-        el(
-          'ul',
-          { className: 'overview__list' },
-          state.bets.map((bet) => {
-            const player = state.players.find((entry) => entry.id === bet.playerId);
-            const horse = HORSES_BY_ID[bet.horseId];
-            return el('li', { className: 'overview__row' }, [
-              playerChip(player),
-              el('span', { className: 'overview__horse' }, [
-                horseBadge(horse, 'sm'),
-                el('span', { text: horse.name }),
-                // Only worth showing when the players could actually choose differently.
-                state.settings.betType === 'free'
-                  ? el('span', {
-                      className: 'overview__type',
-                      text: BET_TYPE_LABELS[bet.type ?? 'win'],
-                    })
-                  : null,
-              ]),
-              el('span', { className: 'overview__sips num', text: sips(state.settings, bet.sips) }),
-            ]);
-          }),
-        ),
-        button({
-          label: 'Wetten zurücksetzen',
-          variant: 'ghost',
-          onClick: () => {
-            draft = null;
-            store.dispatch({ type: 'bets/reset' });
-          },
-        }),
-      ],
-      'card--overview',
-    );
+  /** Opens the horse grid for one player, whether or not they already have a bet. */
+  function startEditing(player) {
+    const bet = betOf(store.getState(), player.id);
+    editing = player.id;
+    draft = bet ? { horseId: bet.horseId, sips: bet.sips, type: bet.type ?? 'win' } : null;
+    render();
+  }
+
+  /** The card offered at the start of a round: the same bets as last time, or start over. */
+  const carryCard = (state) =>
+    carrySummary(state, {
+      onRepeat: () => {
+        carryDismissed = true;
+        store.dispatch({ type: 'bets/repeat' });
+      },
+      onFresh: () => {
+        carryDismissed = true;
+        render();
+      },
+    });
+
+  /** The summary table, with every line a way into that player's bet. */
+  const overview = (state) =>
+    betSummary(state, {
+      onEdit: startEditing,
+      onReset: () => {
+        draft = null;
+        carryDismissed = true;
+        store.dispatch({ type: 'bets/reset' });
+      },
+    });
+
+  /**
+   * What the header says, which is the clearest signal of where in the round we are.
+   * @param {any} state
+   * @param {object|null} player
+   * @param {boolean} offerCarry
+   * @returns {object} arguments for header()
+   */
+  function headingFor(state, player, offerCarry) {
+    // The pill counts bets, not turns. Those used to be the same thing; since bets can be carried
+    // over, somebody who joined afterwards would otherwise be counted as done.
+    const inProgress = player && !editing && !offerCarry ? 1 : 0;
+    const done = Math.min(state.bets.length + inProgress, state.players.length);
+    const aside = el('span', {
+      className: 'progress-pill num',
+      text: `${done} / ${state.players.length}`,
+    });
+
+    /** Everyone still without a bet. */
+    const open = state.players.filter((entry) => !betOf(state, entry.id));
+
+    if (offerCarry) {
+      return { title: 'Noch mal dasselbe?', subtitle: 'Oder setzt neu, wer mag.', aside };
+    }
+    if (player) {
+      // Somebody stepping out of the summary is changing a bet — unless they never had one,
+      // which is what a player who joined after the last race is doing here.
+      const changing = editing && betOf(state, player.id);
+      return {
+        title: `${player.avatar} ${player.name} ${changing ? 'ändert' : 'ist dran'}`,
+        subtitle: changing
+          ? 'Neues Pferd wählen oder den Einsatz anpassen.'
+          : `Wähl ein Pferd und setz deine ${sipWord(state.settings, 2)}.`,
+        aside,
+      };
+    }
+    if (open.length > 0) {
+      // Carried-over bets can leave somebody out: a player who joined after the last race.
+      const names = open.map((entry) => entry.name).join(' und ');
+      return {
+        title: 'Fast bereit',
+        subtitle: `${names} ${open.length === 1 ? 'fehlt' : 'fehlen'} noch — tippt auf die Zeile.`,
+        aside,
+      };
+    }
+    return {
+      title: 'Bereit zum Rennen',
+      subtitle: 'Gib das Gerät zurück in die Mitte.',
+      aside,
+    };
   }
 
   /**
@@ -215,29 +281,30 @@ export function mount(container, store) {
    */
   function render() {
     const state = store.getState();
-    const player = currentPlayer(state);
+    const player = bettingPlayer(state);
+    // The card is offered once per visit, at the start of a fresh round, and only when there is
+    // something to offer.
+    const offerCarry =
+      !carryDismissed &&
+      !editing &&
+      state.bets.length === 0 &&
+      state.bettingTurn === 0 &&
+      restorableBets(state).length > 0;
     const focusedHorse = document.activeElement?.closest?.('.horse-card')?.dataset.horse ?? null;
 
-    // A fresh player must see the horses, not wherever the previous one had scrolled to.
-    if (state.bettingTurn !== lastTurn) {
-      lastTurn = state.bettingTurn;
+    // A fresh player must see the horses, not wherever the previous one had scrolled to. The
+    // same goes for somebody stepping out of the summary to change their bet.
+    const at = `${state.bettingTurn}:${editing ?? ''}`;
+    if (at !== lastTurn) {
+      lastTurn = at;
       container.querySelector('.screen__body')?.scrollTo({ top: 0 });
     }
 
-    headerHost.replaceChildren(
-      header({
-        title: player ? `${player.avatar} ${player.name} ist dran` : 'Bereit zum Rennen',
-        subtitle: player
-          ? `Wähl ein Pferd und setz deine ${sipWord(state.settings, 2)}.`
-          : 'Gib das Gerät zurück in die Mitte.',
-        aside: el('span', {
-          className: 'progress-pill num',
-          text: `${Math.min(state.bettingTurn + (player ? 1 : 0), state.players.length)} / ${state.players.length}`,
-        }),
-      }),
-    );
+    headerHost.replaceChildren(header(headingFor(state, player, offerCarry)));
 
-    if (player) {
+    if (offerCarry) {
+      body.replaceChildren(carryCard(state));
+    } else if (player) {
       body.replaceChildren(
         el(
           'div',
@@ -245,6 +312,18 @@ export function mount(container, store) {
           HORSES.map((horse) => horseCard(horse, state, draft?.horseId === horse.id)),
         ),
         draft ? stakePanel(state) : el('p', { className: 'hint', text: 'Tipp auf ein Pferd.' }),
+        // A change can be called off; the round in progress cannot, there is nothing to go back to.
+        editing
+          ? button({
+              label: 'Abbrechen',
+              variant: 'ghost',
+              onClick: () => {
+                editing = null;
+                draft = null;
+                render();
+              },
+            })
+          : null,
       );
     } else {
       body.replaceChildren(overview(state));
@@ -257,23 +336,26 @@ export function mount(container, store) {
     // The goal button stays visible the whole time; while it is disabled it says why.
     const missing = state.players.length - state.bets.length;
     const missingWord = missing === 1 ? 'Wette' : 'Wetten';
+    // Starting mid-change would run the race on the old bet and throw the new one away without
+    // saying so. The way out of a change is "Setzen" or "Abbrechen", not the start button.
+    const reason = editing
+      ? 'Erst die Änderung bestätigen oder abbrechen.'
+      : missing > 0
+        ? `Es ${missing === 1 ? 'fehlt' : 'fehlen'} noch ${missing} ${missingWord}.`
+        : null;
+
     footer.replaceChildren(
       button({
         label: `${ICON.start} Rennen starten`,
         wide: true,
-        disabled: missing > 0,
-        title: missing > 0 ? `Es fehlen noch ${missing} ${missingWord}.` : undefined,
+        disabled: reason !== null,
+        title: reason ?? undefined,
         onClick: () => {
           store.dispatch({ type: 'race/clear' });
           store.dispatch({ type: 'screen/go', payload: 'race' });
         },
       }),
-      missing > 0
-        ? el('p', {
-            className: 'hint betting__footer-hint',
-            text: `Es ${missing === 1 ? 'fehlt' : 'fehlen'} noch ${missing} ${missingWord}.`,
-          })
-        : el('span'),
+      reason ? el('p', { className: 'hint betting__footer-hint', text: reason }) : el('span'),
     );
   }
 
