@@ -13,7 +13,8 @@ import { el } from '../dom.js';
  * @param {'primary'|'secondary'|'ghost'|'danger'} [options.variant]
  * @param {(event: MouseEvent) => void} [options.onClick]
  * @param {boolean} [options.disabled]
- * @param {string} [options.title] tooltip and aria-label, e.g. why a button is disabled
+ * @param {string} [options.title] tooltip, e.g. why a button is disabled
+ * @param {string} [options.describedBy] id of the element that says why, e.g. the hint next to it
  * @param {boolean} [options.wide] full width
  * @param {'button'|'submit'} [options.type]
  * @returns {HTMLButtonElement}
@@ -24,6 +25,7 @@ export function button({
   onClick,
   disabled = false,
   title,
+  describedBy,
   wide = false,
   type = 'button',
 }) {
@@ -33,7 +35,16 @@ export function button({
   return el('button', {
     className: classes.join(' '),
     text: label,
-    attrs: { type, disabled: disabled || null, title: title ?? null, 'aria-label': title ?? null },
+    attrs: {
+      type,
+      disabled: disabled || null,
+      title: title ?? null,
+      // Why a button cannot be used is a description, not a name. Mirroring the title into an
+      // aria-label replaced the label entirely: a screen reader on the disabled start button heard
+      // "Es fehlen noch 2 Wetten" and never learnt what the button was for (audit A4). The reason
+      // is on screen anyway, so it is pointed at rather than repeated.
+      'aria-describedby': describedBy ?? null,
+    },
     on: onClick ? { click: onClick } : {},
   });
 }

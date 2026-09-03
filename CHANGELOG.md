@@ -6,11 +6,17 @@ Alle nennenswerten Änderungen an diesem Projekt. Format nach
 
 ## [Unreleased] – wird 1.1.0
 
-Das Rennen bekommt Anfang, Höhepunkt und Schluss. Nichts davon berührt die Simulation: Der
-Fairness-Audit liefert danach **Ziffer für Ziffer dieselben Zahlen** wie vorher.
+Das Rennen bekommt Anfang, Höhepunkt und Schluss, und ein Wiederholungsrennen kostet drei Taps
+statt zwei pro Spieler. Nichts davon berührt die Simulation: Der Fairness-Audit liefert danach
+**Ziffer für Ziffer dieselben Zahlen** wie vorher.
 
 ### Neu
 
+- **Wetten übernehmen.** Ab dem zweiten Rennen fragt der Wett-Screen zuerst, ob ihr genauso setzen
+  wollt wie beim letzten Mal. Ein Tap, und ihr steht in der Übersicht.
+- **Einzeln ändern.** Wer doch wechseln will, tippt in der Übersicht seine Zeile an und kommt in
+  die Pferdeauswahl – nur er, alle anderen bleiben stehen. Wer neu dazugekommen ist, steht als
+  „noch offen" in derselben Liste.
 - **Startpistole.** Ein Starter steht an der Bande, hebt den Arm über die drei gezählten Schritte
   und feuert bei „LOS!" in den Himmel – Mündungsblitz, Rauch und ein Knall, der die Glocke ersetzt.
 - **Zielband.** Auf Brusthöhe über die Ziellinie gespannt. Der Sieger reißt es an seiner Bahn; die
@@ -29,6 +35,8 @@ Fairness-Audit liefert danach **Ziffer für Ziffer dieselben Zahlen** wie vorher
   vollem Tempo, während das Pferd durchs Fotofinish kroch.
 - Die Startboxen klappten linear auf, obwohl das Design-System einen Bounce verlangt.
 - Der Timer des Start-Blitzes wurde beim Verlassen des Screens nicht abgeräumt.
+- Ein gesperrter Knopf hieß für Screenreader nicht mehr, wofür er da war: Der Hinweis, *warum* er
+  gesperrt ist, hatte seinen Namen überschrieben.
 
 ## [1.0.0] – 2026-09-02
 

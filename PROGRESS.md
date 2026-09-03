@@ -201,6 +201,18 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 - [x] 8. Backlog v1.1 notiert, `chore: complete M9 – release v1.0.0`
 - [x] **Audit A7 bestanden**
 
+### M11 – Wetten übernehmen
+
+- [x] 1. `lastBets` im State, Persistenz, Reducer-Tests
+- [x] 2. Action `bets/repeat`
+- [x] 3. Übersicht: alle Spieler, Zeilen als Bedienelemente, Einzelnes-Ändern
+- [x] 4. Übernehmen-Karte auf dem Wett-Screen
+- [x] 5. E2E, Doku, `chore: complete M11`
+- [x] **Audit A1 bestanden**
+- [x] **Audit A6 bestanden**
+- [x] **Audit A4 bestanden**
+- [x] **Audit A2 bestanden** (Re-Run als Beweis)
+
 ---
 
 ## Audit-Protokoll
@@ -232,6 +244,10 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A3    | M10         | 2026-09-03 | **bestanden** | Startpistole, Zielband, Ehrung in beiden Orientierungen geprüft |
 | A4    | M10         | 2026-09-03 | **bestanden** | Ehrung ersetzt echten Text: Namen bleiben DOM, Canvas mit `role="img"` |
 | A5    | M10         | 2026-09-03 | **bestanden** | Lighthouse 91/100/100, CLS 0, Initial Load 184 KB; 2 Altlasten gefunden. CI grün: [Run 33689072183](https://github.com/lukabpunkt/Pferderennen/actions/runs/33689072183) |
+| A1    | M11         | 2026-09-03 | **bestanden** | Kein Framework, keine Laufzeit-Abhängigkeit, Farben aus Tokens; 1 Befund behoben (`button()` überschrieb seinen eigenen Namen) |
+| A6    | M11         | 2026-09-03 | **bestanden** | `reducers.js` 100 % Branches; `ui/screens/race.js` 580 → 498 Zeilen (`raceCeremony.js` herausgezogen), bleibt eine begründete Ausnahme |
+| A4    | M11         | 2026-09-03 | **bestanden** | Zeilen als Bedienelemente: 48 px, Fokusring, sprechende Namen; 0 Kontrastverstöße |
+| A2    | M11         | 2026-09-03 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch zum Lauf vor M11 |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
@@ -389,6 +405,23 @@ irgendwann stört, ist `--sub` der Hebel.
 ## Entscheidungen
 
 _(Datum – Entscheidung – Begründung)_
+
+- **2026-09-03 (M11) – `lastBets` wird in `race/setResult` geschrieben, nicht in `bets/place`.**
+  „Dieselbe Konstellation wie letztes Mal" meint das letzte *Rennen*, nicht das Letzte, was
+  irgendwer getippt hat. Erst wenn ein Rennen gelaufen ist, bedeuten die Wetten etwas – abgebrochene
+  Wettrunden sollen nicht als Vorlage zurückkommen.
+- **2026-09-03 (M11) – Die Übernehmen-Karte hängt an einem Flag pro Besuch, nicht am Zustand.**
+  Rein aus dem Zustand abgeleitet („keine Wetten, Turn 0") käme sie nach „Alle neu setzen" sofort
+  zurück, und man käme aus der Schleife nicht heraus. Beide Antworten erledigen sie für diesen
+  Besuch; ein Verlassen des Screens stellt sie wieder her.
+- **2026-09-03 (M11) – Die Übersicht listet alle Spieler, nicht nur die mit Wette.** Wer nach dem
+  letzten Rennen dazugekommen ist, steht als „noch offen" drin und wird über dieselbe Zeile gesetzt
+  wie jeder andere geändert wird. Das spart einen Sonderfall: Nach `bets/repeat` steht der Turn am
+  Ende, der Neue käme sonst nie „dran".
+- **2026-09-03 (M11) – `title` auf einem Knopf ist eine Beschreibung, kein Name.** Der gespiegelte
+  `aria-label` machte den Sperr-Grund zum zugänglichen Namen. Für Knöpfe ohne sichtbaren Text gibt
+  es `iconButton()` mit eigenem `label`; `button()` behält jetzt seinen und zeigt per
+  `aria-describedby` auf den Hinweis, der sowieso danebensteht.
 
 - **2026-09-03 (M10) – Das Zielband liest die gezeichnete Position, nicht die simulierte.**
   Damit reißt es in demselben Bild, in dem die Nase auf der Linie ist, statt einen Schritt später
@@ -1169,12 +1202,46 @@ wird.
 Drehung eine leere Fläche zurück – `canvas.width` zu setzen löscht sie, und es zeichnete ja nichts
 mehr. Ein Resize weckt die Szene jetzt für ein Bild.
 
+### A1 / A2 / A4 / A6 – Audits zu M11 (2026-09-03)
+
+**A2 zuerst, weil es der Punkt ist.** M11 fasst nur an, wie Wetten zustande kommen. Wetten
+erreichen die Simulation ohnehin nie – `createRace()` bekommt `{seed, duration, chaos}` und sonst
+nichts. Der Re-Run über 100.000 Rennen bestätigt das: alle 22 Kriterien erfüllt, S1 **31,24 %**,
+S5 **39,60 %**, S6 **132** Units, Siegquoten 0,1646–0,1688. Dieselben Ziffern wie vor M11.
+
+**A4: Die Übersicht wird von Text zu Bedienelementen** – der eine Punkt, an dem M11 wirklich
+Barrierefreiheit berühren kann. Jede Zeile ist jetzt ein `<button>` mit sprechendem Namen („Wette
+von Luka ändern: Sir Trabsalot, 3 Schlücke" bzw. „Wette für Ada setzen"), 48 px hoch, mit
+sichtbarem Fokusring. Tastatur-Durchlauf: jede Zeile erreichbar, Enter öffnet die Auswahl, der
+Fokus kehrt über den vorhandenen `data-horse`-Trick zurück. Kontrast-Sweep über den Wett-Screen:
+0 Verstöße, kein horizontales Scrollen.
+
+**A1: ein Befund, älter als M11.** `button()` spiegelte seinen `title` in ein `aria-label` – der
+Hinweis, *warum* ein Knopf gesperrt ist, wurde damit zu seinem Namen. Ein Screenreader hörte auf
+dem gesperrten Startknopf „Es fehlen noch 2 Wetten." und erfuhr nie, wofür der Knopf da ist. Der
+Grund ist eine Beschreibung, kein Name. Der Hinweis steht ohnehin sichtbar unter dem Knopf, also
+zeigt der Knopf per `aria-describedby` darauf, statt ihn zu wiederholen – `aria-description` wäre
+ARIA 1.3 und in Firefox nicht implementiert. Gefunden hat das der neue E2E-Test, nicht das Auge:
+Er suchte den Knopf über seinen Namen und fand ihn nicht.
+
+**A6: `ui/screens/race.js` war in M10 auf 580 Zeilen gewachsen**, ohne dass das Audit zu M10 die
+Dateilängen geprüft hätte. Herausgezogen ist `ui/raceCeremony.js` (139 Zeilen): Startpistole,
+Zielband und der Kamera-Push zum Ziel sind eine Zuständigkeit – das Drumherum des Rennens – und
+teilen sich die zwei Uhren, die es antreiben. Das Modul bekommt ausschließlich die **gezeichneten**
+Positionen; damit bleibt strukturell unmöglich, dass das Zielband etwas entscheidet.
+Ergebnis **580 → 498 Zeilen**. Das bleibt über der Richtlinie und damit eine Ausnahme in derselben
+Begründung wie zu M7: Was übrig ist, ist das Verdrahten von Engine, Kamera, Bahn und HUD zu einem
+Bild, und eine weitere Teilung nach Zeilenzahl statt nach Zuständigkeit würde das Lesen erschweren.
+`reducers.js` steht bei **100 % Branch Coverage**, 349 Unit-Tests, 12 E2E-Tests grün.
+
 ## Playtest-Notizen
 
 _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 **Offen (nur der Nutzer kann das):**
 
+- **M11:** Zwei Rennen hintereinander mit vollem Tisch. Ist die Übernehmen-Karte an der richtigen
+  Stelle, oder will man sie schon auf dem Ergebnis-Screen?
 - **M10:** Ein Rennen mit Ton von vorn bis hinten ansehen. Fühlt sich der Start wie ein Start an,
   und ist die Siegerehrung die richtige Länge – oder will man schneller zur Abrechnung?
 - **M9 – einmalig, blockiert den Live-Gang:** In den Repo-Settings → Pages → Source auf
@@ -1201,9 +1268,9 @@ _(werden hier gesammelt, bevor sie zu Tasks werden)_
   nicht lesbar; Farbe und Nummer tragen die Unterscheidung.
 - Das bleibende Dekor liegt immer an der Bahn des betroffenen Pferdes. Ein Pferd, das über eine
   fremde Bananenschale läuft, merkt davon nichts – das Dekor ist Erinnerung, nicht Physik.
-- `screens.css` (710), `components.css` (616), `race.css` (459) und `ui/screens/race.js` (438)
-  liegen über der 400-Zeilen-Richtlinie. Begründung im A6-Protokoll zu M7.
-  Der Produktivcode in `src/**.js` hält sie ein.
+- `screens.css` (756), `components.css` (623), `race.css` (459) und `ui/screens/race.js` (498)
+  liegen über der 400-Zeilen-Richtlinie. Begründung im A6-Protokoll zu M7 und M11.
+  Der übrige Produktivcode in `src/**.js` hält sie ein.
 - Das Publikum steht still. Die La-Ola-Welle bei Events und im Finish gehört zu M5.
 - Das Text-Rennen zeigt pro Event nur die erste Kommentar-Variante. Die richtige
   Kommentator-Engine mit Zeilen-Pool und Wiederholungsschutz kommt in M7.

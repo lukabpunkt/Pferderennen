@@ -134,10 +134,11 @@ Der Screen-Zustand liegt in `state.screen`. Der Race-Substate (`countdown | runn
     betType: 'win' | 'place' | 'last' | 'free',
     sound: true, vibration: true, sober: false,
     reducedMotion: 'auto' | 'on' | 'off',
-    debugSkip: false, debugSeed: false,
+    debugSkip: false,
   },
   players: [ { id: 'p1', name: 'Luka', avatar: '🦄' }, … ],   // 2–12
   bets: [ { playerId: 'p1', horseId: 'trabsalot', sips: 3, type: 'win' }, … ],
+  lastBets: [ … ],                      // Wetten des zuletzt gelaufenen Rennens, für „übernehmen"
   bettingTurn: 0,                       // Index des Spielers, der gerade setzt
   race: {
     seed: 123456789,                    // uint32; wird bei Race-Start neu gezogen

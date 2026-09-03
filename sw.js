@@ -84,6 +84,7 @@ const PRECACHE = [
   './src/ui/debug.js',
   './src/ui/dom.js',
   './src/ui/raceAudio.js',
+  './src/ui/raceCeremony.js',
   './src/ui/raceCommentary.js',
   './src/ui/raceDebug.js',
   './src/ui/raceNarration.js',

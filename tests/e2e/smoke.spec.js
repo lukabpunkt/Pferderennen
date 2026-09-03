@@ -81,9 +81,71 @@ test('from an empty start screen to a settled result and on to the next race', a
   // Everybody either deals out or drinks — nobody is left without a line.
   await expect(page.locator('.payout')).toHaveCount(3);
 
-  // And the game goes on.
+  // And the game goes on — offering the same bets rather than asking everybody again.
   await page.getByRole('button', { name: 'Nächstes Rennen' }).click();
+  await expect(page.getByRole('heading', { name: 'Noch mal dasselbe?' })).toBeVisible();
+});
+
+test('runs the same bets back, with one player changing their mind', async ({ page }) => {
+  await page.goto(FIXED_RACE);
+  await page.getByRole('button', { name: "Los geht's" }).click();
+  await addPlayers(page, ['Ada', 'Bo', 'Cem']);
+  await page.getByRole('button', { name: /Weiter zu den Wetten/ }).click();
+  for (let turn = 0; turn < 3; turn += 1) await placeBet(page, turn);
+
+  await page.getByRole('button', { name: /Rennen starten/ }).click();
+  await page.getByRole('button', { name: 'Überspringen' }).click();
+  await expect(page.locator('.screen[data-screen="results"] h1')).toContainText(/gewinnt!$/, {
+    timeout: 30_000,
+  });
+  await page.getByRole('button', { name: 'Nächstes Rennen' }).click();
+
+  // The offer, and what it is offering.
+  await expect(page.getByRole('heading', { name: 'Noch mal dasselbe?' })).toBeVisible();
+  await expect(page.getByText('Beim letzten Rennen habt ihr so gesetzt')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Wetten übernehmen' }).click();
+
+  // Everybody is back in with their bet, and the race could start right now.
+  await expect(page.getByRole('heading', { name: 'Bereit zum Rennen' })).toBeVisible();
+  await expect(page.locator('.overview__row--action')).toHaveCount(3);
+  await expect(page.getByRole('button', { name: /Rennen starten/ })).toBeEnabled();
+
+  // One player changes to a horse nobody had, and only that line moves.
+  const others = await page.locator('.overview__row--action').nth(1).getAttribute('aria-label');
+  await page.locator('.overview__row--action').first().click();
+  await expect(page.getByText(/ändert/)).toBeVisible();
+  // Starting is locked until the change is settled one way or the other.
+  await expect(page.getByRole('button', { name: /Rennen starten/ })).toBeDisabled();
+
+  await page.locator('.horse-card').nth(4).click();
+  await page.getByRole('button', { name: /Setzen/ }).click();
+
+  await expect(page.getByRole('heading', { name: 'Bereit zum Rennen' })).toBeVisible();
+  await expect(page.locator('.overview__row--action').first()).toContainText('Hopfen Hengst');
+  await expect(page.locator('.overview__row--action').nth(1)).toHaveAttribute('aria-label', others);
+  await expect(page.getByRole('button', { name: /Rennen starten/ })).toBeEnabled();
+});
+
+test('starting over asks everybody again', async ({ page }) => {
+  await page.goto(FIXED_RACE);
+  await page.getByRole('button', { name: "Los geht's" }).click();
+  await addPlayers(page, ['Ada', 'Bo']);
+  await page.getByRole('button', { name: /Weiter zu den Wetten/ }).click();
+  await placeBet(page, 0);
+  await placeBet(page, 1);
+  await page.getByRole('button', { name: /Rennen starten/ }).click();
+  await page.getByRole('button', { name: 'Überspringen' }).click();
+  await expect(page.locator('.screen[data-screen="results"] h1')).toContainText(/gewinnt!$/, {
+    timeout: 30_000,
+  });
+  await page.getByRole('button', { name: 'Nächstes Rennen' }).click();
+
+  await page.getByRole('button', { name: 'Alle neu setzen' }).click();
+
+  // Back to the round as it always was — and the offer does not come straight back.
   await expect(page.getByText(/ist dran/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Noch mal dasselbe?' })).toBeHidden();
 });
 
 test('the same seed produces the same winner', async ({ browser }) => {

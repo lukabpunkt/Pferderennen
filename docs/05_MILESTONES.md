@@ -317,6 +317,31 @@ Geschätzter Umfang pro Meilenstein: 1 Claude-Code-Session (ggf. 2 bei M3/M5/M6)
 
 ---
 
+## M11 – Wetten übernehmen
+
+**Ziel:** Ein Wiederholungsrennen kostet drei Taps statt zwei pro Spieler. Wer sein Pferd behalten will, tut nichts; wer wechseln will, tippt seine Zeile an.
+
+**Tasks**
+
+1. `lastBets` im State: Schnappschuss der gelaufenen Wetten in `race/setResult`, gefiltert auf noch existierende Spieler wiederhergestellt, überlebt den Reload.
+2. Neue Action `bets/repeat`, die `bettingTurn` ans Ende setzt, damit statt der Reihum-Auswahl direkt die Übersicht erscheint.
+3. Übersicht listet **alle** Spieler statt nur die mit Wette; jede Zeile ist ein Bedienelement, das genau diesen Spieler in die Pferdeauswahl führt. Dazugekommene Spieler stehen als „noch offen" drin.
+4. Übernehmen-Karte auf dem Wett-Screen: „Wetten übernehmen" oder „Alle neu setzen", einmal pro Besuch.
+5. E2E auf den neuen Ablauf umschreiben, Doku, `chore: complete M11`.
+
+**DoD**
+
+- Fairness-Audit liefert **identische** Zahlen – Wetten erreichen die Simulation nie.
+- `reducers.js` bleibt bei 100 % Branch Coverage.
+- „Rennen starten" bleibt gesperrt, solange eine Wette offen oder eine Änderung unbestätigt ist.
+- Jede Zeile ist per Tastatur erreichbar, Tap-Ziel ≥ 48 px, sprechender Name.
+
+**Audit:** A1 + A6 + A4 (die Übersicht wird von Text zu Bedienelementen) + A2 (Re-Run als Beweis)
+
+**Nutzer-Test:** Zweimal hintereinander dasselbe Rennen starten und dabei genau einen Spieler das Pferd wechseln lassen. Geht das schneller als vorher?
+
+---
+
 ## Nach v1.0 – Backlog (v1.1+)
 
 Siehe GDD §5 Priorität B: Jackpot-Runde, Pechvogel-Bonus, Sudden Death, Wetter-/Strecken-Varianten, Share-Card, Zuschauer-Emojis, Sprite-Sheet-Option. Jedes Feature bekommt einen eigenen Mini-Meilenstein mit denselben Regeln (DoD + Audit + Fairness-Re-Run).

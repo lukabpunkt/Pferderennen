@@ -16,6 +16,9 @@ import { sips, sipWord, BET_TYPE_LABELS, betTypeHint, ICON } from '../strings.js
 
 let cleanup = null;
 
+/** The hint under the start button; the button points at it rather than repeating it. */
+const HINT_ID = 'betting-start-hint';
+
 /**
  * @param {HTMLElement} container
  * @param {{getState: Function, dispatch: Function, subscribe: Function}} store
@@ -350,12 +353,19 @@ export function mount(container, store) {
         wide: true,
         disabled: reason !== null,
         title: reason ?? undefined,
+        describedBy: reason ? HINT_ID : undefined,
         onClick: () => {
           store.dispatch({ type: 'race/clear' });
           store.dispatch({ type: 'screen/go', payload: 'race' });
         },
       }),
-      reason ? el('p', { className: 'hint betting__footer-hint', text: reason }) : el('span'),
+      reason
+        ? el('p', {
+            className: 'hint betting__footer-hint',
+            text: reason,
+            attrs: { id: HINT_ID },
+          })
+        : el('span'),
     );
   }
 

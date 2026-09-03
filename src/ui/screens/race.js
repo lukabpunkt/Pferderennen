@@ -19,25 +19,15 @@ import { createTrack, orientationFor } from '../../render/track.js';
 import { horseColours } from '../../render/palette.js';
 import { createPose } from '../../render/horseAnimations.js';
 import { drawField } from '../../render/field.js';
-import { createParticles, CONFETTI, DUST } from '../../render/particles.js';
+import { createParticles, CONFETTI } from '../../render/particles.js';
 import { createEventVisuals } from '../../render/eventVisuals.js';
 import { createHud } from '../../render/hud.js';
 import { createQualityMonitor, quality, resetQuality } from '../../render/quality.js';
-import {
-  RACE_DURATIONS,
-  RENDER,
-  RUNNER_COUNT,
-  COMMENTARY,
-  EFFECTS,
-  STARTER,
-  TIMESTEP,
-  TRACK_LENGTH,
-} from '../../config.js';
+import { RACE_DURATIONS, RENDER, RUNNER_COUNT, TIMESTEP, TRACK_LENGTH } from '../../config.js';
 import { createCountdown } from '../components/countdown.js';
 import { createNarration } from '../raceNarration.js';
 import { createPhotoFinish } from '../racePhotoFinish.js';
-import { createFinishTape } from '../../render/finishTape.js';
-import { drawStarter } from '../../render/starter.js';
+import { createRaceCeremony } from '../raceCeremony.js';
 import { toResultPayload } from '../raceResult.js';
 import { debugOptions } from '../debug.js';
 import { countingContext, createReadout } from '../raceDebug.js';
@@ -138,14 +128,17 @@ export function mount(container, store) {
     for (const pose of poses) pose.riderless = false;
   }
 
-  const tape = createFinishTape();
-  // The starter's arm follows the countdown rather than a clock of its own, so the shot lands on
-  // exactly the frame "LOS!" appears.
+  /** The start signal and the finish line — see raceCeremony.js. */
+  const ceremony = createRaceCeremony({
+    track: () => track,
+    particles,
+    camera,
+    narration,
+    drama: { isActive: () => drama.isActive() },
+    calm: () => calm,
+  });
   const countdown = createCountdown({
-    onStep: (index, total) => {
-      countdownStep = index;
-      if (index === total - 1) fireStartingPistol();
-    },
+    onStep: (index, total) => ceremony.countdownStep(index, total),
   });
   /** The photo-finish overlay: vignette, flashes and the banner. */
   const photoFinish = el('div', { className: 'photo-finish', attrs: { 'aria-hidden': 'true' } }, [
@@ -168,11 +161,6 @@ export function mount(container, store) {
   let handedOver = false;
   let timers = [];
   let slowMotion = false;
-  /** Which countdown step is on screen, and how long ago the pistol went off. */
-  let countdownStep = -1;
-  let sinceShot = -1;
-  /** The gentle push in over the final stretch; the photo finish returns to this, not to 1. */
-  let stretchZoom = 1;
   let width = 0;
   let height = 0;
 
@@ -250,8 +238,7 @@ export function mount(container, store) {
       drawn[i] = previous[i] + (current[i] - previous[i]) * alpha;
     }
 
-    if (sinceShot >= 0) sinceShot += dt;
-    followTheFinish(dt);
+    ceremony.advance(dt, drawn, phase !== 'countdown');
 
     if (phase !== 'countdown') {
       camera.update(drawn, RUNNER_COUNT, dt);
@@ -268,7 +255,7 @@ export function mount(container, store) {
     // Eased, not linear: docs/04_DESIGN_SYSTEM.md §5.3 asks the gates to swing open with a
     // bounce, and a door that stops dead at the end reads as a door that got stuck.
     track.drawGates(ctx, bounceOut(gateOpen), laneOfRunner);
-    drawStartingPistol(ctx);
+    ceremony.drawStartingPistol(ctx, width);
     track.drawFinish(ctx);
 
     // Where a runner is on screen right now, for the props that hang off a horse.
@@ -310,11 +297,15 @@ export function mount(container, store) {
 
     visuals.draw(ctx, 'front', race.state.t, frame);
     particles.update(dt);
-    // In front of the field, because a tape you can see through is not a tape; under the banner,
-    // because the banner hangs above everything.
-    tape.update(dt, calm);
-    tearTape();
-    tape.draw(ctx, track, width, height);
+    // Under the banner, because the banner hangs above everything.
+    ceremony.finishLine(ctx, {
+      dt,
+      drawn,
+      lanes: race.metrics.lanes,
+      racing: phase !== 'countdown',
+      width,
+      height,
+    });
     track.drawOverhead(ctx);
     track.drawForeground(ctx);
     hud.update(runners, race.isFinished ? race.order : null);
@@ -335,76 +326,6 @@ export function mount(container, store) {
       quality: quality.level,
       time: race.state.t,
     }));
-  }
-
-  /**
-   * Leans into the end of the race: the crowd's cameras come out, and the picture closes in a
-   * little. Both are driven by how far the leader has got, so they build rather than switch on.
-   * @param {number} dt
-   */
-  function followTheFinish(dt) {
-    if (phase === 'countdown' || calm) return;
-    let lead = 0;
-    for (let i = 0; i < RUNNER_COUNT; i += 1) if (drawn[i] > lead) lead = drawn[i];
-    const progress = Math.min(1, lead / TRACK_LENGTH);
-    track.setCrowdEnergy(progress ** 2);
-
-    const from = COMMENTARY.finalStretchFrom;
-    const stretch = progress <= from ? 0 : (progress - from) / (1 - from);
-    const target = 1 + (EFFECTS.finalZoom - 1) * stretch;
-    // Eased rather than set, so the push is something you notice only afterwards.
-    stretchZoom += (target - stretchZoom) * Math.min(1, dt * 2);
-    if (!drama.isActive()) camera.setZoomBoost(stretchZoom);
-  }
-
-  /**
-   * The starter fires. Everything that follows is decoration — the gates are released by the
-   * countdown's own callback, not by this.
-   */
-  function fireStartingPistol() {
-    sinceShot = 0;
-    const anchor = track?.starterAnchor();
-    if (!anchor || calm) return;
-    // Smoke off the muzzle, which sits at the top of the raised arm.
-    const muzzleY = anchor.y - anchor.size * 1.05;
-    for (let i = 0; i < STARTER.smokePuffs; i += 1) {
-      particles.spawn(DUST, anchor.x + anchor.size * 0.12, muzzleY, {
-        speedX: (Math.random() - 0.5) * 26,
-        speedY: -18 - Math.random() * 26,
-        radius: anchor.size * 0.07,
-        seconds: STARTER.smokeSeconds,
-      });
-    }
-  }
-
-  /**
-   * Tears the tape as soon as somebody is drawn past the line.
-   *
-   * It reads the interpolated drawing positions rather than the engine's, so the tape gives way
-   * in the same frame the horse's nose is on the line rather than a step later. That also makes
-   * it structurally impossible for the tape to affect the race: it only ever looks at what has
-   * already been decided and drawn.
-   */
-  function tearTape() {
-    if (tape.isTorn() || phase === 'countdown') return;
-    for (let i = 0; i < RUNNER_COUNT; i += 1) {
-      if (drawn[i] < TRACK_LENGTH) continue;
-      if (tape.tear(race.metrics.lanes[i])) narration.tape();
-      return;
-    }
-  }
-
-  /**
-   * The starter, while he is still anywhere near the picture.
-   * @param {CanvasRenderingContext2D} ctx
-   */
-  function drawStartingPistol(ctx) {
-    if (sinceShot > STARTER.linger) return;
-    const anchor = track.starterAnchor();
-    if (anchor.x < -anchor.size * 2 || anchor.x > width + anchor.size * 2) return;
-    // The arm comes up over the three counted steps and is at the top when "LOS!" shows.
-    const raise = countdownStep < 0 ? 0 : Math.min(1, (countdownStep + 1) / 3);
-    drawStarter(ctx, { ...anchor, raise, since: sinceShot, calm });
   }
 
   /** Which animation a runner should be playing right now. */
@@ -476,11 +397,8 @@ export function mount(container, store) {
     seed = nextSeed;
     handedOver = false;
     gateOpen = 0;
-    countdownStep = -1;
-    sinceShot = -1;
-    stretchZoom = 1;
+    ceremony.reset();
     drama.end();
-    tape.reset();
     race = createRace({ seed, duration, chaos: settings.chaos });
     resetPoses();
     particles.clear();
@@ -508,7 +426,7 @@ export function mount(container, store) {
     stage,
     narration,
     calm: () => calm,
-    baseZoom: () => stretchZoom,
+    baseZoom: () => ceremony.zoom(),
   });
 
   /** Jumps to the end of the race, for the debug key and the skip button. */
