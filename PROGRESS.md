@@ -225,6 +225,21 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 - [x] **Audit A6 bestanden**
 - [x] **Audit A2 bestanden** (Re-Run als Beweis)
 
+### M13 – Das Fundament
+
+- [x] 1. Fredoka ausgeliefert (29 KB, Preload, Metrik-Fallback)
+- [x] 2. Drei Token-Ebenen, OKLCH-Skalen
+- [x] 3. Fluide Typo- und Abstandsskala, TV-Anhebung
+- [x] 4. Elevation-System und die Unterkante überall
+- [x] 5. Verschachtelte Radien
+- [x] 6. Icon-Set statt Emoji
+- [x] 7. Aufräumen, Audits, `chore: complete M13`
+- [x] **Audit A1 bestanden**
+- [x] **Audit A4 bestanden**
+- [x] **Audit A5 bestanden**
+- [x] **Audit A6 bestanden**
+- [x] **Audit A2 bestanden** (Re-Run als Beweis)
+
 ---
 
 ## Audit-Protokoll
@@ -264,6 +279,11 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A4    | M12         | 2026-09-03 | **bestanden** | Beide neuen Ziele 48 × 48 px, Kontrast 12,64:1, Tab-Reihenfolge Pick → ⊖ → ⊕ |
 | A6    | M12         | 2026-09-03 | **bestanden** | 1 Befund behoben (`betting.js` über 400 Zeilen → `bettingChoice.js`); `reducers.js` weiter 100 % Branches |
 | A2    | M12         | 2026-09-03 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch. CI grün: [Run 33780477576](https://github.com/lukabpunkt/Pferderennen/actions/runs/33780477576) |
+| A1    | M13         | 2026-09-04 | **bestanden** | Kein Hex außerhalb `tokens.css`, kein Primitiv außerhalb davon, keine Laufzeit-Abhängigkeit |
+| A4    | M13         | 2026-09-04 | **bestanden** | Sweep über alle sechs Screens: 0 Verstöße nach 3 Befunden; Lighthouse-A11y **100** |
+| A5    | M13         | 2026-09-04 | **bestanden** | **CLS 0** (vorher 0,002), TBT 0 ms, Performance 88–90; Kontrollmessung: die Schrift kostet keine Punkte |
+| A6    | M13         | 2026-09-04 | **bestanden** | `tokens.css` 306 Zeilen, `icon.js` 96; keine JS-Datei neu über 400 |
+| A2    | M13         | 2026-09-04 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
@@ -421,6 +441,24 @@ irgendwann stört, ist `--sub` der Hebel.
 ## Entscheidungen
 
 _(Datum – Entscheidung – Begründung)_
+
+- **2026-09-04 (M13) – Die Skalen sind auf die vorhandene Marke verankert, nicht neu erfunden.**
+  `--sand-50`, `--sand-600` und `--sand-900` sind bitgleich mit dem alten Creme, Ink-Soft und Ink;
+  `--accent-500` ist `#FF6B35`, `--accent-700` das alte `--accent-dark`. Eine Farbskala soll ein
+  vorhandenes Gesicht ausbauen, nicht austauschen — der Wiedererkennungswert war nie das Problem.
+- **2026-09-04 (M13) – Das Neutral dreht seinen Farbton über die Leiter** (H 77 oben, H 320 unten).
+  Der Hintergrund läuft von Pfirsich nach Flieder; ein Grau mit festem Ton liegt darauf wie ein
+  Aufkleber. Warme Lichter, kühle Schatten gehören zum Bild.
+- **2026-09-04 (M13) – Body bleibt die Systemschrift.** Zwei Familien sind das Maximum, und
+  `system-ui` im Fließtext machen GitHub und Notion genauso; der Amateur-Marker ist die
+  Systemschrift in *Überschriften*. Spart außerdem die halbe Font-Nutzlast.
+- **2026-09-04 (M13) – Der Preload bleibt, obwohl er FCP kostet.** Ohne ihn ist der First Paint auf
+  simuliertem 3G rund 600 ms früher da, aber CLS steigt von 0 auf 0,002. Für eine PWA, die beim
+  ersten Besuch alles cacht, zählt der zweite Besuch mehr als der erste — und dort ist die Schrift
+  im Cache und der Preload gratis.
+- **2026-09-04 (M13) – Die Auszahlungskarten tragen ihr Signal einmal statt dreimal.** Sie hatten
+  gleichzeitig einen linken Farbbalken, einen getönten Hintergrund und einen Schatten. Übrig sind
+  der Ton und eine farbige Icon-Scheibe da, wo das Auge sowieso landet.
 
 - **2026-09-03 (M12) – Die Übersichtszeile ist kein Knopf mehr.** Sie war einer, seit M11; die
   ⊖ ⊕ hineinzulegen hätte einen Knopf im Knopf ergeben, was ungültiges Markup ist und dessen
@@ -1238,6 +1276,57 @@ wird.
 Drehung eine leere Fläche zurück – `canvas.width` zu setzen löscht sie, und es zeichnete ja nichts
 mehr. Ein Resize weckt die Szene jetzt für ein Bild.
 
+### A1 / A2 / A4 / A5 / A6 – Audits zu M13 (2026-09-04)
+
+**A2:** M13 fasst kein einziges Stück Spiellogik an. Re-Run über 100.000 Rennen: alle 22 Kriterien
+erfüllt, S1 **31,24 %**, S5 **39,60 %**, S6 **132**, Siegquoten 0,1646–0,1688 — dieselben Ziffern.
+
+**A5 ist hier der interessante Teil**, weil eine Webschrift genau das kaputt macht, was frühere
+Meilensteine mühsam auf null gebracht haben. Ergebnis: **CLS 0** — vorher 0,002 —, **TBT 0 ms**,
+Barrierefreiheit **100**, Performance **88–90** über drei Läufe.
+
+Zwei Messfehler auf dem Weg, beide erwähnenswert:
+
+1. **Der erste Lauf ergab Performance 41.** Ursache war nicht die Schrift, sondern dass ich gegen
+   den Vite-Dev-Server gemessen habe: `@vite/client` allein sind 199 KiB, und jedes 2-KB-Modul
+   kommt mit HMR-Wrapper als 55–89 KiB an. Auf GitHub Pages liegen die Rohdateien. Gegen
+   `scripts/serve.js` gemessen sind es 93.
+2. **Die Byte-Zahl in der DoD stimmt nicht mehr.** Der lokale statische Server liefert
+   unkomprimiert (542 KiB), GitHub Pages liefert gzip. Gzipped sind es **344 KiB** für die
+   komplette Precache-Liste — und die **live ausgelieferte Version vor M13 lag schon bei 310 KiB**,
+   gemessen über alle 85 Dateien. Die 300-KB-Grenze war also bereits vor diesem Meilenstein
+   gerissen, vermutlich durch M10. M13 fügt +34 KiB hinzu, davon 29 die Schrift. Was tatsächlich
+   den ersten Anstrich blockiert — HTML, fünf Stylesheets, Schrift — sind **48 KiB gzipped**.
+
+**Kontrollmessung, weil ich es nicht glauben wollte:** dreimal ohne Webfont gemessen ergibt
+88/88/91, dreimal mit ergibt 88/88/90. **Die Schrift kostet keinen Punkt.** Der Wertebereich ist
+schlicht der, in dem die App nach M10–M12 liegt; die früher notierten 91/92 liegen im selben
+Rauschen. Der größte verbliebene Posten laut Lighthouse ist Minifizierung (173 KiB JS), und die
+braucht einen Build-Schritt, den das Projekt ausschließt — das ist die bekannte Decke, kein neuer
+Befund.
+
+**A4: drei Befunde, alle behoben, alle älter als M13.** Der Sweep lief diesmal über *alle sechs*
+Screens statt nur über Karteninnenräume — und genau dort lag das Problem: **gedämpfter Text, der
+direkt auf dem Hintergrundverlauf steht**, erreicht mit `--text-muted` nur 3,0–3,7:1. Betroffen
+waren der Screen-Untertitel, `.field__label` und `.hint` auf dem Spieler-Screen. Dafür gibt es
+jetzt `--text-on-sky` (eine Stufe dunkler, 6,1–7,5:1 über den ganzen Verlauf); innerhalb einer
+Karte bleibt es beim helleren Ton, sonst wären die beiden Stufen nicht mehr unterscheidbar.
+Dazu: `.input:focus` schaltete den globalen Fokusring ab, und `.btn--danger:active` blitzte mit
+oranger Kante auf, weil die `:active`-Regel nicht nach Variante qualifiziert war.
+
+Ein vierter, scheinbarer Befund war keiner: Der Sweep meldete Tap-Ziele mit 46 statt 48 px in den
+Modalen. Ursache ist, dass Chrome CSS-Animationen in einem Hintergrund-Tab anhält — die
+Einblendung des Modals stand bei ihrem Startwert `scale(0.96)` still, und 48 × 0,96 = 46,08.
+
+**A1:** Außerhalb von `tokens.css` steht kein Hex-Wert und kein rohes Primitiv; die Komponenten
+sehen ausschließlich die semantische Ebene. 25 tote Tokens sind verschwunden (alle 18 `--horse-*`
+und fünf Umgebungsfarben, die nie jemand gelesen hat). `data/horses.js` trägt jetzt den Vermerk,
+dass es die einzige Quelle der Pferdefarben ist und `trackTheme.js` mitgezogen werden muss.
+
+**A6:** `tokens.css` 306 Zeilen, `base.css` 318, `components.css` 710, `screens.css` 831 — die CSS-
+Ausnahme aus M1 gilt unverändert und ist dort begründet. Keine JS-Datei ist neu über 400 gewachsen;
+`icon.js` hat 96. 350 Unit-Tests, 14 E2E-Tests grün.
+
 ### A1 / A2 / A4 / A6 – Audits zu M12 (2026-09-03)
 
 **A2:** M12 fasst nur an, wie ein Einsatz geändert wird. Der Re-Run über 100.000 Rennen: alle 22
@@ -1302,6 +1391,8 @@ _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 **Offen (nur der Nutzer kann das):**
 
+- **M13:** Das Menü auf dem eigenen Handy anschauen. Sieht das jetzt nach einem Produkt aus, oder
+  fehlt noch etwas Offensichtliches?
 - **M12:** Zwischen zwei Rennen bei einem Spieler den Einsatz hochdrehen. Reicht ein Tap, oder
   sucht man doch wieder die Pferdeauswahl?
 - **M11:** Zwei Rennen hintereinander mit vollem Tisch. Ist die Übernehmen-Karte an der richtigen
@@ -1332,7 +1423,8 @@ _(werden hier gesammelt, bevor sie zu Tasks werden)_
   nicht lesbar; Farbe und Nummer tragen die Unterscheidung.
 - Das bleibende Dekor liegt immer an der Bahn des betroffenen Pferdes. Ein Pferd, das über eine
   fremde Bananenschale läuft, merkt davon nichts – das Dekor ist Erinnerung, nicht Physik.
-- `screens.css` (809), `components.css` (623), `race.css` (459) und `ui/screens/race.js` (498)
+- `screens.css` (831), `components.css` (710), `race.css` (459), `base.css` (318) und
+  `ui/screens/race.js` (498)
   liegen über der 400-Zeilen-Richtlinie. Begründung im A6-Protokoll zu M7 und M11.
   Der übrige Produktivcode in `src/**.js` hält sie ein.
 - Das Publikum steht still. Die La-Ola-Welle bei Events und im Finish gehört zu M5.

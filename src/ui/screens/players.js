@@ -134,7 +134,7 @@ export function mount(container, store) {
       avatar,
       name,
       iconButton({
-        icon: '✕',
+        icon: 'remove',
         label: `${player.name} entfernen`,
         onClick: () => store.dispatch({ type: 'players/remove', payload: { id: player.id } }),
       }),

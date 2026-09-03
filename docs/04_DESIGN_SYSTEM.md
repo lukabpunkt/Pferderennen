@@ -23,46 +23,73 @@ Ziel: Das Spiel soll aussehen wie ein liebevoll gemachtes Indie-Cartoon-Game –
 
 Alle sechs Farben sind gegeneinander auch bei Rot-Grün-Schwäche unterscheidbar, wenn Form/Fell hinzukommt (siehe Barrierefreiheit §9). Jedes Pferd nutzt seine Farbe für: Startbox, Sattel, Jockey-Trikot, Zaumzeug, Lane-Marker-Streifen, Wettkarte-Rahmen, Chips, Konfetti, Podium-Sockel, Leaderboard-Punkt.
 
-### 2.2 UI-Palette
+### 2.2 Die drei Token-Ebenen
+
+Seit M13 ist `tokens.css` dreistufig aufgebaut. Nur die **semantische** Ebene darf außerhalb der Datei benutzt werden — diese Indirektion ist es, die ein zweites Theme zu einem Block Überschreibungen macht statt zu einer zweiten Designrunde.
 
 ```
---bg-sky-top:     #FFB88C   (Pfirsich)
---bg-sky-bottom:  #C9A7EB   (Flieder)
---grass-light:    #7ED957
---grass-dark:     #4CAF50
---track-sand:     #E8C88A
---track-line:     #FFF7E6
---wood:           #8B5A2B
---cream:          #FFF8EE   (Karten, Panels)
---ink:            #2B1D2E   (Text, dunkles Lila-Schwarz statt reinem Schwarz)
---ink-soft:       #6B5B73
---accent:         #FF6B35   (Primär-Buttons: warmes Orange)
---accent-dark:    #C94C1C   (Button-Kante unten)
---success:        #22C55E
---danger:         #EF4444
---overlay:        rgba(43,29,46,0.55)
+Primitiv    was es IST         --sand-300, --accent-500
+Semantisch  wofür es DA IST    --surface, --text-muted, --accent-press
+Komponente  die Ausnahmen      --btn-edge (nur wo eine Komponente wirklich eine braucht)
 ```
 
-Dark Mode ist **nicht** vorgesehen (das Spiel hat seine eigene Stimmung), aber der Kontrast von Text auf Cream muss ≥ 4,5:1 sein (`--ink` auf `--cream` ≈ 13:1 ✔).
+### 2.3 Die Skalen (OKLCH)
 
-### 2.3 Weitere Tokens
+Gebaut in OKLCH, weil dessen Helligkeit über alle Farbtöne hinweg gleich wahrgenommen wird: In HSL bedeutet „+10 % Helligkeit" bei Orange etwas anderes als bei Pflaume, weshalb handgemischte Skalen ungleichmäßig aussehen. Methode: **eine Helligkeitsleiter für alle Skalen festlegen**, dann Chroma und Hue darüberlegen, Chroma an beiden Enden zusammendrücken.
+
+- **`--sand-50 … --sand-900`** – das Neutral. Warmes Papier oben (H 77), pflaumiger Schatten unten (H 320); der Farbton dreht über die Leiter, weil der Hintergrundverlauf von Pfirsich nach Flieder läuft und ein Neutral, das in den Lichtern wärmer und in den Schatten kühler wird, zum Bild gehört. Die Stufen **50, 600 und 900 sind bitgleich** mit dem alten `--cream`, `--ink-soft` und `--ink`.
+- **`--accent-50 … --accent-900`** – Stufe **500 ist `#FF6B35`**, Stufe 700 das alte `--accent-dark`. Die Identität hat sich nicht geändert, sie hat Nachbarn bekommen.
+- **`--danger-*` / `--success-*`** – je vier Stufen, mehr braucht keine von beiden.
+- **`--tint-subtle` / `--tint` / `--tint-strong`** – durchscheinendes Ink für Flächen, deren Untergrund beim Schreiben nicht bekannt ist. Vorher waren das neun unbenannte `color-mix()`-Werte zwischen 6 % und 35 %; das Auge unterscheidet 6 von 8 nicht, also sind es drei.
+
+**Genau zwei Textfarben:** `--text` und `--text-muted`. Alles darunter kommt aus Gewicht und Größe — eine Leiter immer blasserer Grautöne ist der klassische Bastel-Marker. Dazu `--text-on-sky` für die Stellen, an denen Text direkt auf dem Verlauf steht: `--text-muted` erreicht dort nur 3,0–3,7:1, die dunklere Stufe hält 6,1–7,5:1 über den ganzen Verlauf.
+
+Dark Mode ist weiterhin **nicht** vorgesehen. Die semantische Ebene ist aber die gesamte Vorarbeit dafür, falls er kommen soll.
+
+### 2.4 Tiefe
+
+Eine Lichtquelle für die ganze Seite, senkrecht von oben. Mit steigender Höhe wachsen Versatz und Weichzeichnung, während die **Deckkraft sinkt** — das ist es, was Höhe als Höhe lesbar macht statt als Gewicht.
 
 ```
---radius-sm: 8px; --radius-md: 14px; --radius-lg: 22px; --radius-pill: 999px;
---shadow-card: 0 6px 0 rgba(43,29,46,0.12), 0 12px 24px rgba(43,29,46,0.10);
---shadow-btn:  0 5px 0 var(--accent-dark);
---space-1: 4px … --space-8: 48px  (4er-Raster)
---ease-out: cubic-bezier(0.22, 1, 0.36, 1);
---ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
---dur-fast: 120ms; --dur-base: 220ms; --dur-slow: 420ms;
+--elev-1 / --elev-2 / --elev-3   je DREI gestapelte Schatten, nie einer
+--shadow-hue: 0.34 0.055 35      warmes Braun, nie Schwarz
+--edge: 4px                      die Unterkante, auf der alles Drückbare steht
+--edge-press: 1px                worauf sie beim Drücken zusammenfällt
 ```
+
+Ein einzelner harter Schatten ist der auffälligste Bastel-Marker, und Stapeln kostet nichts. Schwarze Schatten auf einer Pfirsich-Seite werden grau und schmutzig; ein zum Untergrund hin eingefärbter Schatten bleibt im Bild.
+
+**Die Unterkante gilt überall**: Knöpfe, Chips, Stepper, Pferdekarten. Sie ist dieselbe Mechanik, die Duolingos Knöpfe wie Gegenstände wirken lässt, und sie funktioniert nur, wenn sie *ausnahmslos* gilt und von derselben Seite beleuchtet wird. Die Kantenfarbe kommt immer aus der eigenen Skala des Elements (`--btn-edge`).
+
+### 2.5 Form und Abstand
+
+**Verschachtelte Ecken: Innenradius = Außenradius − Abstand.** Ein Knopf 16 px innerhalb einer 22-px-Karte will 6 px, nicht noch einmal 22. Falsch verschachtelte Ecken sieht man nicht, bis man einmal darauf achtet, und danach nie wieder nicht.
+
+```
+--radius-xs: 6px  --radius-sm: 10px  --radius-md: 14px
+--radius-lg: 22px --radius-xl: 28px  --radius-pill: 999px
+--space-1..8: 4 8 12 16 24 32 48 64
+```
+
+Bei den Abständen liegen keine zwei Nachbarn näher als ~25 % beieinander, damit nie abgewogen werden muss, welcher gemeint ist.
 
 ## 3. Typografie
 
-- **Display (Titel, Pferdenamen, Countdown):** „Fredoka“ oder „Baloo 2“ (rund, freundlich). Self-hosted als woff2 in `assets/fonts/` (OFL-Lizenz) – **kein** Google-Fonts-Request zur Laufzeit. Fallback: `system-ui, sans-serif`.
-- **Body:** `system-ui, -apple-system, Segoe UI, Roboto, sans-serif`.
-- Skala: 14 / 16 / 18 / 22 / 28 / 36 / 56 px; Countdown 120 px+.
+- **Display (Titel, Pferdenamen, Knöpfe, Countdown):** **Fredoka**, Variable-Achse 300–700, self-hosted als woff2 in `assets/fonts/` (OFL, Lizenz liegt daneben), auf Latin subsettet, **29 KB**. Kein Google-Fonts-Request zur Laufzeit — die CSP erlaubt ohnehin nur `font-src 'self'`. Die Achse hat den Default 300, also **muss jede Nutzung ihr Gewicht angeben**.
+- **Fallback mit Metrik-Überschreibung:** Eine zweite `@font-face`-Regel zwingt Fredokas Metriken auf die Systemschrift (`size-adjust: 96.3 %`, `ascent-override: 101.1 %`, `descent-override: 24.5 %`), damit eine Überschrift vor und nach dem Font-Swap dieselbe Box belegt. Ohne das springt beim Swap jede Zeile und CLS ist nicht mehr 0 (A5).
+- **Body:** der System-Stack. Zwei Familien sind das Maximum, und eine Systemschrift für Fließtext ist bei GitHub oder Notion genauso — der Amateur-Marker ist `system-ui` in *Überschriften*.
+- **Fluide Skala** zwischen 360 px und 1440 px Viewport, per `clamp()`, ohne Breakpoint-Sprung. Der kleine Pol behält die Werte, mit denen das Spiel ausgeliefert wurde (14/16/18/22/28/36/56); der große wächst schneller als proportional, weil ein größerer Bildschirm mehr Hierarchie will, nicht bloß mehr von allem. Jedes `clamp()` behält einen `rem`-Anteil in der Mitte, sonst bricht der Browser-Zoom.
+- **Fernseher:** Ab 1400 px hebt `:root { font-size: 21px }` die ganze Skala an — aus drei Metern ist alles unter ~24 px unlesbar. Abstände bleiben in px: ein Fernseher braucht größere Buchstaben, nicht größere Lücken.
+- Große Schrift enger (Tracking, Leading), kleine Schrift luftiger — `--track-display`, `--leading-display/-heading/-body`.
 - Zahlen (Schlücke) immer **tabular-nums**.
+
+## 3a. Icons (`ui/components/icon.js`)
+
+Ein Set, ein Raster, eine Strichstärke: **24er-Viewbox, 2 px Kontur, runde Enden und Ecken** — dieselbe Sprache wie `OUTLINE` bei den Pferden. Die Strichstärke skaliert bewusst *nicht* mit der Icon-Größe, damit jedes Glyph in derselben Gewichtsklasse bleibt.
+
+Emoji haben diese Aufgabe vorher gemacht und sind das falsche Werkzeug dafür: Jede Plattform zeichnet sie anders, sie bringen ihre eigenen Farben in eine sorgfältig gebaute Palette und sitzen auf der Grundlinie wie ein Fremdkörper, weil sie zu keiner Schrift gehören. **Spieler-Avatare bleiben Emoji** — dort sind sie keine Icons, sondern der Spieler.
+
+Icons sind immer `aria-hidden`; ihr Name steht im Text daneben oder im `aria-label`.
 
 ## 4. Screens (Wireframe-Beschreibung)
 

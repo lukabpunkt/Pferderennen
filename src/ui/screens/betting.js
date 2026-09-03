@@ -11,7 +11,7 @@ import { page, header } from '../components/layout.js';
 import { betSummary, carrySummary, restorableBets } from '../bettingSummary.js';
 import { horseGrid, createStakePanel } from '../bettingChoice.js';
 import { BETTING } from '../../config.js';
-import { sipWord, ICON } from '../strings.js';
+import { sipWord } from '../strings.js';
 
 let cleanup = null;
 
@@ -42,7 +42,9 @@ export function mount(container, store) {
 
   const body = el('div', { className: 'betting' });
   const footer = el('div', { className: 'betting__footer' });
-  const headerHost = el('div', { className: 'betting__header-host' });
+  // A plain slot the header is swapped in and out of. Deliberately unstyled — it exists so the
+  // header can be rebuilt without the screen losing its place in the layout.
+  const headerHost = el('div');
 
   /** The player whose turn it is, or null when everyone has bet. */
   const currentPlayer = (state) => state.players[state.bettingTurn] ?? null;
@@ -284,7 +286,8 @@ export function mount(container, store) {
 
     footer.replaceChildren(
       button({
-        label: `${ICON.start} Rennen starten`,
+        label: 'Rennen starten',
+        icon: 'start',
         wide: true,
         disabled: reason !== null,
         title: reason ?? undefined,

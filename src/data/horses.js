@@ -5,6 +5,11 @@
  * stamina or luck stats. The engine does not even know this file exists (ESLint enforces that);
  * it works with runner indices 0..5, and only rendering maps index -> horse.
  * See docs/01_GAME_DESIGN.md §2 and docs/03_RACE_ENGINE.md §2.
+ *
+ * This file is the SINGLE SOURCE of the six signature colours. They used to exist a third time as
+ * --horse-* tokens in tokens.css, which nothing ever read; those are gone. The one copy that must
+ * stay is render/trackTheme.js, because canvas cannot read custom properties — change a colour
+ * here and change it there too.
  */
 
 /**

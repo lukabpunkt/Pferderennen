@@ -12,6 +12,16 @@ statt zwei pro Spieler. Nichts davon berührt die Simulation: Der Fairness-Audit
 
 ### Neu
 
+- **Eine echte Schrift.** „Fredoka" wird endlich ausgeliefert – bis jetzt stand sie zwar in den
+  Tokens, aber `assets/fonts/` war leer und alles rendete in der Systemschrift. 29 KB, self-hosted,
+  mit metrisch angeglichenem Fallback, damit beim Nachladen nichts springt.
+- **Ein Farbsystem statt fünf Farben.** Drei Token-Ebenen und in OKLCH gebaute Skalen; Creme, Ink
+  und Orange sind auf die Ziffer dieselben wie vorher, haben jetzt aber Nachbarn.
+- **Tiefe mit einer Lichtquelle.** Vier Elevation-Stufen aus je drei gestapelten, warm eingefärbten
+  Schatten – und die Unterkante, auf der ein Knopf steht, haben jetzt auch Chips, Stepper und
+  Karten. Drücken schiebt sie wirklich in die Seite.
+- **Eigene Icons.** Becher, Pokal, Zielflagge, Haus und Schließen sind gezeichnet statt Emoji –
+  gleiche Strichstärke wie die Pferde. Spieler-Avatare bleiben natürlich Emoji.
 - **Wetten übernehmen.** Ab dem zweiten Rennen fragt der Wett-Screen zuerst, ob ihr genauso setzen
   wollt wie beim letzten Mal. Ein Tap, und ihr steht in der Übersicht.
 - **Einzeln ändern.** Wer doch wechseln will, tippt in der Übersicht seine Zeile an und kommt in
@@ -31,6 +41,10 @@ statt zwei pro Spieler. Nichts davon berührt die Simulation: Der Fairness-Audit
 
 ### Behoben
 
+- Gedämpfter Text auf dem Hintergrundverlauf erreichte nur 3,0–3,7:1. Frühere Kontrast-Sweeps
+  hatten nur Karteninnenräume geprüft, nie den Text, der direkt auf dem Himmel steht.
+- Ein Eingabefeld schaltete beim Fokussieren den Fokusring des ganzen Spiels ab und ersetzte ihn
+  durch einen 2-px-Rahmen.
 - Die automatische Qualitätsabsenkung konnte nie auslösen: Der Monitor bekam den festen
   Simulations-Timestep statt der echten Framezeit, `frames / elapsed` ergab damit immer exakt 60.
 - Alles, was animiert, lief unabhängig von der Zeitlupe in Echtzeit – die Beine galoppierten mit

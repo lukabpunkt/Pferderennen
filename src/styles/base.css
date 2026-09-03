@@ -3,6 +3,44 @@
  * Component styles live in components.css, per-screen layout in screens.css.
  */
 
+/*
+ * The display face, self-hosted. No CDN — the CSP allows `font-src 'self'` only, and the game
+ * has to work offline after the first load. One variable file (weight 300-700, latin subset,
+ * 29 KB) replaces five static weights.
+ *
+ * Note the axis default is 300, so anything using this family must state its weight.
+ */
+@font-face {
+  font-family: 'Fredoka';
+  src: url('../../assets/fonts/fredoka-latin-var.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+ * What shows during the swap, with Fredoka's metrics forced onto it, so the headline occupies
+ * exactly the same box before and after the font arrives. Without this the swap shifts every
+ * heading on the page and CLS stops being zero (audit A5).
+ *
+ * Fredoka: 1000 upm, ascent 974, descent 236, line gap 0, x-height 500. The fallbacks sit around
+ * a 0.519 x-height, so 0.500 / 0.519 = 96.3 %; the ascent and descent are then divided by that
+ * same factor to keep the line box where it was.
+ */
+@font-face {
+  font-family: 'Fredoka Fallback';
+  src:
+    local('Helvetica Neue'), local('Arial'), local('Roboto'), local('Segoe UI Variable Display'),
+    local('Segoe UI');
+  size-adjust: 96.3%;
+  ascent-override: 101.1%;
+  descent-override: 24.5%;
+  line-gap-override: 0%;
+}
+
 *,
 *::before,
 *::after {
@@ -18,9 +56,15 @@ body {
   margin: 0;
   font-family: var(--font-body);
   font-size: var(--text-sm);
-  line-height: 1.45;
-  color: var(--ink);
-  background: linear-gradient(170deg, var(--bg-sky-top) 0%, var(--bg-sky-bottom) 100%);
+  line-height: var(--leading-body);
+  color: var(--text);
+  /*
+   * The sky, with a whisper of grain over it. Long gradients band into visible stripes on 8-bit
+   * displays; a little noise dithers the steps away — the same trick film and games have always
+   * used. It is baked into a data URI rather than run as a live SVG filter, because a canvas is
+   * already asking for the GPU on the race screen.
+   */
+  background: var(--grain), linear-gradient(170deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -35,17 +79,24 @@ body.has-modal {
   overflow: hidden;
 }
 
+/*
+ * Big type gets tighter tracking and leading, small type gets looser — the ratio runs opposite
+ * to the size. An untracked 56px headline is an amateur marker all by itself.
+ */
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
   margin: 0 0 var(--space-3);
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  line-height: var(--leading-heading);
+  letter-spacing: var(--track-display);
 }
 
 h1 {
   font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: var(--leading-display);
 }
 h2 {
   font-size: var(--text-xl);
@@ -56,6 +107,8 @@ h3 {
 
 p {
   margin: 0 0 var(--space-3);
+  /* Reading speed peaks around 70 characters; past that the eye loses the line. */
+  max-width: var(--measure);
 }
 
 ul,
@@ -78,10 +131,15 @@ select {
   color: inherit;
 }
 
+/*
+ * One focus ring for the whole game. Two rings, not one: the inner light halo keeps it visible
+ * on the ink toast and the ink house banner, where a dark ring alone would disappear.
+ */
 :focus-visible {
-  outline: 3px solid var(--ink);
+  outline: 3px solid var(--text);
   outline-offset: 3px;
   border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 3px var(--surface);
 }
 
 /* --- Screen skeleton ---------------------------------------------------- */
@@ -147,9 +205,10 @@ select {
   font-size: var(--text-xl);
 }
 
+/* This one sits on the sky, not on a card — see --text-on-sky. */
 .screen__subtitle {
   margin: var(--space-1) 0 0;
-  color: var(--ink-soft);
+  color: var(--text-on-sky);
   font-size: var(--text-xs);
 }
 
@@ -168,7 +227,7 @@ select {
 .screen__footer {
   padding-block: var(--space-3);
   padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, transparent, var(--bg-sky-bottom) 45%);
+  background: linear-gradient(180deg, transparent, var(--sky-bottom) 45%);
 }
 
 /* Visible to screen readers only (aria-live region, canvas description). */
@@ -184,9 +243,25 @@ select {
   border: 0;
 }
 
+/*
+ * Small print. It defaults to the darker on-sky tone because that is where it is least safe:
+ * --text-muted only reaches 3.0-3.7:1 against the gradient. Inside a card there is no such
+ * problem, so it goes back to the lighter tone there and the two tiers stay distinguishable.
+ */
+.hint,
+.field__label {
+  color: var(--text-on-sky);
+}
+
+.card .hint,
+.card .field__label,
+.modal .hint,
+.modal .field__label {
+  color: var(--text-muted);
+}
+
 .hint {
   margin: 0;
-  color: var(--ink-soft);
   font-size: var(--text-xs);
 }
 

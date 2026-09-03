@@ -36,7 +36,7 @@ export function closeAllModals() {
 export function modal({ title, content, onClose }) {
   const previouslyFocused = document.activeElement;
 
-  const closeButton = iconButton({ icon: '✕', label: 'Schließen', onClick: () => close() });
+  const closeButton = iconButton({ icon: 'close', label: 'Schließen', onClick: () => close() });
 
   const dialog = el(
     'div',

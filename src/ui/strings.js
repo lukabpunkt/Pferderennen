@@ -27,14 +27,6 @@ export function sips(settings, count) {
   return `${count} ${sipWord(settings, count)}`;
 }
 
-/** Emoji used consistently across the game (audit A1). */
-export const ICON = {
-  drink: '🍺',
-  winner: '🥇',
-  start: '🏁',
-  house: '🏠',
-};
-
 /** Human readable names of the bet types. */
 export const BET_TYPE_LABELS = {
   win: 'Sieg',

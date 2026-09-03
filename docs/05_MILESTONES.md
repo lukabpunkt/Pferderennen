@@ -367,6 +367,33 @@ Geschätzter Umfang pro Meilenstein: 1 Claude-Code-Session (ggf. 2 bei M3/M5/M6)
 
 ---
 
+## M13 – Das Fundament: Schrift, Farbsystem, Tiefe, Icons
+
+**Ziel:** Die UI-Hülle bekommt das Niveau des Canvas-Artworks. Nichts davon ist für sich ein Feature; zusammen ist es der Unterschied zwischen „jemand hat Farben ausgesucht" und „jemand hat ein System gebaut".
+
+**Tasks**
+
+1. Fredoka ausliefern: Variable-woff2, Latin-Subset, Preload mit `crossorigin`, Fallback mit Metrik-Überschreibung gegen den Font-Swap-Sprung.
+2. `tokens.css` dreistufig: Primitive (OKLCH-Skalen) → Semantik → Komponente. Skalen so verankert, dass die Marke bitgleich erhalten bleibt.
+3. Fluide Typo-Skala per `clamp()` zwischen 360 px und 1440 px, plus TV-Anhebung ab 1400 px. Abstandsskala ohne zwei Nachbarn näher als 25 %.
+4. Vierstufiges Elevation-System, drei gestapelte Schatten je Stufe, warme Schattenfarbe; die 4-px-Unterkante gilt ab jetzt für alles Drückbare.
+5. Verschachtelte Radien nach der Regel Innen = Außen − Abstand.
+6. Icon-Set als Inline-SVG, Emoji-als-Icon verschwindet (Avatare bleiben).
+7. Aufräumen: 25 tote Tokens, `.btn--danger:active`, `.input:focus`.
+
+**DoD**
+
+- Fairness-Audit liefert **identische** Zahlen.
+- **CLS bleibt 0** trotz Webfont, Lighthouse-Barrierefreiheit bleibt 100.
+- Kontrast-Sweep über jeden Screen mit Alpha-Komposition: 0 Verstöße.
+- Außerhalb von `tokens.css` steht kein einziger Hex-Wert und kein rohes Primitiv.
+
+**Audit:** A1 + A4 + A5 + A6 + A2 (Re-Run als Beweis)
+
+**Nutzer-Test:** Das Menü auf dem Handy anschauen. Sieht das nach einem Produkt aus?
+
+---
+
 ## Nach v1.0 – Backlog (v1.1+)
 
 Siehe GDD §5 Priorität B: Jackpot-Runde, Pechvogel-Bonus, Sudden Death, Wetter-/Strecken-Varianten, Share-Card, Zuschauer-Emojis, Sprite-Sheet-Option. Jedes Feature bekommt einen eigenen Mini-Meilenstein mit denselben Regeln (DoD + Audit + Fairness-Re-Run).

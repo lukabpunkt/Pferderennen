@@ -10,7 +10,8 @@ import { button } from '../components/button.js';
 import { page, header, card, playerChip } from '../components/layout.js';
 import { HORSES_BY_ID } from '../../data/horses.js';
 import { settle } from '../../engine/payout.js';
-import { sips, BET_TYPE_LABELS, ICON } from '../strings.js';
+import { sips, BET_TYPE_LABELS } from '../strings.js';
+import { icon } from '../components/icon.js';
 import { openStats } from './stats.js';
 
 let cleanup = null;
@@ -121,11 +122,7 @@ function ceremony(order, settings) {
  */
 function payoutCard({ player, text, kind, horseName, betType }) {
   return el('li', { className: `payout payout--${kind}` }, [
-    el('span', {
-      className: 'payout__icon',
-      text: kind === 'deal' ? ICON.winner : ICON.drink,
-      attrs: { 'aria-hidden': 'true' },
-    }),
+    el('span', { className: 'payout__icon' }, [icon(kind === 'deal' ? 'winner' : 'drink')]),
     el('span', { className: 'payout__body' }, [
       playerChip(player),
       el('span', { className: 'payout__text', text }),
@@ -206,11 +203,7 @@ export function mount(container, store) {
   const houseCard = settlement.houseWins
     ? card(
         [
-          el('span', {
-            className: 'house__icon',
-            text: ICON.house,
-            attrs: { 'aria-hidden': 'true' },
-          }),
+          el('span', { className: 'house__icon' }, [icon('house', { size: 32 })]),
           el('p', {
             className: 'house__text',
             text: 'Das Haus gewinnt – niemand hatte das Siegerpferd. Alle trinken ihren Einsatz!',
