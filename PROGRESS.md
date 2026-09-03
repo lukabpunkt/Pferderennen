@@ -247,7 +247,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A1    | M11         | 2026-09-03 | **bestanden** | Kein Framework, keine Laufzeit-Abhängigkeit, Farben aus Tokens; 1 Befund behoben (`button()` überschrieb seinen eigenen Namen) |
 | A6    | M11         | 2026-09-03 | **bestanden** | `reducers.js` 100 % Branches; `ui/screens/race.js` 580 → 498 Zeilen (`raceCeremony.js` herausgezogen), bleibt eine begründete Ausnahme |
 | A4    | M11         | 2026-09-03 | **bestanden** | Zeilen als Bedienelemente: 48 px, Fokusring, sprechende Namen; 0 Kontrastverstöße |
-| A2    | M11         | 2026-09-03 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch zum Lauf vor M11 |
+| A2    | M11         | 2026-09-03 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch zum Lauf vor M11. CI grün: [Run 33757159274](https://github.com/lukabpunkt/Pferderennen/actions/runs/33757159274) |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
