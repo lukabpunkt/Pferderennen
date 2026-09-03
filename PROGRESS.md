@@ -283,7 +283,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A4    | M13         | 2026-09-04 | **bestanden** | Sweep über alle sechs Screens: 0 Verstöße nach 3 Befunden; Lighthouse-A11y **100** |
 | A5    | M13         | 2026-09-04 | **bestanden** | **CLS 0** (vorher 0,002), TBT 0 ms, Performance 88–90; Kontrollmessung: die Schrift kostet keine Punkte |
 | A6    | M13         | 2026-09-04 | **bestanden** | `tokens.css` 306 Zeilen, `icon.js` 96; keine JS-Datei neu über 400 |
-| A2    | M13         | 2026-09-04 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch |
+| A2    | M13         | 2026-09-04 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch. CI grün: [Run 33811090693](https://github.com/lukabpunkt/Pferderennen/actions/runs/33811090693) |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
