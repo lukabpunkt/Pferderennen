@@ -8,7 +8,7 @@
 
 import { el, listen, focus } from '../dom.js';
 import { button, iconButton } from '../components/button.js';
-import { page, header } from '../components/layout.js';
+import { page, header, card } from '../components/layout.js';
 import { AVATARS, nextAvatar } from '../../data/avatars.js';
 import { BETTING } from '../../config.js';
 
@@ -56,7 +56,8 @@ export function mount(container, store) {
   });
   error.id = 'new-player-error';
 
-  const hint = el('p', { className: 'hint' });
+  const hint = el('p', { className: 'hint players__hint' });
+  const count = el('span', { className: 'progress-pill num' });
   const addButton = button({
     label: '+ Spieler',
     variant: 'secondary',
@@ -150,9 +151,14 @@ export function mount(container, store) {
     footerButton.disabled = !enough;
     footerButton.title = enough ? '' : `Ihr braucht mindestens ${BETTING.minPlayers} Spieler.`;
     addButton.disabled = players.length >= BETTING.maxPlayers;
+    // The count belongs in the header where the betting screen keeps its own; the line under the
+    // roster is for the one thing that changes what you do next.
+    count.textContent = `${players.length} / ${BETTING.maxPlayers}`;
     hint.textContent = enough
-      ? `${players.length} von maximal ${BETTING.maxPlayers} Spielern.`
-      : `Noch ${BETTING.minPlayers - players.length} Spieler, dann kann es losgehen.`;
+      ? 'Reicht. Ihr könnt jederzeit noch jemanden dazunehmen.'
+      : `Noch ${BETTING.minPlayers - players.length} ${
+          BETTING.minPlayers - players.length === 1 ? 'Spieler' : 'Spieler'
+        }, dann kann es losgehen.`;
   }
 
   footerButton.addEventListener('click', () => {
@@ -178,18 +184,26 @@ export function mount(container, store) {
       header: header({
         title: 'Wer spielt mit?',
         subtitle: 'Reicht das Gerät herum – jeder tippt seinen Namen ein.',
+        aside: count,
       }),
+      // One panel, not a list floating above a form. The roster and the way to grow it are the
+      // same thing, so they live in the same box.
       body: [
-        list,
-        el('div', { className: 'field' }, [
-          el('label', {
-            className: 'field__label',
-            text: 'Neuer Spieler',
-            attrs: { for: 'new-player' },
-          }),
-          el('div', { className: 'field__row' }, [input, addButton]),
-          error,
-        ]),
+        card(
+          [
+            list,
+            el('div', { className: 'field players__add' }, [
+              el('label', {
+                className: 'visually-hidden',
+                text: 'Neuer Spieler',
+                attrs: { for: 'new-player' },
+              }),
+              el('div', { className: 'field__row' }, [input, addButton]),
+              error,
+            ]),
+          ],
+          'card--roster',
+        ),
         hint,
       ],
       footer: footerButton,

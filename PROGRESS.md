@@ -240,6 +240,21 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 - [x] **Audit A6 bestanden**
 - [x] **Audit A2 bestanden** (Re-Run als Beweis)
 
+### M14 – Die Screens
+
+- [x] 1. Menü als Titelbild, Attract-Track blendet ein
+- [x] 2. Spieler-Screen als Panel
+- [x] 3. Statistik mit Kennzahlen
+- [x] 4. Ergebnis: Beschriftung statt zweitem Podest
+- [x] 5. Scroll-Andeutung in Modalen und Screens
+- [x] 6. Renn-Chrome als Milchglas
+- [x] 7. Großer Bildschirm
+- [x] **Audit A1 bestanden**
+- [x] **Audit A3 bestanden**
+- [x] **Audit A4 bestanden**
+- [x] **Audit A5 bestanden**
+- [x] **Audit A2 bestanden** (Re-Run als Beweis)
+
 ---
 
 ## Audit-Protokoll
@@ -284,6 +299,11 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A5    | M13         | 2026-09-04 | **bestanden** | **CLS 0** (vorher 0,002), TBT 0 ms, Performance 88–90; Kontrollmessung: die Schrift kostet keine Punkte |
 | A6    | M13         | 2026-09-04 | **bestanden** | `tokens.css` 306 Zeilen, `icon.js` 96; keine JS-Datei neu über 400 |
 | A2    | M13         | 2026-09-04 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch. CI grün: [Run 33811090693](https://github.com/lukabpunkt/Pferderennen/actions/runs/33811090693) |
+| A1    | M14         | 2026-09-04 | **bestanden** | Keine neue Abhängigkeit, kein Hex außerhalb `tokens.css`; ein toter Farbeintrag entfernt |
+| A3    | M14         | 2026-09-04 | **bestanden** | Attract-Track blendet in den Himmel ein; Podest und Canvas-Szene widersprechen sich nicht mehr |
+| A4    | M14         | 2026-09-04 | **bestanden** | Sweep über **alle 9 Ansichten** inkl. Renn-Screen gegen echte Canvas-Pixel: 0 Verstöße; 1 Altlast behoben |
+| A5    | M14         | 2026-09-04 | **bestanden** | CLS **0**, TBT **0 ms**, A11y **100**, Performance 88–89 – unverändert zu M13 |
+| A2    | M14         | 2026-09-04 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
@@ -441,6 +461,28 @@ irgendwann stört, ist `--sub` der Hebel.
 ## Entscheidungen
 
 _(Datum – Entscheidung – Begründung)_
+
+- **2026-09-04 (M14) – Das Menü ist ein Titelbild und benutzt deshalb nicht das Seitenlayout des
+  Rests.** Sein Körper zentriert seinen Inhalt in der verbleibenden Höhe (`justify-content: safe
+  center`), statt von oben zu stapeln. Vorher standen Marke und Karte oben, der Knopf unten und
+  295 px Verlauf dazwischen. `safe` statt `center`, weil ein einfaches Zentrieren den oberen Teil
+  unerreichbar abschneidet, sobald der Inhalt höher wird als der Bereich.
+- **2026-09-04 (M14) – Die Podest-Beschriftung baut kein zweites Podest.** Ein erster Versuch gab
+  ihr echte Stufen — und da die Canvas-Szene darüber bereits Sockel mit Nummern baut, stand
+  dasselbe Podest zweimal untereinander. Die Beschriftung ist jetzt, was ihr Name sagt: die
+  Bildunterschrift, die nebenbei die drei Namen als echten Text trägt (A4).
+- **2026-09-04 (M14) – Der Fuß greift über den Körper.** Der Screen-Körper endete exakt dort, wo
+  der Fuß begann, und der Verlauf des Fußes fing genau an dieser Kante transparent an — Inhalt
+  wurde also mitten im Wort abgeschnitten. Ein negativer oberer Rand zieht den Fuß darüber, sein
+  eigener Verlauf blendet den Inhalt aus.
+- **2026-09-04 (M14) – Milchglas gibt es genau einmal, über dem Canvas.** Dort ist der Untergrund
+  unser eigener und die Lesbarkeit garantierbar. Über dem Seitenverlauf bliebe nur der Effekt
+  übrig, und der sieht billig aus.
+- **2026-09-04 (M14) – Der Attract-Track blendet sich im Canvas ein, nicht per CSS-Maske.** Eine
+  Maske über dem fertigen Bild trifft die Kante nur zufällig; die Szene weiß selbst, wo ihr
+  Horizont liegt. Die Bande ist dabei ganz entfallen: Auf der Rennbahn liest sie sich als Bande,
+  weil ringsum Tiefe ist — auf einem flachen Hintergrund ist sie ein heller Strich quer über die
+  Seite.
 
 - **2026-09-04 (M13) – Die Skalen sind auf die vorhandene Marke verankert, nicht neu erfunden.**
   `--sand-50`, `--sand-600` und `--sand-900` sind bitgleich mit dem alten Creme, Ink-Soft und Ink;
@@ -1276,6 +1318,53 @@ wird.
 Drehung eine leere Fläche zurück – `canvas.width` zu setzen löscht sie, und es zeichnete ja nichts
 mehr. Ein Resize weckt die Szene jetzt für ein Bild.
 
+### A1 / A2 / A3 / A4 / A5 – Audits zu M14 (2026-09-04)
+
+**A2:** Re-Run über 100.000 Rennen, alle 22 Kriterien erfüllt, S1 **31,24 %**, S5 **39,60 %**,
+S6 **132** — dieselben Ziffern wie seit M10.
+
+**A4 lief diesmal anders, und das war der Punkt.** Bisherige Sweeps sind nur durch das DOM
+gelaufen; der Renn-Screen liegt aber über einem Canvas, und für alles, was dort schwebt, ist der
+tatsächliche Untergrund ein gezeichnetes Bild. Der Sweep liest jetzt das **echte Pixel unter dem
+Element** aus dem Canvas aus, wenn kein deckender Vorfahre gefunden wird.
+
+Damit kam eine Altlast heraus, die vier Meilensteine überlebt hat: **die Startnummern auf der
+Anzeigetafel standen in Weiß auf der Signaturfarbe** — 2,15 bis 4,23:1, also genau der Bereich, den
+das M6-Audit für die Badges beschrieben und dort behoben hatte. Die Tafel war übersehen worden,
+weil sie eben nicht auf einer Karte sitzt. Sie bekommt jetzt dieselbe Konstruktion wie
+`.horse-badge`: dunkle Stufe als Fläche, Signaturfarbe als Ring. Weiß erreicht darauf 5,02 bis
+8,98:1 über alle sechs Pferde.
+
+Zwei Messfehler im eigenen Werkzeug, beide auf dem Weg gefunden:
+
+1. **Der Parser konnte `color(srgb …)` nicht lesen** — das ist, was Chrome für `color-mix()`
+   zurückgibt. Werte von 0 bis 1 wurden als 0 bis 255 gelesen, also praktisch als Schwarz. Jedes
+   Element mit einer `color-mix()`-Fläche wurde dadurch falsch bewertet; auf dem Renn-Screen sah
+   das nach sechs zusätzlichen Verstößen aus, die keine waren.
+2. **Der Sweep verlangte 4,5:1 von deaktivierten Knöpfen**, weil er das `disabled` am `<span>`
+   im Knopf suchte statt am Knopf. Deaktivierte Bedienelemente sind von WCAG 1.4.3 ausgenommen.
+
+Nach beiden Korrekturen: **alle neun Ansichten sauber** — Menü (leer und mit Kader), Spieler,
+Wetten (Auswahl und Übersicht), Rennen, Ergebnis, Statistik, Übernehmen-Karte, Regeln. Keine
+Kontrastverstöße, kein Tap-Ziel unter 48 px, kein horizontales Scrollen, im iPhone-Viewport
+gemessen.
+
+**A5:** CLS **0**, TBT **0 ms**, Barrierefreiheit **100**, Performance 88–89 über drei Läufe —
+gegenüber M13 unverändert. Die Kompositionsarbeit hat nichts gekostet.
+
+**A3:** Zwei Befunde, beide sichtbar erst, als der Attract-Modus zum ersten Mal wirklich zu sehen
+war. In allen bisherigen Screenshots war er leer, weil Chrome Animationen und `requestAnimationFrame`
+in einem Hintergrund-Tab anhält — er lief die ganze Zeit, nur nie dann, wenn ich hinsah. Sichtbar
+begann die Bahn auf einer harten Linie quer über die Seite, und die Bande zog einen hellen Strich
+darüber. Die Szene blendet sich jetzt selbst in den Himmel ein, die Bande ist entfallen.
+
+Der zweite: Die neue Podest-Beschriftung baute in einem ersten Versuch echte Stufen — und stand
+damit als zweites Podest unter dem, das die Canvas-Szene ohnehin zeichnet. Sie ist jetzt wieder
+Bildunterschrift.
+
+**A1:** Keine neue Abhängigkeit, kein Hex außerhalb `tokens.css`. Ein toter Farbeintrag
+(`COLOURS.fence` in `attract.js`) ist mit der Bande verschwunden.
+
 ### A1 / A2 / A4 / A5 / A6 – Audits zu M13 (2026-09-04)
 
 **A2:** M13 fasst kein einziges Stück Spiellogik an. Re-Run über 100.000 Rennen: alle 22 Kriterien
@@ -1391,6 +1480,9 @@ _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 **Offen (nur der Nutzer kann das):**
 
+- **M14:** Das Spiel jemandem zeigen, der es nicht kennt. Sieht es aus wie etwas, das man kaufen
+  würde? Und: einmal auf einem echten Fernseher öffnen — der 10-Fuß-Fall ist bisher nur gerechnet,
+  nicht gesehen.
 - **M13:** Das Menü auf dem eigenen Handy anschauen. Sieht das jetzt nach einem Produkt aus, oder
   fehlt noch etwas Offensichtliches?
 - **M12:** Zwischen zwei Rennen bei einem Spieler den Einsatz hochdrehen. Reicht ein Tap, oder
@@ -1423,7 +1515,7 @@ _(werden hier gesammelt, bevor sie zu Tasks werden)_
   nicht lesbar; Farbe und Nummer tragen die Unterscheidung.
 - Das bleibende Dekor liegt immer an der Bahn des betroffenen Pferdes. Ein Pferd, das über eine
   fremde Bananenschale läuft, merkt davon nichts – das Dekor ist Erinnerung, nicht Physik.
-- `screens.css` (831), `components.css` (710), `race.css` (459), `base.css` (318) und
+- `screens.css` (1057), `components.css` (725), `race.css` (498), `base.css` (343) und
   `ui/screens/race.js` (498)
   liegen über der 400-Zeilen-Richtlinie. Begründung im A6-Protokoll zu M7 und M11.
   Der übrige Produktivcode in `src/**.js` hält sie ein.

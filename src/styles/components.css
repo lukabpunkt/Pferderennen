@@ -631,10 +631,25 @@
   font-size: var(--text-lg);
 }
 
+/*
+ * The body scrolls, and it says so. Content used to be guillotined at the bottom edge with no
+ * indication that anything followed — on the settings sheet that meant half the options simply
+ * did not exist as far as anyone could tell.
+ *
+ * Pure CSS: the two `local` layers scroll with the content and sit on top of the two fixed
+ * shadow layers, so a shadow only shows on the edge that actually has more behind it.
+ */
 .modal__body {
   padding: var(--space-4) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
   overflow-y: auto;
   overscroll-behavior: contain;
+  background:
+    linear-gradient(var(--surface) 40%, transparent) local top / 100% 28px no-repeat,
+    linear-gradient(transparent, var(--surface) 60%) local bottom / 100% 28px no-repeat,
+    radial-gradient(farthest-side at 50% 0, oklch(var(--shadow-hue) / 0.16), transparent) scroll
+      top / 100% 12px no-repeat,
+    radial-gradient(farthest-side at 50% 100%, oklch(var(--shadow-hue) / 0.16), transparent) scroll
+      bottom / 100% 12px no-repeat;
 }
 
 @keyframes fade-in {

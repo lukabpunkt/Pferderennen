@@ -29,8 +29,8 @@ export function historyStrip(state, { title = 'Die letzten Rennen', compact = fa
       return el('li', {
         className: 'history__dot',
         vars: {
-          '--horse-color': horse?.color ?? 'var(--ink-soft)',
-          '--horse-dark': horse?.colorDark ?? 'var(--ink-soft)',
+          '--horse-color': horse?.color ?? 'var(--text-muted)',
+          '--horse-dark': horse?.colorDark ?? 'var(--text-muted)',
         },
         attrs: { title: horse?.name ?? 'Unbekannt' },
       });

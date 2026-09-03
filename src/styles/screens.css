@@ -4,8 +4,20 @@
 
 /* --- Start --------------------------------------------------------------- */
 
+/*
+ * A title screen, not a page. The body centres its contents in whatever height is left instead of
+ * stacking from the top — the old layout put the brand at the very top, the card under it, and
+ * then nearly 300 px of empty gradient before the button at the bottom edge.
+ */
+/* `safe center` rather than `center`: once the content is taller than the body, a plain centre
+   clips the top out of reach instead of scrolling to it. */
+.screen[data-screen='start'] .screen__body {
+  justify-content: safe center;
+  gap: var(--space-6);
+  padding-block: var(--space-5);
+}
+
 .start__brand {
-  margin-top: var(--space-6);
   text-align: center;
 }
 
@@ -13,6 +25,7 @@
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--text-3xl);
+  font-weight: 600;
   color: var(--text);
   /* Fredoka's strokes are heavy enough to carry themselves; the old highlight now reads as a
      misregistered second copy. What is left is a soft warm drop so the word sits on the sky. */
@@ -20,26 +33,24 @@
 }
 
 .start__tagline {
+  max-width: none;
   margin: var(--space-2) 0 0;
   color: var(--text-on-sky);
   font-size: var(--text-md);
 }
 
-.card--roster {
+/* Who played last time and how it went — one strip, not a card. */
+.start__last {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-3);
-}
-
-.start__roster-label {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: var(--text-muted);
 }
 
 .start__roster {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-2);
 }
 
@@ -49,7 +60,8 @@
   gap: var(--space-2);
   padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
   border-radius: var(--radius-pill);
-  background: var(--tint-subtle);
+  background: var(--surface-glass);
+  box-shadow: inset 0 0 0 1px var(--tint);
   font-size: var(--text-xs);
 }
 
@@ -64,12 +76,22 @@
   white-space: nowrap;
 }
 
-/* Sits directly under the roster rather than being pushed to the bottom, where the attract
-   horses stand. */
-.start__actions {
+/*
+ * Nobody opens a party game to read the settings, so these are the quietest thing here — small,
+ * icon-led, and well below the brand.
+ */
+.start__utilities {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  gap: var(--space-2);
+}
+
+/* The primary action, with the one thing that belongs to it directly underneath. */
+.start__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: var(--space-2);
 }
 
@@ -78,17 +100,52 @@
 .player-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
 }
 
+/*
+ * A roster is a column of names; it does not want the full width of a desktop. Capping it keeps
+ * the name and its remove button within a glance of each other instead of at opposite ends of a
+ * metre of cream.
+ */
+.card--roster {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+.screen[data-screen='players'] .screen__body {
+  justify-content: safe center;
+  gap: var(--space-4);
+}
+
+/* The way to grow the roster, separated from it by a rule rather than by distance. */
+.players__add {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.players__hint {
+  text-align: center;
+}
+
+/*
+ * A row inside the roster panel, not a card of its own. It used to be its own cream bar on the
+ * sky, which on a wide screen meant a name at the far left, a cross at the far right and a metre
+ * of empty cream between them.
+ */
 .player-row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  box-shadow: var(--elev-1);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.player-row:last-child {
+  border-bottom: 0;
 }
 
 .player-row__avatar {
@@ -109,11 +166,18 @@
   transform: scale(0.92) rotate(-8deg);
 }
 
+/*
+ * The name reads as text until you touch it, then it admits to being a field. A row of obvious
+ * input boxes makes the screen a form; this way the roster is a list of people.
+ */
 .player-row__name {
   flex: 1;
   min-width: 0;
+  padding-inline: var(--space-2);
   border-color: transparent;
   background: transparent;
+  font-family: var(--font-display);
+  font-weight: 500;
 }
 
 .player-row__name:focus {
@@ -454,7 +518,7 @@
 .ceremony {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 0;
 }
 
 .ceremony__stage {
@@ -468,12 +532,21 @@
   background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
 }
 
+/*
+ * The names under the scene. The canvas above is already building the podium — plinths, heights,
+ * colours and all — so these must not build a second one underneath it; that is exactly what a
+ * previous pass here did and the result was the same podium twice, four centimetres apart.
+ *
+ * What this is instead: the caption for the picture. It also carries the three names as real
+ * text, which is the only way a screen reader ever learns who came where (audit A4).
+ */
 .ceremony__names {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  align-items: start;
   gap: var(--space-2);
   margin: 0;
-  padding: 0;
+  padding: var(--space-3) 0 0;
   list-style: none;
 }
 
@@ -481,27 +554,41 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding-top: var(--space-1);
-  border-top: 4px solid var(--horse-color);
+  gap: var(--space-1);
 }
 
 .ceremony__place {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--horse-dark, var(--horse-color));
+  color: var(--paper);
   font-family: var(--font-display);
-  font-size: var(--text-sm);
-  color: var(--text-muted);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  /* The signature colour as a ring, because white on it reaches only 2.2-4.2:1 (audit A4). */
+  box-shadow: 0 0 0 2px var(--horse-color);
 }
 
 .ceremony__name--1 .ceremony__place {
-  font-size: var(--text-lg);
-  color: var(--text);
+  width: 34px;
+  height: 34px;
+  font-size: var(--text-sm);
 }
 
 .ceremony__horse {
   font-family: var(--font-display);
+  font-weight: 500;
   font-size: var(--text-xs);
   text-align: center;
   line-height: 1.2;
+}
+
+.ceremony__name--1 .ceremony__horse {
+  font-weight: 600;
+  font-size: var(--text-sm);
 }
 
 .payouts {
@@ -510,9 +597,14 @@
   gap: var(--space-2);
 }
 
+/*
+ * Two columns on a phone: the icon, then everything else. Giving the horse its own column there
+ * squeezes the sentence that actually matters ("verteilt 3 Schlücke") onto two lines to make room
+ * for context nobody is reading first.
+ */
 .payout {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
@@ -564,12 +656,32 @@
 .payout__text {
   font-size: var(--text-md);
   font-weight: 600;
+  text-wrap: balance;
 }
 
 .payout__horse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  grid-column: 2;
+  min-width: 0;
   font-size: var(--text-xs);
   color: var(--text-muted);
-  text-align: right;
+}
+
+/* From here the line is wide enough to carry the horse beside the sentence instead of under it. */
+@media (min-width: 560px) {
+  .payout {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .payout__horse {
+    grid-column: auto;
+    justify-content: flex-end;
+    max-width: 12rem;
+    text-align: right;
+  }
 }
 
 .card--house {
@@ -694,6 +806,48 @@
   font-size: var(--text-xs);
 }
 
+/*
+ * The three figures worth saying out loud. A table answers "what are the numbers"; these answer
+ * "what happened tonight", which is the question anyone actually opens this for.
+ */
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--space-2);
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Centred, so a tile without an avatar still lines its number up with the ones that have one. */
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  /* Inside a --radius-lg modal body with --space-5 of padding. */
+  border-radius: var(--radius-xs);
+  background: var(--surface-sunken);
+  text-align: center;
+}
+
+.stat-tile__avatar {
+  font-size: var(--text-lg);
+  line-height: 1;
+}
+
+.stat-tile__value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-lg);
+  line-height: 1.1;
+}
+
+.stat-tile__label {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.2;
+}
+
 .stats-table {
   width: 100%;
   border-collapse: collapse;
@@ -702,9 +856,14 @@
 
 .stats-table th,
 .stats-table td {
-  padding: var(--space-2);
+  padding: var(--space-2) var(--space-1);
   text-align: right;
-  border-bottom: 1px solid var(--tint);
+  border-bottom: 1px solid var(--border);
+}
+
+.stats-table tbody tr:last-child th,
+.stats-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .stats-table th:first-child,
@@ -712,9 +871,61 @@
   text-align: left;
 }
 
+/* Column names are labels, not content: small, quiet, and set apart by letter-spacing rather
+   than by yet another size. */
 .stats-table thead th {
+  padding-bottom: var(--space-1);
   color: var(--text-muted);
   font-weight: 600;
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-caps);
+  text-transform: lowercase;
+}
+
+.stats-table tbody th {
+  font-weight: 600;
+}
+
+.stats-table tbody td {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+/* The avatar used to sit flush against the name with no space at all. */
+.stats-table__who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stats-table__avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--tint-subtle);
+  font-size: var(--text-sm);
+}
+
+.stats-table tr.is-leading {
+  background: var(--accent-tint);
+}
+
+.stats-table tr.is-leading th,
+.stats-table tr.is-leading td {
+  border-bottom-color: transparent;
+}
+
+.stats-table tr.is-leading th:first-child {
+  border-start-start-radius: var(--radius-xs);
+  border-end-start-radius: var(--radius-xs);
+}
+
+.stats-table tr.is-leading td:last-child {
+  border-start-end-radius: var(--radius-xs);
+  border-end-end-radius: var(--radius-xs);
 }
 
 .history__dots {
@@ -731,11 +942,14 @@
   box-shadow: inset 0 -2px 0 var(--horse-dark, transparent);
 }
 
-/* On the start screen the strip sits under the roster as a quiet footnote, not a headline. */
+/*
+ * On the title screen the strip is a footnote under the roster, not a headline. It used to carry
+ * a rule above it from when it lived inside a card — out here that read as a stray line with a
+ * dot under it.
+ */
 .history--compact {
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--tint);
+  display: flex;
+  justify-content: center;
 }
 
 .history--compact .history__dot {
@@ -750,8 +964,19 @@
     grid-template-columns: repeat(3, 1fr);
   }
 
-  /* A button spanning the whole desktop width looks accidental rather than inviting. */
-  .screen__footer > .btn--wide {
+  /*
+   * On a wide screen the payouts stop being a long column nobody can take in at once. Two per
+   * row means a table of six sees its whole settlement without scrolling.
+   */
+  .payouts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: start;
+  }
+
+  /* A button spanning the whole desktop width looks accidental rather than inviting. Not a
+     child selector: the start screen wraps its primary action so a second line can sit under it. */
+  .screen__footer .btn--wide {
     display: flex;
     max-width: 420px;
     margin-inline: auto;
@@ -786,6 +1011,7 @@
 
 /* --- Start screen: attract mode ------------------------------------------- */
 
+/* The idling horses live behind everything. The scene fades itself into the sky — see attract.js. */
 .attract {
   position: absolute;
   inset: 0;

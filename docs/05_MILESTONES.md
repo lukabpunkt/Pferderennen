@@ -394,6 +394,32 @@ Geschätzter Umfang pro Meilenstein: 1 Claude-Code-Session (ggf. 2 bei M3/M5/M6)
 
 ---
 
+## M14 – Die Screens
+
+**Ziel:** Jeder Screen wird komponiert statt gestapelt. Leitgedanke aus der Party-Game-Praxis: eine Entscheidung pro Screen, eine unübersehbare Hauptaktion, aus zwei Metern lesbar — das Publikum ist angetrunken.
+
+**Tasks**
+
+1. Menü als Titelbild: Inhalt vertikal ausbalanciert statt oben angeklebt, Marke groß, Utilities ruhig, „Spieler ändern" unter der Hauptaktion. Der Attract-Track blendet sich in den Himmel ein statt auf einer harten Linie anzufangen.
+2. Spieler-Screen wird ein Panel statt eines Formulars; Zeilen sind Zeilen, nicht Karten; Zählung in den Header.
+3. Statistik: drei Kennzahl-Kacheln über der Tabelle, Tabelle mit Führenden-Zeile, Avatar mit Abstand.
+4. Ergebnis: Beschriftung benennt die Canvas-Szene, statt ein zweites Podest darunter zu bauen; Auszahlungskarten tragen ihr Signal einmal statt dreimal und stapeln auf dem Handy.
+5. Scroll-Andeutung: Modal-Körper mit Scroll-Schatten, Screen-Fuß greift über den Körper, damit Inhalt ausblendet statt abgeschnitten zu werden.
+6. Renn-Chrome: Anzeigetafel und Kommentar als echtes Milchglas (Füllung + Blur + Haarlinie + `prefers-reduced-transparency`), Event-Toast auf 18 px.
+7. Großer Bildschirm: Ränder, Overscan-Reserve, zweispaltige Auszahlungen.
+
+**DoD**
+
+- Fairness-Audit liefert **identische** Zahlen.
+- Kontrast-Sweep über **alle** Ansichten inklusive Renn-Screen (dort gegen echte Canvas-Pixel gemessen): 0 Verstöße, alle Tap-Ziele ≥ 48 px, kein horizontales Scrollen.
+- CLS bleibt 0, Lighthouse-Barrierefreiheit 100.
+
+**Audit:** A1 + A3 + A4 + A5 + A2 (Re-Run als Beweis)
+
+**Nutzer-Test:** Das Spiel einem Menschen zeigen, der es nicht kennt. Sieht es aus wie etwas, das man kaufen würde?
+
+---
+
 ## Nach v1.0 – Backlog (v1.1+)
 
 Siehe GDD §5 Priorität B: Jackpot-Runde, Pechvogel-Bonus, Sudden Death, Wetter-/Strecken-Varianten, Share-Card, Zuschauer-Emojis, Sprite-Sheet-Option. Jedes Feature bekommt einen eigenen Mini-Meilenstein mit denselben Regeln (DoD + Audit + Fairness-Re-Run).

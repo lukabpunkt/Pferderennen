@@ -1,15 +1,19 @@
 /**
- * Start screen: title, play / continue / rules / settings.
+ * Start screen: the title, and one obvious way in.
+ *
+ * This is a title screen, not a content screen, so it does not stack from the top like the rest
+ * of the game — the brand sits in the optical centre with the horses idling behind it, and the
+ * one action that matters waits at the bottom where a thumb already is. Everything else is
+ * utility and reads as utility.
  *
  * When players are already stored the primary action becomes "Weiterspielen", so a second
- * evening starts without typing a single name again. The attract mode with idle horses on the
- * canvas follows in M6.
+ * evening starts without typing a single name again.
  */
 
 import { el } from '../dom.js';
 import { historyStrip } from '../components/history.js';
 import { button } from '../components/button.js';
-import { page, card } from '../components/layout.js';
+import { page } from '../components/layout.js';
 import { openRules } from './rules.js';
 import { openSettings } from './settings.js';
 import { openStats } from './stats.js';
@@ -43,31 +47,32 @@ export function mount(container, store) {
     el('p', { className: 'start__tagline', text: 'Sechs Pferde. Ein Gerät. Viel Blödsinn.' }),
   ]);
 
+  /*
+   * Who played last time and how the last races went, as one quiet strip. It used to be a full
+   * card with a label, a rule and a row of dots under it, which gave a line of small print the
+   * same weight as the thing you came here to press.
+   */
   const roster = hasPlayers
-    ? card(
-        [
-          el('p', {
-            className: 'start__roster-label',
-            text: `Zuletzt gespielt mit ${players.length} ${players.length === 1 ? 'Spieler' : 'Spielern'}:`,
-          }),
-          el(
-            'ul',
-            { className: 'start__roster' },
-            players.map((player) =>
-              el('li', { className: 'start__roster-item', attrs: { title: player.name } }, [
-                el('span', {
-                  className: 'start__roster-avatar',
-                  text: player.avatar,
-                  attrs: { 'aria-hidden': 'true' },
-                }),
-                el('span', { className: 'start__roster-name', text: player.name }),
-              ]),
-            ),
+    ? el('div', { className: 'start__last' }, [
+        el(
+          'ul',
+          {
+            className: 'start__roster',
+            attrs: { 'aria-label': `Zuletzt gespielt mit ${players.length} Spielern` },
+          },
+          players.map((player) =>
+            el('li', { className: 'start__roster-item', attrs: { title: player.name } }, [
+              el('span', {
+                className: 'start__roster-avatar',
+                text: player.avatar,
+                attrs: { 'aria-hidden': 'true' },
+              }),
+              el('span', { className: 'start__roster-name', text: player.name }),
+            ]),
           ),
-          historyStrip(state, { compact: true }),
-        ],
-        'card--roster',
-      )
+        ),
+        historyStrip(state, { compact: true }),
+      ])
     : null;
 
   const primary = hasPlayers
@@ -82,16 +87,30 @@ export function mount(container, store) {
       })
     : button({ label: "Los geht's", wide: true, onClick: () => go('players') });
 
-  const secondary = el('div', { className: 'start__actions' }, [
-    hasPlayers
-      ? button({ label: 'Spieler ändern', variant: 'secondary', onClick: () => go('players') })
-      : null,
-    button({ label: 'Regeln', variant: 'ghost', onClick: () => openRules(store) }),
-    button({ label: 'Einstellungen', variant: 'ghost', onClick: () => openSettings(store) }),
-    state.session.racesPlayed > 0
-      ? button({ label: 'Statistik', variant: 'ghost', onClick: () => openStats(store) })
-      : null,
-  ]);
+  /*
+   * The three utilities. They are deliberately the quietest thing on the screen: nobody opens a
+   * party game to read the settings. Icons carry them so they stay legible while staying small.
+   */
+  const utilities = el(
+    'div',
+    { className: 'start__utilities' },
+    [
+      { label: 'Regeln', name: 'rules', open: () => openRules(store) },
+      { label: 'Einstellungen', name: 'settings', open: () => openSettings(store) },
+      state.session.racesPlayed > 0
+        ? { label: 'Statistik', name: 'stats', open: () => openStats(store) }
+        : null,
+    ]
+      .filter(Boolean)
+      .map((item) =>
+        button({ label: item.label, icon: item.name, variant: 'ghost', onClick: item.open }),
+      ),
+  );
+
+  // Changing the roster belongs to "Weiterspielen", not to the utilities, so it sits under it.
+  const changePlayers = hasPlayers
+    ? button({ label: 'Spieler ändern', variant: 'ghost', onClick: () => go('players') })
+    : null;
 
   // The attract mode: the six horses idling on the track behind the title. It is loaded on
   // demand for the same reason the race is — it *is* the race renderer, and pulling it in here
@@ -122,8 +141,8 @@ export function mount(container, store) {
   container.append(
     stage,
     page({
-      body: [title, roster, secondary].filter(Boolean),
-      footer: primary,
+      body: [title, roster, utilities].filter(Boolean),
+      footer: el('div', { className: 'start__footer' }, [primary, changePlayers].filter(Boolean)),
     }),
   );
 

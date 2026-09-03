@@ -25,6 +25,19 @@ const FRAME_MS = 1000 / 20;
  * high enough that the grass below it carries the primary button, so nothing overlaps a horse.
  */
 const GROUND = 0.84;
+/** How far above the ground the track starts fading in, as a fraction of the canvas height. */
+const FADE_IN = 0.26;
+
+/**
+ * The same colour with a different alpha, for the gradient stop that has to vanish.
+ * @param {string} hex `#rrggbb`
+ * @param {number} alpha
+ * @returns {string}
+ */
+function withAlpha(hex, alpha) {
+  const value = parseInt(hex.slice(1), 16);
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+}
 const HORSE_SIZE = 0.2;
 
 const COLOURS = {
@@ -32,7 +45,6 @@ const COLOURS = {
   grassDark: '#4CAF50',
   sand: '#E8C88A',
   sandDark: '#D9B370',
-  fence: '#FFF7E6',
 };
 
 /**
@@ -77,15 +89,22 @@ export function startAttract(canvas, { calm = false } = {}) {
 
     const groundY = height * GROUND;
 
-    // A strip of track with a rail, just enough to stand on.
-    const sand = ctx.createLinearGradient(0, groundY - height * 0.14, 0, groundY);
-    sand.addColorStop(0, COLOURS.sandDark);
+    /*
+     * A strip of track with a rail, just enough to stand on — but it has to arrive out of the sky
+     * rather than start on a hard line. The scene is drawn over the page's own gradient, and a
+     * band of sand that simply begins two thirds of the way down reads as a strip pasted on top
+     * instead of as a horizon. So the top quarter of the sand fades in from nothing.
+     */
+    const top = groundY - height * FADE_IN;
+    const sand = ctx.createLinearGradient(0, top, 0, groundY);
+    sand.addColorStop(0, withAlpha(COLOURS.sandDark, 0));
+    sand.addColorStop(0.42, COLOURS.sandDark);
     sand.addColorStop(1, COLOURS.sand);
     ctx.fillStyle = sand;
-    ctx.fillRect(0, groundY - height * 0.14, width, height * 0.14);
+    ctx.fillRect(0, top, width, groundY - top);
 
-    ctx.fillStyle = COLOURS.fence;
-    ctx.fillRect(0, groundY - height * 0.15, width, 3);
+    // No rail here. On the race track it reads as a rail because there is depth around it; on a
+    // flat backdrop it is just a bright line ruled across the page.
 
     const grass = ctx.createLinearGradient(0, groundY, 0, height);
     grass.addColorStop(0, COLOURS.grassDark);

@@ -12,6 +12,11 @@ statt zwei pro Spieler. Nichts davon berührt die Simulation: Der Fairness-Audit
 
 ### Neu
 
+- **Jeder Screen neu komponiert.** Das Menü ist ein Titelbild statt einer Liste mit 300 px Nichts
+  darunter, der Spieler-Screen ein Panel statt eines Formulars, und die Statistik hat Kennzahlen
+  statt einer nackten Tabelle.
+- **Die Anzeigetafel im Rennen ist Milchglas.** Die eine Stelle, an der der Effekt zu Recht steht:
+  Dahinter liegt unser eigenes Canvas, also lässt sich die Lesbarkeit garantieren.
 - **Eine echte Schrift.** „Fredoka" wird endlich ausgeliefert – bis jetzt stand sie zwar in den
   Tokens, aber `assets/fonts/` war leer und alles rendete in der Systemschrift. 29 KB, self-hosted,
   mit metrisch angeglichenem Fallback, damit beim Nachladen nichts springt.
@@ -41,6 +46,13 @@ statt zwei pro Spieler. Nichts davon berührt die Simulation: Der Fairness-Audit
 
 ### Behoben
 
+- Die Startnummern auf der Renn-Anzeigetafel standen in Weiß auf der Signaturfarbe und erreichten
+  damit nur 2,2–4,2:1. Die Badges hatten diese Behandlung seit M6, die Tafel war übersehen worden,
+  weil sie auf einem Canvas sitzt und die Kontrastprüfungen nur das DOM abgelaufen sind.
+- Inhalt am unteren Rand wurde hart abgeschnitten, ohne Hinweis, dass noch etwas folgt – auf dem
+  Einstellungs-Blatt hieß das, dass die Hälfte der Optionen faktisch nicht existierte.
+- Der Attract-Track begann auf einer harten Linie quer über die Seite statt sich in den Himmel
+  einzublenden.
 - Gedämpfter Text auf dem Hintergrundverlauf erreichte nur 3,0–3,7:1. Frühere Kontrast-Sweeps
   hatten nur Karteninnenräume geprüft, nie den Text, der direkt auf dem Himmel steht.
 - Ein Eingabefeld schaltete beim Fokussieren den Fokusring des ganzen Spiels ab und ersetzte ihn
