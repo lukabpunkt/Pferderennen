@@ -263,7 +263,7 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A1    | M12         | 2026-09-03 | **bestanden** | Farben aus Tokens, keine neue Abhängigkeit; das Bedienelement ist der vorhandene Stepper-Knopf |
 | A4    | M12         | 2026-09-03 | **bestanden** | Beide neuen Ziele 48 × 48 px, Kontrast 12,64:1, Tab-Reihenfolge Pick → ⊖ → ⊕ |
 | A6    | M12         | 2026-09-03 | **bestanden** | 1 Befund behoben (`betting.js` über 400 Zeilen → `bettingChoice.js`); `reducers.js` weiter 100 % Branches |
-| A2    | M12         | 2026-09-03 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch |
+| A2    | M12         | 2026-09-03 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch. CI grün: [Run 33780477576](https://github.com/lukabpunkt/Pferderennen/actions/runs/33780477576) |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
