@@ -187,6 +187,40 @@ test('starting over asks everybody again', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Noch mal dasselbe?' })).toBeHidden();
 });
 
+test('the race takes the whole screen and gives it back', async ({ page }) => {
+  await page.goto(FIXED_RACE);
+  await page.getByRole('button', { name: "Los geht's" }).click();
+  await addPlayers(page, ['Ada', 'Bo']);
+  await page.getByRole('button', { name: /Weiter zu den Wetten/ }).click();
+  await placeBet(page, 0);
+  await placeBet(page, 1);
+
+  // Both projects run as a handheld, but only one of them has the API: Safari on iPhone has never
+  // exposed fullscreen for anything but a <video>, so there the race just runs in the window and
+  // the only assertion left is that nothing broke.
+  const supported = await page.evaluate(
+    () =>
+      Boolean(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
+      Boolean(
+        document.documentElement.requestFullscreen ||
+        document.documentElement.webkitRequestFullscreen,
+      ),
+  );
+  const inFullscreen = () =>
+    page.evaluate(() => Boolean(document.fullscreenElement || document.webkitFullscreenElement));
+
+  await page.getByRole('button', { name: /Rennen starten/ }).click();
+  await expect(page.locator('.race-stage')).toBeVisible();
+  if (supported) expect(await inFullscreen()).toBe(true);
+
+  await page.getByRole('button', { name: 'Überspringen' }).click();
+  await expect(page.locator('.screen[data-screen="results"] h1')).toContainText(/gewinnt!$/, {
+    timeout: 30_000,
+  });
+  // Released on the way out, however the race ended.
+  expect(await inFullscreen()).toBe(false);
+});
+
 test('the same seed produces the same winner', async ({ browser }) => {
   /**
    * Plays one race with the fixed seed in its own browser context and returns the winner's

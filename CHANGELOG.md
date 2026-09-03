@@ -12,6 +12,9 @@ statt zwei pro Spieler. Nichts davon berührt die Simulation: Der Fairness-Audit
 
 ### Neu
 
+- **Vollbild fürs Rennen.** Auf dem Handy nimmt sich das Spiel mit „Rennen starten“ den ganzen
+  Bildschirm und gibt ihn danach zurück. (Nicht auf dem iPhone — Safari kennt die Fullscreen-API
+  dort nicht. Als installierte PWA läuft das Spiel aber ohnehin ohne Browser-Leiste.)
 - **Jeder Screen neu komponiert.** Das Menü ist ein Titelbild statt einer Liste mit 300 px Nichts
   darunter, der Spieler-Screen ein Panel statt eines Formulars, und die Statistik hat Kennzahlen
   statt einer nackten Tabelle.
@@ -46,6 +49,8 @@ statt zwei pro Spieler. Nichts davon berührt die Simulation: Der Fairness-Audit
 
 ### Behoben
 
+- Im Hochformat lag der „Überspringen“-Knopf auf dem Kommentar. Der Knopf schwebt über dem Canvas
+  und wurde von nichts von der Textzeile ferngehalten, die dort die volle Breite einnimmt.
 - Die Startnummern auf der Renn-Anzeigetafel standen in Weiß auf der Signaturfarbe und erreichten
   damit nur 2,2–4,2:1. Die Badges hatten diese Behandlung seit M6, die Tafel war übersehen worden,
   weil sie auf einem Canvas sitzt und die Kontrastprüfungen nur das DOM abgelaufen sind.

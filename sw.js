@@ -85,6 +85,7 @@ const PRECACHE = [
   './src/ui/components/toast.js',
   './src/ui/debug.js',
   './src/ui/dom.js',
+  './src/ui/fullscreen.js',
   './src/ui/raceAudio.js',
   './src/ui/raceCeremony.js',
   './src/ui/raceCommentary.js',

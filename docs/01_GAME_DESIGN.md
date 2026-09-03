@@ -58,6 +58,8 @@ Alle Pferde sind **spielmechanisch identisch**. Unterschiede sind ausschließlic
 
 ### 3.4 Rennen
 
+- **Vollbild auf dem Handy:** Mit „Rennen starten“ nimmt sich das Spiel den ganzen Bildschirm und gibt ihn zurück, sobald der Renn-Screen verlassen wird. Ein Handy liegt beim Rennen in der Tischmitte und sechs Leute schauen zu — die Adressleiste kostet dort ein Drittel der Fläche. Nur auf Touchgeräten: auf dem Desktop ist das Fenster ohnehin groß und ein ungefragter Vollbildwechsel erschreckt eher.
+  - **Auf dem iPhone gibt es das nicht.** Safari auf dem iPhone kennt die Fullscreen-API nicht (nur für `<video>`); das iPad kann es. Dort hilft nur „Zum Home-Bildschirm hinzufügen“ — als installierte PWA läuft das Spiel ohnehin ohne Browser-Leiste.
 - Countdown „3 – 2 – 1 – LOS!“ mit Startboxen, die aufklappen.
 - Die sechs Pferde laufen auf sechs Bahnen von links nach rechts (Desktop) bzw. die Kamera folgt dem Feld (Mobile Portrait: Bahn vertikal von unten nach oben, siehe Design System).
 - Dauer: **25–40 Sekunden** (konfigurierbar: kurz 20 s / normal 30 s / lang 45 s).

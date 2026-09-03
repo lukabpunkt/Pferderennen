@@ -10,6 +10,7 @@ import { button } from '../components/button.js';
 import { page, header } from '../components/layout.js';
 import { betSummary, carrySummary, restorableBets } from '../bettingSummary.js';
 import { horseGrid, createStakePanel } from '../bettingChoice.js';
+import { enter as enterFullscreen } from '../fullscreen.js';
 import { BETTING } from '../../config.js';
 import { sipWord } from '../strings.js';
 
@@ -293,6 +294,9 @@ export function mount(container, store) {
         title: reason ?? undefined,
         describedBy: reason ? HINT_ID : undefined,
         onClick: () => {
+          // Here rather than in the race screen's mount: entering fullscreen is only allowed
+          // from inside a user gesture, and by the time the screen mounts the gesture is over.
+          enterFullscreen();
           store.dispatch({ type: 'race/clear' });
           store.dispatch({ type: 'screen/go', payload: 'race' });
         },

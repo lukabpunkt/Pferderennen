@@ -163,6 +163,16 @@
   align-items: center;
 }
 
+/*
+ * When the skip button is on screen the commentary moves up out of its way. The button is
+ * positioned over the canvas rather than laid out in the HUD, so nothing else keeps them apart —
+ * and in portrait the commentary runs the full width, which put the two straight on top of each
+ * other.
+ */
+.race-stage.is-skippable .hud__bottom {
+  padding-bottom: calc(var(--tap-min) + var(--space-2));
+}
+
 .commentary {
   margin: 0;
   max-width: 40rem;

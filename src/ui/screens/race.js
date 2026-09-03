@@ -31,6 +31,7 @@ import { createRaceCeremony } from '../raceCeremony.js';
 import { toResultPayload } from '../raceResult.js';
 import { debugOptions } from '../debug.js';
 import { countingContext, createReadout } from '../raceDebug.js';
+import { exit as exitFullscreen } from '../fullscreen.js';
 
 let cleanup = null;
 
@@ -463,6 +464,9 @@ export function mount(container, store) {
   stage.append(canvas, hud.root, photoFinish, paused, countdown.node);
   if (debug.enabled) stage.append(debugPanel);
   if (settings.debugSkip || debug.skip) {
+    // The class tells the HUD to keep a row free for it; the button floats over the canvas and
+    // would otherwise land on top of the commentary, which in portrait spans the full width.
+    stage.classList.add('is-skippable');
     stage.append(
       el('button', {
         className: 'race-skip',
@@ -489,6 +493,9 @@ export function mount(container, store) {
     for (const timer of timers) clearTimeout(timer);
     timers = [];
     delete window.__race;
+    // Tied to the screen going away rather than to the race finishing, so skipping, navigating
+    // back and a hand-typed URL all give the screen back the same way a won race does.
+    exitFullscreen();
   };
 }
 

@@ -462,6 +462,21 @@ irgendwann stört, ist `--sub` der Hebel.
 
 _(Datum – Entscheidung – Begründung)_
 
+- **2026-09-04 – Vollbild wird im Klick-Handler betreten, nicht beim Mount des Renn-Screens.**
+  `requestFullscreen()` ist nur innerhalb einer Nutzergeste erlaubt; wenn der Screen montiert, ist
+  die Geste vorbei und der Browser lehnt ab. Verlassen wird dagegen an `unmount()` gehängt statt
+  ans Rennende — so geben Überspringen, Zurücknavigieren und eine von Hand getippte URL den
+  Bildschirm genauso zurück wie ein gewonnenes Rennen.
+- **2026-09-04 – Vollbild nur auf Touchgeräten** (`(hover: none) and (pointer: coarse)`). Auf dem
+  Desktop ist das Fenster ohnehin groß, und es ungefragt zu übernehmen erschreckt mehr, als es
+  hilft.
+- **2026-09-04 – Auf dem iPhone gibt es kein Vollbild, und das ist nicht zu umgehen.** Empirisch
+  geprüft, nicht aus dem Gedächtnis: In WebKit auf einem iPhone-13-Profil ist
+  `document.fullscreenEnabled` **false** und `requestFullscreen` existiert nicht — Safari
+  exponiert die API dort nur für `<video>`. Der Code fällt still durch, das Rennen läuft im
+  Fenster. Wer die Browser-Leiste loswerden will, installiert das Spiel als PWA; im
+  Standalone-Modus ist sie ohnehin weg.
+
 - **2026-09-04 (M14) – Das Menü ist ein Titelbild und benutzt deshalb nicht das Seitenlayout des
   Rests.** Sein Körper zentriert seinen Inhalt in der verbleibenden Höhe (`justify-content: safe
   center`), statt von oben zu stapeln. Vorher standen Marke und Karte oben, der Knopf unten und
@@ -1515,8 +1530,8 @@ _(werden hier gesammelt, bevor sie zu Tasks werden)_
   nicht lesbar; Farbe und Nummer tragen die Unterscheidung.
 - Das bleibende Dekor liegt immer an der Bahn des betroffenen Pferdes. Ein Pferd, das über eine
   fremde Bananenschale läuft, merkt davon nichts – das Dekor ist Erinnerung, nicht Physik.
-- `screens.css` (1057), `components.css` (725), `race.css` (498), `base.css` (343) und
-  `ui/screens/race.js` (498)
+- `screens.css` (1057), `components.css` (725), `race.css` (509), `base.css` (343) und
+  `ui/screens/race.js` (505)
   liegen über der 400-Zeilen-Richtlinie. Begründung im A6-Protokoll zu M7 und M11.
   Der übrige Produktivcode in `src/**.js` hält sie ein.
 - Das Publikum steht still. Die La-Ola-Welle bei Events und im Finish gehört zu M5.
