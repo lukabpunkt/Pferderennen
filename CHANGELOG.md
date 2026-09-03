@@ -17,6 +17,8 @@ statt zwei pro Spieler. Nichts davon berührt die Simulation: Der Fairness-Audit
 - **Einzeln ändern.** Wer doch wechseln will, tippt in der Übersicht seine Zeile an und kommt in
   die Pferdeauswahl – nur er, alle anderen bleiben stehen. Wer neu dazugekommen ist, steht als
   „noch offen" in derselben Liste.
+- **Schlücke direkt in der Zeile.** ⊖ und ⊕ neben jeder Schluckzahl. Einen Schluck mehr kostet
+  einen Tap, ohne den Screen zu wechseln und ohne das Rennen zu blockieren.
 - **Startpistole.** Ein Starter steht an der Bande, hebt den Arm über die drei gezählten Schritte
   und feuert bei „LOS!" in den Himmel – Mündungsblitz, Rauch und ein Knall, der die Glocke ersetzt.
 - **Zielband.** Auf Brusthöhe über die Ziellinie gespannt. Der Sieger reißt es an seiner Bahn; die

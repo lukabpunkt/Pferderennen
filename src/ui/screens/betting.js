@@ -7,12 +7,11 @@
 
 import { el } from '../dom.js';
 import { button } from '../components/button.js';
-import { stepper } from '../components/stepper.js';
-import { page, header, card, horsePortrait } from '../components/layout.js';
-import { HORSES, HORSES_BY_ID } from '../../data/horses.js';
+import { page, header } from '../components/layout.js';
 import { betSummary, carrySummary, restorableBets } from '../bettingSummary.js';
+import { horseGrid, createStakePanel } from '../bettingChoice.js';
 import { BETTING } from '../../config.js';
-import { sips, sipWord, BET_TYPE_LABELS, betTypeHint, ICON } from '../strings.js';
+import { sipWord, ICON } from '../strings.js';
 
 let cleanup = null;
 
@@ -26,7 +25,7 @@ const HINT_ID = 'betting-start-hint';
 export function mount(container, store) {
   /** Draft of the bet the current player is composing. */
   let draft = null;
-  let activeStepper = null;
+  let activePanel = null;
   /** Where we last rendered, so a new player starts at the top of the list. */
   let lastTurn = '';
   /**
@@ -57,138 +56,51 @@ export function mount(container, store) {
   /** The bet a player currently holds, if any. */
   const betOf = (state, playerId) => state.bets.find((bet) => bet.playerId === playerId) ?? null;
 
-  /** Builds one horse card. */
-  function horseCard(horse, state, selected) {
-    const backers = state.bets
-      .filter((bet) => bet.horseId === horse.id)
-      .map((bet) => state.players.find((player) => player.id === bet.playerId))
-      .filter(Boolean);
-
-    return el(
-      'button',
-      {
-        className: `horse-card${selected ? ' horse-card--selected' : ''}`,
-        vars: {
-          '--horse-color': horse.color,
-          '--horse-light': horse.colorLight,
-          '--horse-dark': horse.colorDark,
-        },
-        attrs: {
-          type: 'button',
-          'aria-pressed': selected ? 'true' : 'false',
-          // The stable handle a redraw uses to give the keyboard its place back.
-          'data-horse': horse.id,
-        },
-        on: {
-          click: () => {
-            draft = {
-              horseId: horse.id,
-              sips: draft?.sips ?? BETTING.defaultSips,
-              type: draft?.type ?? 'win',
-            };
-            render();
-          },
-        },
-      },
-      [
-        horsePortrait(horse, 68),
-        el('span', { className: 'horse-card__name', text: horse.name }),
-        el('span', { className: 'horse-card__character', text: horse.character }),
-        backers.length > 0
-          ? el(
-              'span',
-              { className: 'horse-card__backers' },
-              backers.map((player) =>
-                el('span', {
-                  className: 'horse-card__backer',
-                  text: player.avatar,
-                  attrs: { title: player.name },
-                }),
-              ),
-            )
-          : null,
-      ],
-    );
-  }
-
-  /** The stake panel that appears once a horse is picked. */
+  /**
+   * The stake panel for the current draft, replacing whatever one was there before.
+   *
+   * The old panel is destroyed rather than dropped: its stepper holds a hold-to-repeat timer.
+   *
+   * @param {any} state
+   * @returns {HTMLElement}
+   */
   function stakePanel(state) {
-    const horse = HORSES_BY_ID[draft.horseId];
-    const settings = state.settings;
-
-    activeStepper?.destroy();
-    activeStepper = stepper({
-      value: draft.sips,
-      min: BETTING.minSips,
-      max: BETTING.maxSips,
-      label: 'Einsatz',
-      format: (value) => sips(settings, value),
-      onChange: (value) => {
-        draft.sips = value;
+    activePanel?.destroy();
+    activePanel = createStakePanel(state, draft, {
+      onType: (value) => {
+        draft.type = value;
+        render();
+      },
+      onConfirm: () => {
+        const player = bettingPlayer(store.getState());
+        if (!player) return;
+        const wasEditing = editing !== null;
+        const bet = {
+          playerId: player.id,
+          horseId: draft.horseId,
+          sips: draft.sips,
+          type: draft.type,
+        };
+        // Both flags are cleared *before* dispatching: each dispatch re-renders, and a stale
+        // draft would build the panel one more time for nothing.
+        draft = null;
+        editing = null;
+        store.dispatch({ type: 'bets/place', payload: bet });
+        // Somebody changing their mind is not the next player's turn.
+        if (!wasEditing) store.dispatch({ type: 'betting/next' });
       },
     });
+    return activePanel.node;
+  }
 
-    const typeChooser =
-      settings.betType === 'free'
-        ? el('div', { className: 'bet-types' }, [
-            el('span', { className: 'bet-types__label', text: 'Wettart' }),
-            el(
-              'div',
-              { className: 'bet-types__row' },
-              Object.entries(BET_TYPE_LABELS).map(([value, label]) =>
-                el('button', {
-                  className: `chip${draft.type === value ? ' chip--active' : ''}`,
-                  text: label,
-                  attrs: {
-                    type: 'button',
-                    'aria-pressed': draft.type === value ? 'true' : 'false',
-                  },
-                  on: {
-                    click: () => {
-                      draft.type = value;
-                      render();
-                    },
-                  },
-                }),
-              ),
-            ),
-            el('p', { className: 'hint', text: betTypeHint(draft.type) }),
-          ])
-        : el('p', { className: 'hint', text: betTypeHint(settings.betType) });
-
-    return card(
-      [
-        el('p', { className: 'stake__horse' }, [
-          el('span', { className: 'stake__horse-name', text: horse.name }),
-          el('span', { className: 'stake__horse-dot', vars: { '--horse-color': horse.color } }),
-        ]),
-        activeStepper.node,
-        typeChooser,
-        button({
-          label: 'Setzen ✓',
-          wide: true,
-          onClick: () => {
-            const player = bettingPlayer(store.getState());
-            if (!player) return;
-            const wasEditing = editing !== null;
-            const bet = {
-              playerId: player.id,
-              horseId: draft.horseId,
-              sips: draft.sips,
-              type: draft.type,
-            };
-            // Both flags are cleared *before* dispatching: each dispatch re-renders, and a stale
-            // draft would build the panel one more time for nothing.
-            draft = null;
-            editing = null;
-            store.dispatch({ type: 'bets/place', payload: bet });
-            // Somebody changing their mind is not the next player's turn.
-            if (!wasEditing) store.dispatch({ type: 'betting/next' });
-          },
-        }),
-      ],
-      'card--stake',
-    );
+  /** A horse was tapped: it becomes the draft, keeping whatever stake was already dialled in. */
+  function pickHorse(horse) {
+    draft = {
+      horseId: horse.id,
+      sips: draft?.sips ?? BETTING.defaultSips,
+      type: draft?.type ?? 'win',
+    };
+    render();
   }
 
   /** Opens the horse grid for one player, whether or not they already have a bet. */
@@ -212,10 +124,27 @@ export function mount(container, store) {
       },
     });
 
+  /**
+   * Moves one player's stake by a sip without leaving the summary.
+   *
+   * `bets/place` replaces the bet of a player who already has one and clamps the stake to its
+   * bounds, so the horse and the bet type simply travel along unchanged. Deliberately *not*
+   * setting `editing`: there is nothing to confirm here, so the race stays startable.
+   *
+   * @param {object} player
+   * @param {number} delta
+   */
+  function nudgeStake(player, delta) {
+    const bet = betOf(store.getState(), player.id);
+    if (!bet) return;
+    store.dispatch({ type: 'bets/place', payload: { ...bet, sips: bet.sips + delta } });
+  }
+
   /** The summary table, with every line a way into that player's bet. */
   const overview = (state) =>
     betSummary(state, {
       onEdit: startEditing,
+      onStake: nudgeStake,
       onReset: () => {
         draft = null;
         carryDismissed = true;
@@ -294,6 +223,7 @@ export function mount(container, store) {
       state.bettingTurn === 0 &&
       restorableBets(state).length > 0;
     const focusedHorse = document.activeElement?.closest?.('.horse-card')?.dataset.horse ?? null;
+    const focusedStake = document.activeElement?.closest?.('[data-stake]')?.dataset.stake ?? null;
 
     // A fresh player must see the horses, not wherever the previous one had scrolled to. The
     // same goes for somebody stepping out of the summary to change their bet.
@@ -309,11 +239,7 @@ export function mount(container, store) {
       body.replaceChildren(carryCard(state));
     } else if (player) {
       body.replaceChildren(
-        el(
-          'div',
-          { className: 'horse-grid' },
-          HORSES.map((horse) => horseCard(horse, state, draft?.horseId === horse.id)),
-        ),
+        horseGrid(state, draft, pickHorse),
         draft ? stakePanel(state) : el('p', { className: 'hint', text: 'Tipp auf ein Pferd.' }),
         // A change can be called off; the round in progress cannot, there is nothing to go back to.
         editing
@@ -334,6 +260,15 @@ export function mount(container, store) {
 
     if (focusedHorse) {
       body.querySelector(`.horse-card[data-horse="${focusedHorse}"]`)?.focus();
+    }
+    if (focusedStake) {
+      const again = body.querySelector(`[data-stake="${focusedStake}"]`);
+      // The button that just did the work goes disabled at 1 and at 10. Rather than dropping the
+      // focus on the floor, hand it to the one that still works.
+      const partner = body.querySelector(
+        `[data-stake="${focusedStake.replace(/:(up|down)$/, (_, dir) => (dir === 'up' ? ':down' : ':up'))}"]`,
+      );
+      (again && !again.disabled ? again : partner)?.focus();
     }
 
     // The goal button stays visible the whole time; while it is disabled it says why.
@@ -375,8 +310,8 @@ export function mount(container, store) {
   render();
   cleanup = () => {
     unsubscribe();
-    activeStepper?.destroy();
-    activeStepper = null;
+    activePanel?.destroy();
+    activePanel = null;
   };
 }
 

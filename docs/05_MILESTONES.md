@@ -342,6 +342,31 @@ Geschätzter Umfang pro Meilenstein: 1 Claude-Code-Session (ggf. 2 bei M3/M5/M6)
 
 ---
 
+## M12 – Schlücke direkt in der Zeile
+
+**Ziel:** Den Einsatz eines Spielers ändern, ohne den Screen zu wechseln. Das Pferd zu wechseln ging seit M11; den Einsatz auch, aber nur über die Pferdeauswahl — und deren Panel liegt auf dem Handy unter der Falz, hinter 516–621 px Pferde-Raster.
+
+**Tasks**
+
+1. `betRow()` umbauen: Die Zeile hört auf, selbst ein Knopf zu sein (Knopf im Knopf ist ungültig), und trägt zwei Bedienelemente — links der Pick-Knopf in die Pferdeauswahl, rechts ⊖ ⊕ für den Einsatz.
+2. `onStake` im Wett-Screen: `bets/place` mit unveränderter Wette und `sips ± 1`. Keine neue Action — der Reducer ersetzt und klemmt schon.
+3. Fokus-Rückgabe über `data-stake`, mit Übergabe an den Partnerknopf, wenn der gedrückte an der Grenze deaktiviert wird.
+4. Umbruch auf zwei Ebenen unter 560 px; Tap-Ziele bleiben 48 × 48 px.
+5. Tests, Doku, `chore: complete M12`.
+
+**DoD**
+
+- Fairness-Audit liefert **identische** Zahlen.
+- Ein Einsatz-Tipp setzt kein `editing`: „Rennen starten" bleibt freigeschaltet.
+- Die Karte „Beim letzten Rennen habt ihr so gesetzt" bleibt rein lesbar.
+- Alle Texte über `sipWord()` / `sips()`, damit der Alkoholfrei-Modus mitkommt.
+
+**Audit:** A1 + A4 (die Zeile bekommt zwei zusätzliche Ziele) + A6 + A2 (Re-Run als Beweis)
+
+**Nutzer-Test:** Zwischen zwei Rennen bei einem Spieler den Einsatz hochdrehen. Reicht ein Tap, oder sucht man doch wieder die Pferdeauswahl?
+
+---
+
 ## Nach v1.0 – Backlog (v1.1+)
 
 Siehe GDD §5 Priorität B: Jackpot-Runde, Pechvogel-Bonus, Sudden Death, Wetter-/Strecken-Varianten, Share-Card, Zuschauer-Emojis, Sprite-Sheet-Option. Jedes Feature bekommt einen eigenen Mini-Meilenstein mit denselben Regeln (DoD + Audit + Fairness-Re-Run).

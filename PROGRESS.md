@@ -213,6 +213,18 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 - [x] **Audit A4 bestanden**
 - [x] **Audit A2 bestanden** (Re-Run als Beweis)
 
+### M12 – Schlücke direkt in der Zeile
+
+- [x] 1. Zeile trägt zwei Bedienelemente statt einem
+- [x] 2. `onStake` über `bets/place`
+- [x] 3. Fokus-Rückgabe über `data-stake`
+- [x] 4. Umbruch auf zwei Ebenen unter 560 px
+- [x] 5. Tests, Doku, `chore: complete M12`
+- [x] **Audit A1 bestanden**
+- [x] **Audit A4 bestanden**
+- [x] **Audit A6 bestanden**
+- [x] **Audit A2 bestanden** (Re-Run als Beweis)
+
 ---
 
 ## Audit-Protokoll
@@ -248,6 +260,10 @@ ohne ihn wäre die Liste nur zu erraten gewesen.
 | A6    | M11         | 2026-09-03 | **bestanden** | `reducers.js` 100 % Branches; `ui/screens/race.js` 580 → 498 Zeilen (`raceCeremony.js` herausgezogen), bleibt eine begründete Ausnahme |
 | A4    | M11         | 2026-09-03 | **bestanden** | Zeilen als Bedienelemente: 48 px, Fokusring, sprechende Namen; 0 Kontrastverstöße |
 | A2    | M11         | 2026-09-03 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch zum Lauf vor M11. CI grün: [Run 33757159274](https://github.com/lukabpunkt/Pferderennen/actions/runs/33757159274) |
+| A1    | M12         | 2026-09-03 | **bestanden** | Farben aus Tokens, keine neue Abhängigkeit; das Bedienelement ist der vorhandene Stepper-Knopf |
+| A4    | M12         | 2026-09-03 | **bestanden** | Beide neuen Ziele 48 × 48 px, Kontrast 12,64:1, Tab-Reihenfolge Pick → ⊖ → ⊕ |
+| A6    | M12         | 2026-09-03 | **bestanden** | 1 Befund behoben (`betting.js` über 400 Zeilen → `bettingChoice.js`); `reducers.js` weiter 100 % Branches |
+| A2    | M12         | 2026-09-03 | **bestanden** | Re-Run: S1 31,24 %, S5 39,60 %, S6 132 – identisch |
 | A7    | M9          | 2026-09-02 | **bestanden** | Release-Audit: [`docs/audits/release-v1.0.md`](docs/audits/release-v1.0.md); 3 Befunde behoben. CI grün inkl. E2E: [Run 33681803057](https://github.com/lukabpunkt/Pferderennen/actions/runs/33681803057) |
 
 ### A0 – Setup-Audit im Detail (2026-09-02)
@@ -405,6 +421,26 @@ irgendwann stört, ist `--sub` der Hebel.
 ## Entscheidungen
 
 _(Datum – Entscheidung – Begründung)_
+
+- **2026-09-03 (M12) – Die Übersichtszeile ist kein Knopf mehr.** Sie war einer, seit M11; die
+  ⊖ ⊕ hineinzulegen hätte einen Knopf im Knopf ergeben, was ungültiges Markup ist und dessen
+  Klicks der Browser nicht zustellt. Die Zeile ist jetzt ein Container mit zwei Bedienelementen:
+  links der Pick-Knopf, rechts der Einsatz.
+- **2026-09-03 (M12) – Kein Halten-zum-Wiederholen in der Zeile.** Der `stepper()` im Einsatz-Panel
+  kann das, hier wäre es falsch: Die Liste wird nach jedem Dispatch neu gebaut, ein Halten überlebt
+  das nicht — und in einer Übersicht will niemand versehentlich auf zehn hochlaufen. Ein Tipp,
+  ein Schluck.
+- **2026-09-03 (M12) – Der aktuelle Einsatz steht im Namen der ⊖ ⊕.** Die Zahl daneben ist nach
+  dem Neuzeichnen ein neuer Knoten, eine `aria-live`-Region darauf würde also nicht auslösen. Der
+  Fokus landet aber wieder auf dem Knopf, und *das* liest ein Screenreader vor — deshalb trägt der
+  Knopf „…, jetzt 4 Schlücke" und die Zahl ist `aria-hidden`.
+- **2026-09-03 (M12) – Die ⊖ ⊕ tragen nicht den Akzent.** Sechs orange Kreise in der Übersicht
+  haben „Rennen starten" überschrien, und das ist der Knopf, auf den der Screen hinführt. Gleiche
+  Größe, gleiches Verhalten, ruhigere Farbe.
+- **2026-09-03 (M12) – Auf dem Handy bricht die Zeile auf zwei Ebenen um.** Spieler, Pferd und ein
+  Einsatz-Bedienelement mit zwei 48-px-Zielen brauchen zusammen rund 500 px; ein Telefon hat 390.
+  Alles auf eine Zeile zu zwingen hieße, entweder den Pferdenamen abzuschneiden oder die Tap-Ziele
+  unter 48 px zu drücken. Beides ist schlechter als eine zweite Zeile.
 
 - **2026-09-03 (M11) – `lastBets` wird in `race/setResult` geschrieben, nicht in `bets/place`.**
   „Dieselbe Konstellation wie letztes Mal" meint das letzte *Rennen*, nicht das Letzte, was
@@ -1202,6 +1238,32 @@ wird.
 Drehung eine leere Fläche zurück – `canvas.width` zu setzen löscht sie, und es zeichnete ja nichts
 mehr. Ein Resize weckt die Szene jetzt für ein Bild.
 
+### A1 / A2 / A4 / A6 – Audits zu M12 (2026-09-03)
+
+**A2:** M12 fasst nur an, wie ein Einsatz geändert wird. Der Re-Run über 100.000 Rennen: alle 22
+Kriterien erfüllt, S1 **31,24 %**, S5 **39,60 %**, S6 **132**, Siegquoten 0,1646–0,1688 — dieselben
+Ziffern wie vor M12.
+
+**A4 ist hier der eigentliche Punkt**, weil die Zeile zwei zusätzliche Bedienelemente bekommt.
+Beide messen 48 × 48 px, Kontrast **12,64:1** im aktiven Zustand (gemessen mit Alpha-Komposition,
+nicht auf der halbtransparenten Füllung geraten). Der deaktivierte Zustand an den Grenzen 1 und 10
+liegt bei 3,35:1 — dieselbe Regel wie beim Stepper im Einsatz-Panel, und inaktive Bedienelemente
+sind von WCAG 1.4.3 ausgenommen. Tab-Reihenfolge je Zeile Pick → ⊖ → ⊕, kein horizontales Scrollen,
+und der Fokus bleibt nach jedem Tipp auf dem Knopf, den man gedrückt hat — außer der wird durch
+den Tipp selbst deaktiviert, dann übernimmt der Partnerknopf.
+
+**A6: ein Befund, von mir selbst verursacht.** `ui/screens/betting.js` war durch `nudgeStake` und
+die Fokus-Rückgabe auf 413 Zeilen gewachsen. Die Naht lag schon bereit — der Kopf von
+`bettingSummary.js` sagt seit M11, das Pferde-Raster sei „a different job: that one is about
+choosing, these are about seeing what has been chosen". Genau das ist jetzt `ui/bettingChoice.js`
+(157 Zeilen): das Raster und das Einsatz-Panel. Ergebnis **413 → 321 Zeilen**. `reducers.js` steht
+weiter bei 100 % Branch Coverage; 350 Unit-Tests, 14 E2E-Tests grün.
+
+**A1:** Keine neue Abhängigkeit, keine Hex-Farbe außerhalb der erlaubten Dateien. Das neue
+Bedienelement ist bewusst keins: Die Nudge-Knöpfe tragen `.stepper__btn`, also denselben Knopf, den
+das Einsatz-Panel benutzt — nur mit ruhigerer Füllung, damit sechs davon nicht den Startknopf
+überschreien.
+
 ### A1 / A2 / A4 / A6 – Audits zu M11 (2026-09-03)
 
 **A2 zuerst, weil es der Punkt ist.** M11 fasst nur an, wie Wetten zustande kommen. Wetten
@@ -1240,6 +1302,8 @@ _(Datum – Meilenstein – Beobachtungen – abgeleitete Tasks)_
 
 **Offen (nur der Nutzer kann das):**
 
+- **M12:** Zwischen zwei Rennen bei einem Spieler den Einsatz hochdrehen. Reicht ein Tap, oder
+  sucht man doch wieder die Pferdeauswahl?
 - **M11:** Zwei Rennen hintereinander mit vollem Tisch. Ist die Übernehmen-Karte an der richtigen
   Stelle, oder will man sie schon auf dem Ergebnis-Screen?
 - **M10:** Ein Rennen mit Ton von vorn bis hinten ansehen. Fühlt sich der Start wie ein Start an,
@@ -1268,7 +1332,7 @@ _(werden hier gesammelt, bevor sie zu Tasks werden)_
   nicht lesbar; Farbe und Nummer tragen die Unterscheidung.
 - Das bleibende Dekor liegt immer an der Bahn des betroffenen Pferdes. Ein Pferd, das über eine
   fremde Bananenschale läuft, merkt davon nichts – das Dekor ist Erinnerung, nicht Physik.
-- `screens.css` (756), `components.css` (623), `race.css` (459) und `ui/screens/race.js` (498)
+- `screens.css` (809), `components.css` (623), `race.css` (459) und `ui/screens/race.js` (498)
   liegen über der 400-Zeilen-Richtlinie. Begründung im A6-Protokoll zu M7 und M11.
   Der übrige Produktivcode in `src/**.js` hält sie ein.
 - Das Publikum steht still. Die La-Ola-Welle bei Events und im Finish gehört zu M5.

@@ -73,6 +73,7 @@ const PRECACHE = [
   './src/styles/race.css',
   './src/styles/screens.css',
   './src/styles/tokens.css',
+  './src/ui/bettingChoice.js',
   './src/ui/bettingSummary.js',
   './src/ui/components/button.js',
   './src/ui/components/countdown.js',

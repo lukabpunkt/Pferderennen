@@ -51,7 +51,8 @@ Alle Pferde sind **spielmechanisch identisch**. Unterschiede sind ausschließlic
 - Anzeige „Wer setzt gerade?“ groß und klar, damit das Handy weitergereicht werden kann.
 - Übersicht am Ende: Tabelle Spieler → Pferd → Einsatz. Button **„Rennen starten“** erst aktiv, wenn alle gesetzt haben.
 - **Wetten übernehmen:** Ab dem zweiten Rennen öffnet der Wett-Screen mit einer Karte „Beim letzten Rennen habt ihr so gesetzt“ und den Wetten des Vorrennens. **„Wetten übernehmen“** stellt sie wieder her und führt direkt in die Übersicht; **„Alle neu setzen“** startet die Runde wie gehabt reihum. Damit kostet ein Wiederholungsrennen drei Taps, unabhängig davon, wie viele mitspielen.
-- **Einzeln ändern:** In der Übersicht ist jede Zeile antippbar und führt in die Pferdeauswahl für genau diesen Spieler. Wer nach dem letzten Rennen dazugekommen ist, steht als **„noch offen“** in der Liste — dieselbe Zeile, derselbe Weg. „Rennen starten“ bleibt gesperrt, solange eine Wette offen oder eine Änderung nicht bestätigt ist.
+- **Einsatz in der Zeile:** Jede Zeile der Übersicht trägt ⊖ und ⊕ neben der Schluckzahl. Einen Schluck rauf oder runter kostet einen Tap, ohne den Screen zu wechseln — das ist der häufigste Fall am Tisch: Das Pferd bleibt, der Einsatz steigt.
+- **Einzeln ändern:** Für ein anderes Pferd (oder eine andere Wettart) ist die linke Hälfte der Zeile antippbar und führt in die Pferdeauswahl für genau diesen Spieler. Wer nach dem letzten Rennen dazugekommen ist, steht als **„noch offen“** in der Liste — dieselbe Zeile, derselbe Weg. „Rennen starten“ bleibt gesperrt, solange eine Wette offen oder eine Änderung nicht bestätigt ist.
 - Die übernommenen Wetten überleben einen Reload und verlieren die Wetten von Spielern, die inzwischen gegangen sind.
 - Noch offen (Einstellung): **Quick-Bet** – ein Tap auf die Pferdekarte übernimmt den letzten Einsatz. Kleiner als das Obige: es geht um den Einsatz je Karte, nicht um die ganze Runde.
 

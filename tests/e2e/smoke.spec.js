@@ -112,8 +112,8 @@ test('runs the same bets back, with one player changing their mind', async ({ pa
   await expect(page.getByRole('button', { name: /Rennen starten/ })).toBeEnabled();
 
   // One player changes to a horse nobody had, and only that line moves.
-  const others = await page.locator('.overview__row--action').nth(1).getAttribute('aria-label');
-  await page.locator('.overview__row--action').first().click();
+  const others = await page.locator('.overview__pick').nth(1).getAttribute('aria-label');
+  await page.locator('.overview__pick').first().click();
   await expect(page.getByText(/ändert/)).toBeVisible();
   // Starting is locked until the change is settled one way or the other.
   await expect(page.getByRole('button', { name: /Rennen starten/ })).toBeDisabled();
@@ -123,8 +123,47 @@ test('runs the same bets back, with one player changing their mind', async ({ pa
 
   await expect(page.getByRole('heading', { name: 'Bereit zum Rennen' })).toBeVisible();
   await expect(page.locator('.overview__row--action').first()).toContainText('Hopfen Hengst');
-  await expect(page.locator('.overview__row--action').nth(1)).toHaveAttribute('aria-label', others);
+  await expect(page.locator('.overview__pick').nth(1)).toHaveAttribute('aria-label', others);
   await expect(page.getByRole('button', { name: /Rennen starten/ })).toBeEnabled();
+});
+
+test('a stake can be moved from the summary, without leaving it', async ({ page }) => {
+  await page.goto(FIXED_RACE);
+  await page.getByRole('button', { name: "Los geht's" }).click();
+  await addPlayers(page, ['Ada', 'Bo']);
+  await page.getByRole('button', { name: /Weiter zu den Wetten/ }).click();
+  await placeBet(page, 0);
+  await placeBet(page, 1);
+  await expect(page.getByRole('heading', { name: 'Bereit zum Rennen' })).toBeVisible();
+
+  const stakes = page.locator('.overview__stake .overview__sips');
+  await expect(stakes.first()).toHaveText('3 Schlücke');
+
+  // One tap, one sip — and the other player is not dragged along.
+  await page.getByRole('button', { name: /Ein Schluck mehr für Ada/ }).click();
+  await expect(stakes.first()).toHaveText('4 Schlücke');
+  await expect(stakes.nth(1)).toHaveText('3 Schlücke');
+
+  // Nothing to confirm: unlike a horse change, this never locks the race.
+  await expect(page.getByRole('heading', { name: 'Bereit zum Rennen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Rennen starten/ })).toBeEnabled();
+
+  // Down to the floor, where the button gives up rather than the reducer having to.
+  const less = page.getByRole('button', { name: /Ein Schluck weniger für Ada/ });
+  for (let i = 0; i < 3; i += 1) await less.click();
+  await expect(stakes.first()).toHaveText('1 Schluck');
+  await expect(page.getByRole('button', { name: /Ein Schluck weniger für Ada/ })).toBeDisabled();
+
+  // The stake really is the bet now, not just a label: it survives into the race and back.
+  await page.getByRole('button', { name: /Rennen starten/ }).click();
+  await page.getByRole('button', { name: 'Überspringen' }).click();
+  await expect(page.locator('.screen[data-screen="results"] h1')).toContainText(/gewinnt!$/, {
+    timeout: 30_000,
+  });
+  await page.getByRole('button', { name: 'Nächstes Rennen' }).click();
+  await expect(page.locator('.card--carry .overview__row').first()).toContainText('1 Schluck');
+  // The offer is for reading, not for editing.
+  await expect(page.locator('.card--carry [data-stake]')).toHaveCount(0);
 });
 
 test('starting over asks everybody again', async ({ page }) => {

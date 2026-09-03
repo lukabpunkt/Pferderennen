@@ -230,6 +230,22 @@ describe('bets/place', () => {
     expect(state.bets[1]).toMatchObject({ playerId: 'p2', horseId: 'wodka', sips: 2 });
   });
 
+  // How the ⊖ ⊕ in the summary line work: the whole bet is sent back with one field moved, so the
+  // horse and the bet type travel along untouched and no separate action is needed.
+  it('moves only the stake when the bet is resent with everything else unchanged', () => {
+    const placed = run(
+      withPlayers(2),
+      { type: 'bets/place', payload: { playerId: 'p1', horseId: 'hopfen', sips: 4, type: 'last' } },
+      { type: 'bets/place', payload: { playerId: 'p2', horseId: 'wodka', sips: 2 } },
+    );
+    const bet = placed.bets[0];
+    const state = run(placed, { type: 'bets/place', payload: { ...bet, sips: bet.sips + 1 } });
+
+    expect(state.bets).toHaveLength(2);
+    expect(state.bets[0]).toEqual({ playerId: 'p1', horseId: 'hopfen', sips: 5, type: 'last' });
+    expect(state.bets[1]).toBe(placed.bets[1]);
+  });
+
   it('clamps the stake to the allowed range and rounds it', () => {
     const check = (sips) =>
       run(withPlayers(1), { type: 'bets/place', payload: { playerId: 'p1', horseId: 'x', sips } })
